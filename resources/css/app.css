@@ -1,0 +1,181 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    --color-navy-950: #0b3d3d;
+    --color-navy-900: #114848;
+    --color-navy-800: #165555;
+    --color-navy-700: #1d6666;
+    --color-teal-900: #0d4747;
+    --color-teal-800: #115858;
+    --color-teal-700: #167070;
+    --color-teal-600: #1c8585;
+    --color-teal-500: #24a0a0;
+    --color-teal-400: #3cb8b8;
+    --color-teal-50: #e8f7f7;
+    --color-sand-50: #f5fafb;
+    --color-sand-100: #d7ecec;
+    --color-gold-500: #8fd4d4;
+    --color-ink-900: #1a3a3a;
+    --color-ink-600: #4d6d6d;
+    --color-ink-400: #7f9a9a;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    color: var(--color-ink-900);
+    background: #ffffff;
+}
+
+.font-display {
+    font-family: var(--font-display);
+}
+
+.hero-shell {
+    border-radius: 0 0 50% 50% / 0 0 7rem 7rem;
+}
+
+@media (min-width: 640px) {
+    .hero-shell {
+        border-radius: 0 0 50% 50% / 0 0 9.5rem 9.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hero-shell {
+        border-radius: 0 0 50% 50% / 0 0 11rem 11rem;
+    }
+}
+
+.hero-teal-overlay {
+    background:
+        linear-gradient(180deg, rgb(13 71 71 / 0.78) 0%, rgb(17 88 88 / 0.86) 45%, rgb(13 71 71 / 0.92) 100%);
+}
+
+.services-teal-overlay {
+    background:
+        linear-gradient(110deg, rgb(13 71 71 / 0.94) 0%, rgb(22 112 112 / 0.82) 50%, rgb(13 71 71 / 0.92) 100%);
+}
+
+.booking-bar {
+    background:
+        linear-gradient(135deg, #f3fbfb 0%, #e8f6f6 45%, #dff3f3 100%);
+    border: 1px solid rgb(22 112 112 / 0.14);
+    box-shadow:
+        0 18px 40px -24px rgb(13 71 71 / 0.35),
+        inset 0 1px 0 rgb(255 255 255 / 0.85);
+}
+
+.service-rail {
+    position: absolute;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    right: 0;
+    width: 1px;
+    background: rgb(255 255 255 / 0.35);
+}
+
+.service-dot {
+    position: absolute;
+    right: -1.4rem;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: #ffffff;
+    transform: translateY(-50%);
+}
+
+.stat-ring {
+    --progress: 0.67;
+    --size: 10.5rem;
+    width: var(--size);
+    height: var(--size);
+}
+
+.stat-ring__track,
+.stat-ring__value {
+    fill: none;
+    stroke-width: 4.5;
+}
+
+.stat-ring__track {
+    stroke: #d9efef;
+}
+
+.stat-ring__value {
+    stroke: #24a0a0;
+    stroke-linecap: round;
+    stroke-dasharray: 301.6;
+    stroke-dashoffset: calc(301.6 * (1 - var(--progress)));
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.service-tile-overlay {
+    background:
+        linear-gradient(180deg, rgb(13 71 71 / 0.15) 0%, rgb(13 71 71 / 0.55) 45%, rgb(11 61 61 / 0.92) 100%);
+}
+
+.service-panel {
+    background:
+        linear-gradient(180deg, #ffffff 0%, #f7fcfc 100%);
+    border: 1px solid rgb(22 112 112 / 0.12);
+    box-shadow: 0 16px 36px -28px rgb(13 71 71 / 0.35);
+}
+
+.service-panel:hover {
+    border-color: rgb(22 112 112 / 0.22);
+    box-shadow: 0 22px 44px -26px rgb(13 71 71 / 0.42);
+}
+
+@keyframes reveal-up {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.reveal {
+    animation: reveal-up 0.7s ease both;
+}
+
+.reveal-delay-1 {
+    animation-delay: 0.12s;
+}
+
+.reveal-delay-2 {
+    animation-delay: 0.22s;
+}
+
+.prose-service p {
+    margin: 0;
+}
+
+.prose-service p + p {
+    margin-top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .service-tile img,
+    .service-panel,
+    .service-panel img {
+        animation: none !important;
+        transition: none !important;
+    }
+}
