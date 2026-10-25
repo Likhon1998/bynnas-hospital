@@ -16,7 +16,7 @@ class DoctorSeeder extends Seeder
      */
     public function run(): void
     {
-        $doctorUser = User::query()->where('email', 'doctor@demo.hospital')->first();
+        $doctorUser = User::query()->where('email', 'doctor@hospital.com')->first();
 
         $doctors = [
             [

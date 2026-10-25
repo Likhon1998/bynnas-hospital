@@ -1,47 +1,55 @@
 @extends('layouts.admin')
-
 @section('title', 'Doctors')
 @section('heading', 'Doctors')
-
 @section('content')
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <form method="GET" class="flex w-full max-w-md gap-2">
-            <input type="search" name="q" value="{{ request('q') }}" placeholder="Search doctors" class="w-full rounded-full border border-sand-100 bg-white px-4 py-2.5 text-sm">
-            <button type="submit" class="rounded-full bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Search</button>
+    <div class="table-frame table-frame--fill">
+        <form method="GET" class="table-toolbar">
+            <p class="table-count">{{ $doctors->total() }} {{ \Illuminate\Support\Str::plural('doctor', $doctors->total()) }}</p>
+            <div class="admin-filters">
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search doctors">
+                <button type="submit">Search</button>
+                <a href="{{ route('admin.doctors.create') }}" class="admin-action">Add doctor</a>
+            </div>
         </form>
-        <a href="{{ route('admin.doctors.create') }}" class="inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Add doctor</a>
-    </div>
-    <div class="overflow-hidden rounded-3xl bg-white ring-1 ring-sand-100">
-        <table class="min-w-full text-left text-sm">
-            <thead class="bg-sand-50 text-xs uppercase tracking-wide text-ink-400">
-                <tr>
-                    <th class="px-4 py-3">Doctor</th>
-                    <th class="px-4 py-3">Department</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-sand-100">
-                @forelse ($doctors as $doctor)
+        <div class="table-scroll admin-scroll">
+            <table class="pro-table">
+                <thead>
                     <tr>
-                        <td class="px-4 py-3">
-                            <p class="font-medium text-navy-900">{{ $doctor->name }}</p>
-                            <p class="text-ink-600">{{ $doctor->designation }}</p>
-                        </td>
-                        <td class="px-4 py-3 text-ink-600">{{ $doctor->department?->name }}</td>
-                        <td class="px-4 py-3"><x-admin.status-pill :value="$doctor->is_active ? 'active' : 'inactive'" /></td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center justify-end gap-4">
-                                <a href="{{ route('admin.doctors.edit', $doctor) }}" class="font-semibold text-teal-700">Edit</a>
-                                <x-admin.delete-button :action="route('admin.doctors.destroy', $doctor)" />
-                            </div>
-                        </td>
+                        <th class="col-idx">#</th>
+                        <th>Doctor</th>
+                        <th>Department</th>
+                        <th class="col-num">Fee</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-action">Action</th>
                     </tr>
-                @empty
-                    <tr><td colspan="4" class="px-4 py-10 text-center text-ink-600">No doctors yet.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse ($doctors as $doctor)
+                        <tr>
+                            <td class="col-idx">{{ ($doctors->firstItem() ?? 1) + $loop->index }}</td>
+                            <td>
+                                <span class="col-primary">{{ $doctor->name }}</span>
+                                <span class="cell-sub">{{ $doctor->designation ?: 'Consultant' }}@if ($doctor->qualifications) · {{ $doctor->qualifications }}@endif</span>
+                            </td>
+                            <td>
+                                <span>{{ $doctor->department?->name ?: '—' }}</span>
+                                <span class="cell-sub">{{ $doctor->specialization ?: '—' }}</span>
+                            </td>
+                            <td class="col-num">{{ number_format((float) $doctor->consultation_fee, 2) }}</td>
+                            <td class="col-status"><x-admin.status-pill :value="$doctor->is_active ? 'active' : 'inactive'" /></td>
+                            <td class="col-action">
+                                <div class="table-actions">
+                                    <a href="{{ route('admin.doctors.edit', $doctor) }}">Edit</a>
+                                    <x-admin.delete-button :action="route('admin.doctors.destroy', $doctor)" />
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr class="is-empty"><td colspan="6">No doctors yet.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="mt-6">{{ $doctors->links() }}</div>
+    <div class="table-pager">{{ $doctors->links() }}</div>
 @endsection

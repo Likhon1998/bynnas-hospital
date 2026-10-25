@@ -18,6 +18,9 @@ class AppointmentController extends Controller
             ->when($request->string('status')->toString(), function ($query, string $status): void {
                 $query->where('status', $status);
             })
+            ->when($request->string('source')->toString(), function ($query, string $source): void {
+                $query->where('source', $source);
+            })
             ->when($request->string('q')->toString(), function ($query, string $term): void {
                 $query->where(function ($builder) use ($term): void {
                     $builder->where('appointment_no', 'like', '%'.$term.'%')
@@ -47,12 +50,12 @@ class AppointmentController extends Controller
 
         $appointment->update([
             'status' => $status,
-            'notes' => $request->validated('notes'),
+            'notes' => $request->exists('notes') ? $request->validated('notes') : $appointment->notes,
             'cancelled_at' => $status === 'cancelled' ? ($appointment->cancelled_at ?? now()) : null,
             'cancellation_reason' => $status === 'cancelled' ? $request->validated('cancellation_reason') : null,
             'booking_key' => $status === 'cancelled' ? null : $appointment->booking_key,
         ]);
 
-        return redirect()->route('admin.appointments.show', $appointment)->with('status', 'Appointment updated.');
+        return back()->with('status', 'Appointment status updated.');
     }
 }

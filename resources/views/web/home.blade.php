@@ -2,170 +2,173 @@
 
 @php
     $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
-    $heroImage = 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=2000&q=80';
-    $servicesImage = 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=2000&q=80';
-    $serviceList = $services->isNotEmpty()
-        ? $services
-        : collect();
-    $activeServiceIndex = min(1, max(0, $serviceList->count() - 1));
+    $address = $hospital->get('address');
+    $phone = $hospital->get('phone');
+    $emergency = $hospital->get('emergency_phone');
+    $heroImage = 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1600&q=80';
+    $serviceList = $services->isNotEmpty() ? $services : collect();
+    $bookableList = isset($bookableServices) && $bookableServices->isNotEmpty() ? $bookableServices : $serviceList;
 @endphp
 
-@section('title', $hospitalName.' | Care for Yourself')
-@section('meta_description', 'A great place to care for yourself. Medical recovery focused on helping you feel your best.')
+@section('title', $hospitalName)
+@section('meta_description', $hospitalName.' in Gulshan, Dhaka. Clinics, diagnostics, and a 24-hour emergency desk.')
 
 @section('content')
-    <section id="about" class="relative bg-white pb-10">
-        <div class="hero-shell relative min-h-[34rem] overflow-hidden sm:min-h-[40rem]">
-            <img src="{{ $heroImage }}" alt="" class="absolute inset-0 h-full w-full object-cover object-center">
-            <div class="hero-teal-overlay absolute inset-0"></div>
-
-            <div class="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 pb-24 pt-36 text-center sm:pb-28 sm:pt-40">
-                <h1 class="text-[2.35rem] font-bold leading-[1.15] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
-                    A Great Place<br>
-                    care for yourself
-                </h1>
-                <p class="mt-5 max-w-sm text-[0.95rem] leading-7 text-white/85">
-                    Medical recover is most focused in helping you discover your most beautiful smile.
+    <section class="bg-[#f7f5ef]">
+        <div class="web-wrap grid items-center gap-10 py-12 lg:grid-cols-2 lg:gap-16 lg:py-16">
+            <div class="max-w-xl">
+                @if ($address)
+                    <p class="web-kicker">{{ $address }}</p>
+                @endif
+                <h1 class="web-title mt-3">{{ $hospitalName }}</h1>
+                <p class="web-lead mt-5">
+                    A hospital in Gulshan for clinic visits, tests, and emergency. If you are not sure which doctor to see, call the OPD desk first. They will point you to the right room.
                 </p>
+                <div class="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+                    <x-ui.button href="#appointment" variant="navy" class="!rounded">
+                        Request a visit
+                    </x-ui.button>
+                    @if ($emergency)
+                        <a href="tel:{{ preg_replace('/\s+/', '', $emergency) }}" class="text-sm font-semibold text-[#9a3b32]">
+                            Emergency {{ $emergency }}
+                        </a>
+                    @endif
+                </div>
+            </div>
+            <div class="min-h-[16rem] overflow-hidden border border-[#ddd8cc] bg-[#c5cdc8] lg:min-h-[22rem]">
+                <img
+                    src="{{ $heroImage }}"
+                    alt="Ward corridor at {{ $hospitalName }}"
+                    referrerpolicy="no-referrer"
+                    class="h-full min-h-[16rem] w-full object-cover lg:min-h-[22rem]"
+                >
             </div>
         </div>
+    </section>
 
-        <div class="relative z-30 px-4 pt-10 sm:px-6 sm:pt-12">
-            <form
-                id="appointment"
-                action="#appointment"
-                method="get"
-                class="booking-bar mx-auto grid max-w-5xl gap-0 rounded-[2rem] px-4 py-5 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-center sm:rounded-full sm:px-6 sm:py-5"
-            >
-                <label class="flex min-w-0 flex-col gap-1 border-b border-sand-100 px-3 py-3 sm:border-b-0 sm:border-r sm:py-1">
-                    <span class="text-[0.7rem] font-semibold uppercase tracking-wide text-ink-400">Choose Services</span>
-                    <span class="relative">
-                        <select name="service" class="w-full appearance-none bg-transparent py-1 pr-7 text-sm font-semibold text-ink-900 outline-none">
-                            <option value="">Select a service</option>
-                            @foreach ($serviceList as $serviceItem)
-                                <option value="{{ $serviceItem->slug }}">{{ $serviceItem->title }}</option>
-                            @endforeach
-                        </select>
-                        <svg class="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-teal-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
-                    </span>
+    <section id="appointment" class="border-y border-[#ddd8cc] bg-[#fbfaf6]">
+        <div class="web-wrap web-section--tight">
+            <div class="max-w-2xl">
+                <h2 class="web-h2">Ask the desk for a slot</h2>
+                <p class="web-copy mt-3">
+                    Leave your name, a service, a date, and a number. Reception sees this request in the desk list and will call you back. This is not an instant confirmation.
+                </p>
+            </div>
+            <form action="{{ route('appointment-requests.store') }}" method="POST" class="mt-6 grid gap-4 border border-[#ddd8cc] bg-white p-5 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-end">
+                @csrf
+                <label class="web-field">
+                    <span>Your name</span>
+                    <input type="text" name="name" value="{{ old('name') }}" required>
+                    @error('name') <span class="is-error">{{ $message }}</span> @enderror
                 </label>
-
-                <label class="flex min-w-0 flex-col gap-1 border-b border-sand-100 px-3 py-3 sm:border-b-0 sm:border-r sm:py-1">
-                    <span class="text-[0.7rem] font-semibold uppercase tracking-wide text-ink-400">Choose Date</span>
-                    <span class="relative">
-                        <input
-                            type="text"
-                            name="date"
-                            placeholder="DD/MM/YYYY"
-                            onfocus="this.type='date'"
-                            onblur="if(!this.value)this.type='text'"
-                            class="w-full bg-transparent py-1 pr-7 text-sm font-semibold text-ink-900 outline-none placeholder:text-ink-900"
-                        >
-                        <svg class="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-teal-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M6 21h12a2 2 0 002-2V7a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    </span>
+                <label class="web-field">
+                    <span>Phone</span>
+                    <input type="tel" name="phone" value="{{ old('phone') }}" placeholder="01XXXXXXXXX" required>
+                    @error('phone') <span class="is-error">{{ $message }}</span> @enderror
                 </label>
-
-                <label class="flex min-w-0 flex-col gap-1 border-b border-sand-100 px-3 py-3 sm:border-b-0 sm:border-r sm:py-1">
-                    <span class="text-[0.7rem] font-semibold uppercase tracking-wide text-ink-400">Contact Number</span>
-                    <span class="relative">
-                        <input
-                            type="tel"
-                            name="phone"
-                            placeholder="+91 958 727 9122"
-                            class="w-full bg-transparent py-1 pr-7 text-sm font-semibold text-ink-900 outline-none placeholder:text-ink-900"
-                        >
-                        <svg class="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-teal-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h2.2a1 1 0 01.95.68l1.1 3.2a1 1 0 01-.27 1.1L7.9 9.9a12 12 0 006.2 6.2l1.92-1.08a1 1 0 011.1-.27l3.2 1.1a1 1 0 01.68.95V19a2 2 0 01-2 2h-.2C10.4 21 3 13.6 3 5.2V5z"/></svg>
-                    </span>
+                <label class="web-field">
+                    <span>Service</span>
+                    <select name="service" required>
+                        <option value="">Choose one</option>
+                        @foreach ($bookableList as $serviceItem)
+                            <option value="{{ $serviceItem->slug }}" @selected(old('service', request('service')) === $serviceItem->slug)>{{ $serviceItem->title }}</option>
+                        @endforeach
+                    </select>
+                    @error('service') <span class="is-error">{{ $message }}</span> @enderror
                 </label>
-
-                <div class="flex items-center justify-center px-2 py-3 sm:py-0 sm:pl-4">
-                    <x-ui.button type="submit" variant="outline-teal" class="w-full whitespace-nowrap sm:w-auto">
-                        Book Appointment
-                    </x-ui.button>
-                </div>
+                <label class="web-field">
+                    <span>Preferred date</span>
+                    <input type="date" name="date" value="{{ old('date') }}" min="{{ now()->toDateString() }}" required>
+                    @error('date') <span class="is-error">{{ $message }}</span> @enderror
+                </label>
+                <button type="submit" class="web-submit w-full lg:w-auto">Send request</button>
             </form>
         </div>
     </section>
 
-    <section id="services" class="relative overflow-hidden text-white">
-        <img src="{{ $servicesImage }}" alt="" class="absolute inset-0 h-full w-full object-cover">
-        <div class="services-teal-overlay absolute inset-0"></div>
-
-        <div class="relative mx-auto grid max-w-6xl gap-12 px-6 py-20 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:py-24">
-            <div class="max-w-md">
-                <h2 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-[1.2]">
-                    See what we provide to keep you healthy
-                </h2>
-                <p class="mt-6 text-sm leading-7 text-white/80 sm:text-[0.95rem]">
-                    Medical recover is most focused in helping you discover your most beautiful smile and restoring confidence through complete hospital care.
+    <section id="services" class="bg-[#f7f5ef]">
+        <div class="web-wrap web-section grid items-start gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+            <div class="max-w-sm">
+                <h2 class="web-h2">What we do here</h2>
+                <p class="web-copy mt-4">
+                    Most people come for a consultant, a lab test, or the emergency desk. Click a line to read how that service works.
                 </p>
+                <a href="{{ route('services') }}" class="web-link mt-5 inline-block">See every service</a>
             </div>
-
-            <div class="relative pr-6">
-                <span class="service-rail" aria-hidden="true"></span>
-                <ul>
-                    @forelse ($serviceList as $index => $serviceItem)
-                        <li class="relative border-b border-white/20 last:border-b-0">
-                            <a
-                                href="{{ route('services.show', $serviceItem) }}"
-                                @class([
-                                    'block py-3.5 text-[1.05rem] transition sm:text-lg',
-                                    'font-semibold text-white underline decoration-white decoration-1 underline-offset-8' => $index === $activeServiceIndex,
-                                    'font-medium text-white/85 hover:text-white' => $index !== $activeServiceIndex,
-                                ])
-                            >
-                                {{ $serviceItem->title }}
-                            </a>
-                            @if ($index === $activeServiceIndex)
-                                <span class="service-dot" aria-hidden="true"></span>
-                            @endif
-                        </li>
-                    @empty
-                        <li class="relative border-b border-white/20 py-3.5">
-                            <a href="{{ route('services') }}" class="text-[1.05rem] font-medium text-white/85 transition hover:text-white sm:text-lg">
-                                View all services
-                            </a>
-                        </li>
-                    @endforelse
-                </ul>
-            </div>
-        </div>
-
-        <div class="relative flex justify-center pb-10">
-            <a href="#stats" class="text-white/85 transition hover:text-white" aria-label="Scroll to statistics">
-                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.35">
-                    <rect x="9" y="2.5" width="6" height="11" rx="3"></rect>
-                    <path stroke-linecap="round" d="M12 5.5v2.5"></path>
-                </svg>
-            </a>
+            <ul class="border-t border-[#ddd8cc]">
+                @forelse ($serviceList as $serviceItem)
+                    <li class="border-b border-[#ddd8cc]">
+                        <a href="{{ route('services.show', $serviceItem) }}" class="flex items-baseline justify-between gap-6 py-3.5 text-[#1c332c] hover:text-[#0a5858]">
+                            <span class="min-w-0">{{ $serviceItem->title }}</span>
+                            <span class="shrink-0 text-sm text-[#2f433c]">{{ $serviceItem->department?->name }}</span>
+                        </a>
+                    </li>
+                @empty
+                    <li class="py-3.5">
+                        <a href="{{ route('services') }}" class="web-link">View all services</a>
+                    </li>
+                @endforelse
+            </ul>
         </div>
     </section>
 
-    <section id="stats" class="bg-white py-20 sm:py-24">
-        <div class="mx-auto grid max-w-5xl gap-14 px-6 sm:grid-cols-3 sm:gap-10">
-            @php
-                $statItems = [
-                    ['value' => '67+', 'label' => 'Qualified Doctors', 'caption' => 'Experienced consultants across every major specialty.', 'progress' => 0.67],
-                    ['value' => '99%', 'label' => 'Recover Patients', 'caption' => 'Care pathways designed for faster, safer recovery.', 'progress' => 0.99],
-                    ['value' => '98%', 'label' => 'Satisfaction Rate', 'caption' => 'Families who trust our doctors and hospital team.', 'progress' => 0.98],
-                ];
-            @endphp
+    <section class="border-y border-[#ddd8cc] bg-[#fbfaf6]">
+        <div class="web-wrap web-section--tight grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
+            <p class="web-stat">
+                <strong>{{ number_format($stats['doctors'] ?? 0) }}</strong>
+                <span>Doctors on the roster</span>
+            </p>
+            <p class="web-stat">
+                <strong>{{ number_format($stats['departments'] ?? 0) }}</strong>
+                <span>Departments</span>
+            </p>
+            <p class="web-stat">
+                <strong>{{ number_format($stats['services'] ?? 0) }}</strong>
+                <span>Hospital services</span>
+            </p>
+            <p class="web-stat">
+                <strong>24/7</strong>
+                <span>Emergency desk</span>
+            </p>
+        </div>
+    </section>
 
-            @foreach ($statItems as $stat)
-                <div class="flex flex-col items-center text-center">
-                    <div class="stat-ring relative flex items-center justify-center" style="--progress: {{ $stat['progress'] }}">
-                        <svg viewBox="0 0 120 120" class="h-full w-full" aria-hidden="true">
-                            <circle class="stat-ring__track" cx="60" cy="60" r="48"></circle>
-                            <circle class="stat-ring__value" cx="60" cy="60" r="48"></circle>
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-                            <p class="text-[2rem] font-bold tracking-tight text-teal-700">{{ $stat['value'] }}</p>
-                            <p class="mt-1 text-[0.7rem] font-semibold leading-4 text-ink-600">{{ $stat['label'] }}</p>
-                        </div>
-                    </div>
-                    <p class="mt-5 max-w-[13rem] text-xs leading-5 text-ink-400">{{ $stat['caption'] }}</p>
+    @if ($doctors->isNotEmpty())
+        <section class="bg-[#f7f5ef]">
+            <div class="web-wrap web-section">
+                <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+                    <h2 class="web-h2">Some of our consultants</h2>
+                    <a href="{{ route('about') }}" class="web-link">About the hospital</a>
                 </div>
-            @endforeach
-        </div>
-    </section>
+                <div class="mt-8 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+                    @foreach ($doctors->take(4) as $doctor)
+                        <article class="web-person">
+                            <img
+                                src="{{ filled($doctor->photo) ? $doctor->photo : 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=800&q=80' }}"
+                                alt="{{ $doctor->name }}"
+                                referrerpolicy="no-referrer"
+                                class="aspect-[4/5] w-full border border-[#ddd8cc] bg-[#c5cdc8] object-cover object-top"
+                                loading="lazy"
+                            >
+                            <h3 class="web-h3">{{ $doctor->name }}</h3>
+                            <p class="web-muted">{{ $doctor->department?->name ?: $doctor->designation }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    @if ($phone)
+        <section class="border-t border-[#ddd8cc] bg-[#efeae0]">
+            <div class="web-wrap web-section--tight flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="web-copy max-w-2xl">
+                    For a regular appointment call {{ $phone }}. For an accident or sudden illness, go straight to emergency.
+                </p>
+                <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="web-link shrink-0">
+                    Call the OPD desk
+                </a>
+            </div>
+        </section>
+    @endif
 @endsection

@@ -37,4 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', () => setAdminOpen(false));
         });
     }
+
+    const adminSearch = document.querySelector('[data-admin-search]');
+
+    if (adminSearch) {
+        document.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                adminSearch.focus();
+            }
+        });
+    }
 });
