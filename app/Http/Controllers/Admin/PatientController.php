@@ -38,6 +38,33 @@ class PatientController extends Controller
         return view('admin.patients.show', compact('patient'));
     }
 
+    public function create(Request $request): View
+    {
+        abort_unless($request->user()?->can('patients.manage') ?? false, 403);
+
+        return view('admin.patients.create', [
+            'returnTo' => $request->string('return_to')->toString(),
+        ]);
+    }
+
+    public function store(PatientRequest $request): RedirectResponse
+    {
+        $patient = Patient::query()->create($request->safe()->except(['_token', 'return_to']));
+
+        if (
+            $request->string('return_to')->toString() === 'beds'
+            && ($request->user()?->can('beds.view') ?? false)
+        ) {
+            return redirect()
+                ->route('admin.beds.index', ['status' => 'available'])
+                ->with('status', 'Patient '.$patient->full_name.' registered. Select them to admit.');
+        }
+
+        return redirect()
+            ->route('admin.patients.show', $patient)
+            ->with('status', 'Patient registered.');
+    }
+
     public function edit(Request $request, Patient $patient): View
     {
         abort_unless($request->user()?->can('patients.manage') ?? false, 403);

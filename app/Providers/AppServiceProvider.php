@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Support\CriticalAlertFeed;
 use App\View\Composers\AdminLayoutComposer;
 use App\View\Composers\PublicLayoutComposer;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -20,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(CriticalAlertFeed::class);
     }
 
     /**
@@ -39,11 +40,35 @@ class AppServiceProvider extends ServiceProvider
             'doctors.manage',
             'content.manage',
             'billing.manage',
+            'operations.manage',
             'settings.manage',
             'users.manage',
         ] as $permission) {
             Gate::define($permission, fn (?User $user) => (bool) $user?->hasPermission($permission));
         }
+
+        Gate::define('beds.view', function (?User $user): bool {
+            return (bool) (
+                $user?->hasPermission('beds.view')
+                || $user?->hasPermission('beds.operate')
+                || $user?->hasPermission('beds.maintain')
+                || $user?->hasPermission('operations.manage')
+            );
+        });
+
+        Gate::define('beds.operate', function (?User $user): bool {
+            return (bool) (
+                $user?->hasPermission('beds.operate')
+                || $user?->hasPermission('operations.manage')
+            );
+        });
+
+        Gate::define('beds.maintain', function (?User $user): bool {
+            return (bool) (
+                $user?->hasPermission('beds.maintain')
+                || $user?->hasPermission('operations.manage')
+            );
+        });
 
         RateLimiter::for('admin-login', function (Request $request) {
             return Limit::perMinute(5)->by(Str::transliterate(

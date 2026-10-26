@@ -50,9 +50,10 @@ class HomeController extends Controller
         return view('web.home', [
             'heroBanner' => Banner::query()->active()->where('placement', 'hero')->orderBy('sort_order')->first(),
             'emergencyBanner' => Banner::query()->active()->where('placement', 'emergency')->orderBy('sort_order')->first(),
-            'departments' => Department::query()->active()->orderBy('sort_order')->limit(6)->get(),
+            'departments' => Department::query()->active()->orderBy('sort_order')->limit(8)->get(),
             'doctors' => $featuredDoctors,
             'services' => $featuredServices,
+            'featuredService' => $featuredServices->first(),
             'bookableServices' => $bookableServices,
             'packages' => HealthPackage::query()
                 ->active()

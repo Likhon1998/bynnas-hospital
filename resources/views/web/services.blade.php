@@ -20,22 +20,24 @@
     />
 
     @if ($featuredServices->isNotEmpty())
-        <section class="bg-[#f7f5ef]">
-            <div class="web-wrap web-section">
-                <h2 class="web-h2">Services families ask for first</h2>
-                <div class="mt-8 grid gap-5 lg:grid-cols-2">
+        <section class="site-block">
+            <div class="web-wrap">
+                <div class="site-section-head">
+                    <h2>Services families ask for first</h2>
+                </div>
+                <div class="grid gap-5 lg:grid-cols-2">
                     @foreach ($featuredServices->take(4) as $service)
-                        <a href="{{ route('services.show', $service) }}" class="grid overflow-hidden border border-[#ddd8cc] bg-[#fbfaf6] sm:grid-cols-[9rem_1fr]">
+                        <a href="{{ route('services.show', $service) }}" class="grid overflow-hidden rounded-[1.35rem] border border-[#e2e8f0] bg-white shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)] sm:grid-cols-[9rem_1fr]">
                             <img
                                 src="{{ $service->image }}"
                                 alt="{{ $service->title }}"
                                 referrerpolicy="no-referrer"
-                                class="h-40 w-full bg-[#c5cdc8] object-cover sm:h-full"
+                                class="h-40 w-full bg-[#dbe4f0] object-cover sm:h-full"
                                 loading="{{ $loop->first ? 'eager' : 'lazy' }}"
                             >
                             <div class="flex flex-col justify-center px-5 py-4">
-                                <h3 class="web-h3">{{ $service->title }}</h3>
-                                <p class="web-copy mt-2">{{ $service->summary }}</p>
+                                <h3 class="text-lg font-bold text-[#122447]">{{ $service->title }}</h3>
+                                <p class="mt-2 text-sm leading-6 text-[#64748b]">{{ $service->summary }}</p>
                             </div>
                         </a>
                     @endforeach
@@ -44,31 +46,35 @@
         </section>
     @endif
 
-    <section class="border-y border-[#ddd8cc] bg-[#fbfaf6]">
-        <div class="web-wrap web-section">
-            <h2 class="web-h2">If you have not been here before</h2>
-            <div class="mt-8 grid gap-8 sm:grid-cols-3 sm:gap-10">
+    <section class="site-block site-block--soft">
+        <div class="web-wrap">
+            <div class="site-section-head">
+                <h2>If you have not been here before</h2>
+            </div>
+            <div class="grid gap-8 sm:grid-cols-3 sm:gap-10">
                 @foreach ($steps as $step)
-                    <div class="border-t border-[#c9c2b2] pt-4">
-                        <h3 class="web-h3">{{ $step['title'] }}</h3>
-                        <p class="web-copy mt-3">{{ $step['text'] }}</p>
+                    <div class="rounded-[1.35rem] border border-[#e2e8f0] bg-white p-5 shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)]">
+                        <h3 class="text-base font-bold text-[#122447]">{{ $step['title'] }}</h3>
+                        <p class="mt-3 text-sm leading-6 text-[#64748b]">{{ $step['text'] }}</p>
                     </div>
                 @endforeach
             </div>
         </div>
     </section>
 
-    <section class="bg-[#f7f5ef]">
-        <div class="web-wrap web-section">
-            <h2 class="web-h2">Complete hospital support</h2>
-            <div class="mt-8 grid gap-px bg-[#ddd8cc] sm:grid-cols-2 lg:grid-cols-3">
+    <section class="site-block">
+        <div class="web-wrap">
+            <div class="site-section-head">
+                <h2>Complete hospital support</h2>
+            </div>
+            <div class="site-depts">
                 @foreach ($services as $service)
-                    <a href="{{ route('services.show', $service) }}" class="bg-[#f7f5ef] p-5 hover:bg-[#fbfaf6]">
+                    <a href="{{ route('services.show', $service) }}" class="site-dept block transition hover:-translate-y-0.5">
                         @if ($service->department)
-                            <p class="web-kicker">{{ $service->department->name }}</p>
+                            <p class="text-xs font-semibold uppercase tracking-[0.08em] text-[#16a34a]">{{ $service->department->name }}</p>
                         @endif
-                        <h3 @class(['web-h3', 'mt-2' => (bool) $service->department])>{{ $service->title }}</h3>
-                        <p class="web-copy mt-2">{{ $service->summary }}</p>
+                        <h3 @class(['text-[1.05rem] font-bold text-[#122447]', 'mt-2' => (bool) $service->department])>{{ $service->title }}</h3>
+                        <p class="mt-2 text-sm leading-6 text-[#64748b]">{{ $service->summary }}</p>
                     </a>
                 @endforeach
             </div>
@@ -76,20 +82,22 @@
     </section>
 
     @if ($departments->isNotEmpty())
-        <section class="border-t border-[#ddd8cc] bg-[#fbfaf6]">
-            <div class="web-wrap web-section">
-                <h2 class="web-h2">By department</h2>
-                <div class="mt-8 space-y-8">
+        <section class="site-block site-block--soft">
+            <div class="web-wrap">
+                <div class="site-section-head">
+                    <h2>By department</h2>
+                </div>
+                <div class="space-y-8">
                     @foreach ($departments as $department)
-                        <div>
-                            <div class="flex items-baseline justify-between gap-4 border-b border-[#ddd8cc] pb-2">
-                                <h3 class="web-h3">{{ $department->name }}</h3>
-                                <p class="web-muted shrink-0">{{ $department->services->count() }} services</p>
+                        <div class="rounded-[1.35rem] border border-[#e2e8f0] bg-white p-5 shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)]">
+                            <div class="flex items-baseline justify-between gap-4 border-b border-[#e2e8f0] pb-2">
+                                <h3 class="text-base font-bold text-[#122447]">{{ $department->name }}</h3>
+                                <p class="shrink-0 text-sm text-[#64748b]">{{ $department->services->count() }} services</p>
                             </div>
                             <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-2">
                                 @foreach ($department->services as $service)
                                     <li>
-                                        <a href="{{ route('services.show', $service) }}" class="web-link">
+                                        <a href="{{ route('services.show', $service) }}" class="text-sm font-semibold text-[#16a34a] hover:underline">
                                             {{ $service->title }}
                                         </a>
                                     </li>

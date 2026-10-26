@@ -17,6 +17,7 @@ class RoleAndUserSeeder extends Seeder
         $roles = [
             'super_admin' => 'Super Admin',
             'hospital_admin' => 'Hospital Admin',
+            'nurse_station' => 'Nurse Station',
             'receptionist' => 'Receptionist',
             'doctor' => 'Doctor',
             'content_manager' => 'Content Manager',
@@ -49,6 +50,10 @@ class RoleAndUserSeeder extends Seeder
             'doctors.manage',
             'content.manage',
             'billing.manage',
+            'operations.manage',
+            'beds.view',
+            'beds.operate',
+            'beds.maintain',
             'settings.manage',
             'users.manage',
         ];
@@ -82,7 +87,19 @@ class RoleAndUserSeeder extends Seeder
                 'doctors.manage',
                 'content.manage',
                 'billing.manage',
+                'operations.manage',
+                'beds.view',
+                'beds.operate',
+                'beds.maintain',
                 'settings.manage',
+            ],
+            'nurse_station' => [
+                'appointments.view',
+                'patients.view',
+                'patients.manage',
+                'beds.view',
+                'beds.operate',
+                'beds.maintain',
             ],
             'receptionist' => [
                 'appointments.view',
@@ -90,10 +107,15 @@ class RoleAndUserSeeder extends Seeder
                 'patients.view',
                 'patients.manage',
                 'billing.manage',
+                'operations.manage',
+                'beds.view',
+                'beds.operate',
             ],
             'doctor' => [
                 'appointments.view',
                 'patients.view',
+                'beds.view',
+                'beds.operate',
             ],
             'content_manager' => [
                 'content.manage',
@@ -119,6 +141,11 @@ class RoleAndUserSeeder extends Seeder
                 'name' => 'Hospital Admin (Demo)',
                 'email' => 'admin@hospital.com',
                 'role' => 'hospital_admin',
+            ],
+            [
+                'name' => 'Nurse Station (Demo)',
+                'email' => 'nurse@hospital.com',
+                'role' => 'nurse_station',
             ],
             [
                 'name' => 'Receptionist (Demo)',

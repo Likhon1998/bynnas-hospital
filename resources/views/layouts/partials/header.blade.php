@@ -12,12 +12,12 @@
     ];
 @endphp
 
-<header class="sticky top-0 z-40 border-b border-[#ddd8cc] bg-[#fbfaf6]">
-    <div class="web-wrap flex h-[4.25rem] items-center justify-between gap-6">
+<header class="sticky top-0 z-40 border-b border-[#e2e8f0] bg-white/95 backdrop-blur">
+    <div class="web-wrap flex h-[4.35rem] items-center justify-between gap-6">
         <a href="{{ route('home') }}" class="min-w-0 leading-tight">
-            <span class="block text-[1.05rem] font-semibold tracking-tight text-[#1c332c]">{{ $brandMark }}</span>
+            <span class="block text-[1.05rem] font-bold tracking-tight text-[#122447]">{{ $brandMark }}</span>
             @if ($brandRest)
-                <span class="mt-0.5 block text-[11px] leading-none text-[#2f433c]">{{ $brandRest }}</span>
+                <span class="mt-0.5 block text-[11px] font-medium leading-none text-[#64748b]">{{ $brandRest }}</span>
             @endif
         </a>
 
@@ -26,9 +26,9 @@
                 <a
                     href="{{ $link['href'] }}"
                     @class([
-                        'text-sm',
-                        'font-semibold text-[#0a5858] underline decoration-[#0a5858] underline-offset-8' => $link['active'],
-                        'text-[#2c403a] hover:text-[#0a5858]' => ! $link['active'],
+                        'text-sm font-semibold',
+                        'text-[#16a34a]' => $link['active'],
+                        'text-[#334155] hover:text-[#16a34a]' => ! $link['active'],
                     ])
                 >{{ $link['label'] }}</a>
             @endforeach
@@ -36,16 +36,16 @@
 
         <div class="flex items-center gap-4">
             @if ($phone)
-                <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="hidden text-sm text-[#2c403a] lg:inline">
+                <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="hidden text-sm font-medium text-[#475569] lg:inline">
                     {{ $phone }}
                 </a>
             @endif
-            <x-ui.button href="{{ route('home') }}#appointment" variant="outline-teal" class="hidden !rounded !px-4 !py-2 sm:inline-flex">
+            <a href="{{ route('home') }}#appointment" class="site-btn site-btn--green hidden !min-h-10 !px-4 sm:inline-flex">
                 Request a visit
-            </x-ui.button>
+            </a>
             <button
                 type="button"
-                class="inline-flex h-10 w-10 items-center justify-center border border-[#ddd8cc] text-[#1c332c] md:hidden"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e2e8f0] text-[#122447] md:hidden"
                 data-nav-toggle
                 aria-expanded="false"
                 aria-controls="mobile-navigation"
@@ -58,19 +58,19 @@
 </header>
 
 <div id="mobile-navigation" class="fixed inset-0 z-50 hidden md:hidden" data-nav-panel>
-    <button type="button" class="absolute inset-0 bg-[#1c332c]/40" data-nav-close aria-label="Close menu"></button>
-    <div class="absolute inset-y-0 right-0 flex w-[min(20rem,100%)] flex-col bg-[#fbfaf6] p-6 shadow-2xl">
+    <button type="button" class="absolute inset-0 bg-[#122447]/45" data-nav-close aria-label="Close menu"></button>
+    <div class="absolute inset-y-0 right-0 flex w-[min(20rem,100%)] flex-col bg-white p-6 shadow-2xl">
         <div class="flex items-center justify-between">
-            <p class="text-base font-semibold text-[#1c332c]">{{ $hospitalName }}</p>
-            <button type="button" class="p-2 text-ink-600" data-nav-close aria-label="Close menu">✕</button>
+            <p class="text-base font-bold text-[#122447]">{{ $hospitalName }}</p>
+            <button type="button" class="p-2 text-[#64748b]" data-nav-close aria-label="Close menu">✕</button>
         </div>
         <nav class="mt-8 flex flex-col gap-4" aria-label="Mobile">
             @foreach ($links as $link)
-                <a href="{{ $link['href'] }}" class="text-base text-[#1c332c]" data-nav-close>{{ $link['label'] }}</a>
+                <a href="{{ $link['href'] }}" class="text-base font-medium text-[#122447]" data-nav-close>{{ $link['label'] }}</a>
             @endforeach
         </nav>
-        <x-ui.button href="{{ route('home') }}#appointment" variant="outline-teal" class="mt-8 !rounded" data-nav-close>
+        <a href="{{ route('home') }}#appointment" class="site-btn site-btn--green mt-8" data-nav-close>
             Request a visit
-        </x-ui.button>
+        </a>
     </div>
 </div>

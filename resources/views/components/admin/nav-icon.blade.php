@@ -25,6 +25,11 @@
         'chevron' => '<path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>',
         'bell' => '<path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/>',
         'clock' => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+        'bed' => '<path stroke-linecap="round" stroke-linejoin="round" d="M4 18V9a2 2 0 012-2h5v7h9v4M4 18h16M8 7V5a1 1 0 011-1h2a1 1 0 011 1v2"/>',
+        'spark' => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.2 4.2L17.5 8.5 13.2 9.8 12 14l-1.2-4.2L6.5 8.5l4.3-1.3L12 3zm6 8 .8 2.4L21 14.5l-2.2.7L18 17.5l-.8-2.3L15 14.5l2.2-.7L18 11z"/>',
+        'badge' => '<path stroke-linecap="round" stroke-linejoin="round" d="M8 4h8l1 3H7l1-3zm-1 3h10v11a2 2 0 01-2 2H9a2 2 0 01-2-2V7zm3 4h4M10 14h4"/>',
+        'grid' => '<path stroke-linecap="round" stroke-linejoin="round" d="M5 5h5v5H5V5zm9 0h5v5h-5V5zM5 14h5v5H5v-5zm9 0h5v5h-5v-5z"/>',
+        'help' => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0-3.2h.01M9.5 9.2A2.5 2.5 0 0112 7.5c1.4 0 2.5 1 2.5 2.4 0 1.4-1.1 2.1-2.5 2.6v1"/>',
         'dot' => '<circle cx="12" cy="12" r="3"/>',
     ];
 @endphp

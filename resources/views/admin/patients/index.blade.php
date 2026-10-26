@@ -8,6 +8,9 @@
             <div class="admin-filters">
                 <input type="search" name="q" value="{{ request('q') }}" placeholder="Search patients">
                 <button type="submit">Search</button>
+                @can('patients.manage')
+                    <a href="{{ route('admin.patients.create') }}" class="admin-action">Add patient</a>
+                @endcan
             </div>
         </form>
         <div class="table-scroll admin-scroll">

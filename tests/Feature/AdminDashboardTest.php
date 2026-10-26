@@ -30,7 +30,7 @@ class AdminDashboardTest extends TestCase
         $response->assertSee($user->email);
     }
 
-    public function test_staff_dashboard_shows_welcome_and_desk_sections(): void
+    public function test_staff_dashboard_shows_medcore_desk_sections(): void
     {
         $user = $this->createStaffUser([
             'appointments.view',
@@ -42,14 +42,18 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Welcome back');
-        $response->assertSee('Upcoming visits');
-        $response->assertSee('New bill');
-        $response->assertSee('Open bills');
+        $response->assertSee('Operations Desk');
+        $response->assertSee('Total visits');
+        $response->assertSee('Visit status');
+        $response->assertSee('Upcoming appointments');
+        $response->assertSee('Generate bill');
+        $response->assertSee('Patient billing');
+        $response->assertSee('Care timeline');
+        $response->assertDontSee('Welcome back');
+        $response->assertDontSee('Quick actions');
         $response->assertDontSee('New appointment');
         $response->assertDontSee('Add patient');
-        $response->assertDontSee('Shortcuts');
-        $response->assertDontSee('Better Care');
+        $response->assertDontSee('Admin command desk');
         $response->assertDontSee('Patient ID P-');
     }
 
@@ -71,8 +75,7 @@ class AdminDashboardTest extends TestCase
         $response->assertSee($appointment->patient->phone);
         $response->assertSee('1 visit today');
         $response->assertSee('1 still needs confirmation');
-        $response->assertSee('1 visit waiting to confirm');
-        $response->assertSee('Upcoming visits');
+        $response->assertSee('Upcoming appointments');
         $response->assertDontSee('Patient ID P-');
     }
 }
