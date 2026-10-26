@@ -13,7 +13,7 @@
         name="{{ $name }}"
         rows="{{ $rows }}"
         @if ($required) required @endif
-        {{ $attributes->merge(['class' => 'admin-field mt-2 w-full px-4 py-3 text-sm']) }}
+        {{ $attributes->merge(['class' => 'mt-2 w-full rounded-2xl border border-sand-100 bg-sand-50 px-4 py-3 text-sm outline-none ring-teal-700/20 focus:ring-2']) }}
     >{{ old($name, $value) }}</textarea>
     @error($name) <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 </div>

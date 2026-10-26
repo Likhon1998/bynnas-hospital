@@ -2,48 +2,30 @@
 @section('title', 'Patients')
 @section('heading', 'Patients')
 @section('content')
-    <div class="table-frame table-frame--fill">
-        <form method="GET" class="table-toolbar">
-            <p class="table-count">{{ $patients->total() }} {{ \Illuminate\Support\Str::plural('patient', $patients->total()) }}</p>
-            <div class="admin-filters">
-                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search patients">
-                <button type="submit">Search</button>
-            </div>
-        </form>
-        <div class="table-scroll admin-scroll">
-            <table class="pro-table">
-                <thead>
+    <form method="GET" class="mb-6 flex w-full max-w-md gap-2">
+        <input type="search" name="q" value="{{ request('q') }}" placeholder="Search patients" class="w-full rounded-full border border-sand-100 bg-white px-4 py-2.5 text-sm">
+        <button type="submit" class="rounded-full bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Search</button>
+    </form>
+    <div class="overflow-hidden rounded-3xl bg-white ring-1 ring-sand-100">
+        <table class="min-w-full text-left text-sm">
+            <thead class="bg-sand-50 text-xs uppercase tracking-wide text-ink-400">
+                <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"></th></tr>
+            </thead>
+            <tbody class="divide-y divide-sand-100">
+                @forelse ($patients as $patient)
                     <tr>
-                        <th class="col-idx">#</th>
-                        <th>Patient</th>
-                        <th>Contact</th>
-                        <th class="col-status">Status</th>
-                        <th class="col-open">Open</th>
+                        <td class="px-4 py-3 font-medium text-navy-900">{{ $patient->full_name }}</td>
+                        <td class="px-4 py-3 text-ink-600">{{ $patient->phone }}</td>
+                        <td class="px-4 py-3"><x-admin.status-pill :value="$patient->is_active ? 'active' : 'inactive'" /></td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="{{ route('admin.patients.show', $patient) }}" class="font-semibold text-teal-700">View</a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @forelse ($patients as $patient)
-                        <tr>
-                            <td class="col-idx">{{ ($patients->firstItem() ?? 1) + $loop->index }}</td>
-                            <td>
-                                <span class="col-primary">{{ $patient->full_name }}</span>
-                                <span class="cell-sub">{{ $patient->gender ? ucfirst($patient->gender) : 'Patient' }}@if ($patient->date_of_birth) · {{ $patient->date_of_birth->format('d M Y') }}@endif</span>
-                            </td>
-                            <td>
-                                <span>{{ $patient->phone }}</span>
-                                <span class="cell-sub">{{ $patient->email ?: '—' }}</span>
-                            </td>
-                            <td class="col-status"><x-admin.status-pill :value="$patient->is_active ? 'active' : 'inactive'" /></td>
-                            <td class="col-open">
-                                <a href="{{ route('admin.patients.show', $patient) }}">View</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr class="is-empty"><td colspan="5">No patients yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @empty
+                    <tr><td colspan="4" class="px-4 py-10 text-center text-ink-600">No patients yet.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-    <div class="table-pager">{{ $patients->links() }}</div>
+    <div class="mt-6">{{ $patients->links() }}</div>
 @endsection

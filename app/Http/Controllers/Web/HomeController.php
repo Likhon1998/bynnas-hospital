@@ -36,15 +36,9 @@ class HomeController extends Controller
 
         $featuredServices = Service::query()
             ->active()
-            ->with('department')
             ->orderByDesc('is_featured')
             ->orderBy('sort_order')
             ->limit(7)
-            ->get();
-
-        $bookableServices = Service::query()
-            ->active()
-            ->orderBy('title')
             ->get();
 
         return view('web.home', [
@@ -53,7 +47,6 @@ class HomeController extends Controller
             'departments' => Department::query()->active()->orderBy('sort_order')->limit(6)->get(),
             'doctors' => $featuredDoctors,
             'services' => $featuredServices,
-            'bookableServices' => $bookableServices,
             'packages' => HealthPackage::query()
                 ->active()
                 ->with(['healthPackageItems' => fn ($query) => $query->orderBy('sort_order')])

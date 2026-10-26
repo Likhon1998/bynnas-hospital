@@ -39,24 +39,22 @@
             @endif
         </section>
 
-        <table class="pro-table mt-8">
-            <thead>
+        <table class="mt-8 min-w-full text-left text-sm">
+            <thead class="border-y border-sand-100 text-xs uppercase tracking-wide text-ink-400">
                 <tr>
-                    <th class="col-idx">#</th>
-                    <th>Description</th>
-                    <th class="col-count">Qty</th>
-                    <th class="col-num">Unit price</th>
-                    <th class="col-num">Amount</th>
+                    <th class="py-3 pr-3">Description</th>
+                    <th class="py-3 pr-3">Qty</th>
+                    <th class="py-3 pr-3">Unit price</th>
+                    <th class="py-3">Amount</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($bill->billItems as $item)
-                    <tr>
-                        <td class="col-idx">{{ $loop->iteration }}</td>
-                        <td>{{ $item->description }}</td>
-                        <td class="col-count">{{ $item->quantity }}</td>
-                        <td class="col-num">{{ number_format((float) $item->unit_price, 2) }}</td>
-                        <td class="col-num">{{ number_format((float) $item->line_total, 2) }}</td>
+                    <tr class="border-b border-sand-100">
+                        <td class="py-3 pr-3">{{ $item->description }}</td>
+                        <td class="py-3 pr-3">{{ $item->quantity }}</td>
+                        <td class="py-3 pr-3">{{ number_format((float) $item->unit_price, 2) }}</td>
+                        <td class="py-3">{{ number_format((float) $item->line_total, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>

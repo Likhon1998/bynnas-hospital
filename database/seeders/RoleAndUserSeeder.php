@@ -112,51 +112,43 @@ class RoleAndUserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Super Admin (Demo)',
-                'email' => 'superadmin@hospital.com',
+                'email' => 'superadmin@demo.hospital',
                 'role' => 'super_admin',
             ],
             [
                 'name' => 'Hospital Admin (Demo)',
-                'email' => 'admin@hospital.com',
+                'email' => 'admin@demo.hospital',
                 'role' => 'hospital_admin',
             ],
             [
                 'name' => 'Receptionist (Demo)',
-                'email' => 'receptionist@hospital.com',
+                'email' => 'receptionist@demo.hospital',
                 'role' => 'receptionist',
             ],
             [
                 'name' => 'Dr. Arif Rahman (Demo)',
-                'email' => 'doctor@hospital.com',
+                'email' => 'doctor@demo.hospital',
                 'role' => 'doctor',
             ],
             [
                 'name' => 'Content Manager (Demo)',
-                'email' => 'content@hospital.com',
+                'email' => 'content@demo.hospital',
                 'role' => 'content_manager',
             ],
         ];
 
         foreach ($users as $userData) {
-            $legacyEmail = str_replace('@hospital.com', '@demo.hospital', $userData['email']);
-
-            $user = User::query()
-                ->whereIn('email', [$userData['email'], $legacyEmail])
-                ->first();
-
-            if (! $user) {
-                $user = User::query()->create([
+            $user = User::query()->firstOrCreate(
+                ['email' => $userData['email']],
+                [
                     'name' => $userData['name'],
-                    'email' => $userData['email'],
-                    'password' => Hash::make('12345678'),
+                    'password' => Hash::make('Demo@Hospital123'),
                     'email_verified_at' => now(),
-                ]);
-            } else {
-                $user->forceFill([
-                    'name' => $userData['name'],
-                    'email' => $userData['email'],
-                    'password' => Hash::make('12345678'),
-                ])->save();
+                ],
+            );
+
+            if ($user->name !== $userData['name']) {
+                $user->forceFill(['name' => $userData['name']])->save();
             }
 
             DB::table('model_has_roles')->updateOrInsert([

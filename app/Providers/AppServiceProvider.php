@@ -29,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         View::composer(['layouts.public', 'web.*'], PublicLayoutComposer::class);
-        View::composer(['layouts.admin', 'admin.*'], AdminLayoutComposer::class);
+        View::composer(['layouts.admin'], AdminLayoutComposer::class);
 
         foreach ([
             'appointments.view',
@@ -49,10 +49,6 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by(Str::transliterate(
                 Str::lower($request->string('email')->toString()).'|'.$request->ip()
             ));
-        });
-
-        RateLimiter::for('appointment-requests', function (Request $request) {
-            return Limit::perMinute(6)->by($request->ip());
         });
     }
 }

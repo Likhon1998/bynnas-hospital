@@ -2,39 +2,26 @@
 @section('title', 'Users')
 @section('heading', 'Staff users')
 @section('content')
-    <div class="table-frame table-frame--fill">
-        <div class="table-toolbar">
-            <p class="table-count">{{ $users->total() }} {{ \Illuminate\Support\Str::plural('user', $users->total()) }}</p>
-        </div>
-        <div class="table-scroll admin-scroll">
-            <table class="pro-table">
-                <thead>
+    <div class="overflow-hidden rounded-3xl bg-white ring-1 ring-sand-100">
+        <table class="min-w-full text-left text-sm">
+            <thead class="bg-sand-50 text-xs uppercase tracking-wide text-ink-400">
+                <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Roles</th><th class="px-4 py-3"></th></tr>
+            </thead>
+            <tbody class="divide-y divide-sand-100">
+                @forelse ($users as $user)
                     <tr>
-                        <th class="col-idx">#</th>
-                        <th>Staff</th>
-                        <th>Roles</th>
-                        <th class="col-open">Action</th>
+                        <td class="px-4 py-3 font-medium text-navy-900">{{ $user->name }}</td>
+                        <td class="px-4 py-3 text-ink-600">{{ $user->email }}</td>
+                        <td class="px-4 py-3 text-ink-600">{{ implode(', ', $user->assigned_roles ?: []) ?: '—' }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="{{ route('admin.users.edit', $user) }}" class="font-semibold text-teal-700">Edit</a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @forelse ($users as $user)
-                        <tr>
-                            <td class="col-idx">{{ ($users->firstItem() ?? 1) + $loop->index }}</td>
-                            <td>
-                                <span class="col-primary">{{ $user->name }}</span>
-                                <span class="cell-sub">{{ $user->email }}</span>
-                            </td>
-                            <td>{{ implode(', ', $user->assigned_roles ?: []) ?: '—' }}</td>
-                            <td class="col-open">
-                                <a href="{{ route('admin.users.edit', $user) }}">Edit</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr class="is-empty"><td colspan="4">No users found.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @empty
+                    <tr><td colspan="4" class="px-4 py-10 text-center text-ink-600">No users found.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-    <div class="table-pager">{{ $users->links() }}</div>
+    <div class="mt-6">{{ $users->links() }}</div>
 @endsection

@@ -2,56 +2,37 @@
 @section('title', 'Health packages')
 @section('heading', 'Health packages')
 @section('content')
-    <div class="table-frame table-frame--fill">
-        <form method="GET" class="table-toolbar">
-            <p class="table-count">{{ $packages->total() }} {{ \Illuminate\Support\Str::plural('package', $packages->total()) }}</p>
-            <div class="admin-filters">
-                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search packages">
-                <button type="submit">Search</button>
-                <a href="{{ route('admin.health-packages.create') }}" class="admin-action">Add package</a>
-            </div>
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <form method="GET" class="flex w-full max-w-md gap-2">
+            <input type="search" name="q" value="{{ request('q') }}" placeholder="Search packages" class="w-full rounded-full border border-sand-100 bg-white px-4 py-2.5 text-sm">
+            <button type="submit" class="rounded-full bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Search</button>
         </form>
-        <div class="table-scroll admin-scroll">
-            <table class="pro-table">
-                <thead>
-                    <tr>
-                        <th class="col-idx">#</th>
-                        <th>Package</th>
-                        <th class="col-num">Price</th>
-                        <th class="col-count">Items</th>
-                        <th class="col-status">Status</th>
-                        <th class="col-action">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($packages as $package)
-                        <tr>
-                            <td class="col-idx">{{ ($packages->firstItem() ?? 1) + $loop->index }}</td>
-                            <td>
-                                <span class="col-primary">{{ $package->title }}</span>
-                                <span class="cell-sub">
-                                    {{ $package->is_featured ? 'Featured' : 'Package' }}
-                                    @if (filled($package->duration_label))
-                                        · {{ $package->duration_label }}
-                                    @endif
-                                </span>
-                            </td>
-                            <td class="col-num">{{ number_format((float) $package->price, 2) }}</td>
-                            <td class="col-count">{{ $package->health_package_items_count }}</td>
-                            <td class="col-status"><x-admin.status-pill :value="$package->is_active ? 'active' : 'inactive'" /></td>
-                            <td class="col-action">
-                                <div class="table-actions">
-                                    <a href="{{ route('admin.health-packages.edit', $package) }}">Edit</a>
-                                    <x-admin.delete-button :action="route('admin.health-packages.destroy', $package)" />
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr class="is-empty"><td colspan="6">No packages yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+        <a href="{{ route('admin.health-packages.create') }}" class="inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">Add package</a>
     </div>
-    <div class="table-pager">{{ $packages->links() }}</div>
+    <div class="overflow-hidden rounded-3xl bg-white ring-1 ring-sand-100">
+        <table class="min-w-full text-left text-sm">
+            <thead class="bg-sand-50 text-xs uppercase tracking-wide text-ink-400">
+                <tr><th class="px-4 py-3">Package</th><th class="px-4 py-3">Price</th><th class="px-4 py-3">Items</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"></th></tr>
+            </thead>
+            <tbody class="divide-y divide-sand-100">
+                @forelse ($packages as $package)
+                    <tr>
+                        <td class="px-4 py-3 font-medium text-navy-900">{{ $package->title }}</td>
+                        <td class="px-4 py-3 text-ink-600">{{ number_format((float) $package->price) }}</td>
+                        <td class="px-4 py-3 text-ink-600">{{ $package->health_package_items_count }}</td>
+                        <td class="px-4 py-3"><x-admin.status-pill :value="$package->is_active ? 'active' : 'inactive'" /></td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center justify-end gap-4">
+                                <a href="{{ route('admin.health-packages.edit', $package) }}" class="font-semibold text-teal-700">Edit</a>
+                                <x-admin.delete-button :action="route('admin.health-packages.destroy', $package)" />
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" class="px-4 py-10 text-center text-ink-600">No packages yet.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-6">{{ $packages->links() }}</div>
 @endsection

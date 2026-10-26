@@ -18,7 +18,7 @@ class HospitalSettingSeeder extends Seeder
             ['key' => 'logo', 'group' => 'general', 'value' => DemoContent::image('Lakeside Logo', 400, 120)],
             ['key' => 'phone', 'group' => 'contact', 'value' => '+880 1700-000000'],
             ['key' => 'emergency_phone', 'group' => 'contact', 'value' => '+880 1700-911911'],
-            ['key' => 'email', 'group' => 'contact', 'value' => 'hello@hospital.com'],
+            ['key' => 'email', 'group' => 'contact', 'value' => 'hello@demo.hospital'],
             ['key' => 'address', 'group' => 'contact', 'value' => '12 Lakeside Avenue, Gulshan, Dhaka 1212, Bangladesh'],
             ['key' => 'working_hours', 'group' => 'contact', 'value' => json_encode([
                 'saturday' => '9:00 AM – 9:00 PM',
