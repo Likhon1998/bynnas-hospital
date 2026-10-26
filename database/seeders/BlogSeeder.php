@@ -15,7 +15,7 @@ class BlogSeeder extends Seeder
      */
     public function run(): void
     {
-        $author = User::query()->where('email', 'content@demo.hospital')->firstOrFail();
+        $author = User::query()->where('email', 'content@hospital.com')->firstOrFail();
 
         $categories = [
             'Heart Health',

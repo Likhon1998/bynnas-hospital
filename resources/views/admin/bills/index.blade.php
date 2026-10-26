@@ -2,48 +2,67 @@
 @section('title', 'Billing')
 @section('heading', 'Patient billing')
 @section('content')
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <form method="GET" class="flex flex-col gap-3 sm:flex-row">
-            <input type="search" name="q" value="{{ request('q') }}" placeholder="Search by bill number or patient" class="w-full max-w-md rounded-full border border-sand-100 bg-white px-4 py-2.5 text-sm">
-            <select name="status" class="rounded-full border border-sand-100 bg-white px-4 py-2.5 text-sm">
-                <option value="">All statuses</option>
-                @foreach (['draft', 'issued', 'paid', 'cancelled'] as $status)
-                    <option value="{{ $status }}" @selected(request('status') === $status)>{{ str_replace('_', ' ', $status) }}</option>
-                @endforeach
-            </select>
-            <button type="submit" class="rounded-full bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Filter</button>
+    <div class="table-frame table-frame--fill">
+        <form method="GET" class="table-toolbar">
+            <p class="table-count">{{ $bills->total() }} {{ \Illuminate\Support\Str::plural('bill', $bills->total()) }}</p>
+            <div class="admin-filters">
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search bills">
+                <select name="status">
+                    <option value="">All statuses</option>
+                    @foreach (['draft' => 'Draft', 'issued' => 'Issued', 'paid' => 'Paid', 'cancelled' => 'Cancelled'] as $status => $label)
+                        <option value="{{ $status }}" @selected(request('status') === $status)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <button type="submit">Filter</button>
+                <a href="{{ route('admin.bills.create') }}" class="admin-action">Generate bill</a>
+            </div>
         </form>
-        <a href="{{ route('admin.bills.create') }}" class="inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">Generate bill</a>
-    </div>
-    <div class="overflow-hidden rounded-3xl bg-white ring-1 ring-sand-100">
-        <table class="min-w-full text-left text-sm">
-            <thead class="bg-sand-50 text-xs uppercase tracking-wide text-ink-400">
-                <tr>
-                    <th class="px-4 py-3">Bill</th>
-                    <th class="px-4 py-3">Patient</th>
-                    <th class="px-4 py-3">Date</th>
-                    <th class="px-4 py-3">Total</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-sand-100">
-                @forelse ($bills as $bill)
+        <div class="table-scroll admin-scroll">
+            <table class="pro-table">
+                <thead>
                     <tr>
-                        <td class="px-4 py-3 font-medium text-navy-900">{{ $bill->bill_no }}</td>
-                        <td class="px-4 py-3 text-ink-600">{{ $bill->patient?->full_name }}</td>
-                        <td class="px-4 py-3 text-ink-600">{{ $bill->bill_date?->format('d M Y') }}</td>
-                        <td class="px-4 py-3 text-ink-600">{{ number_format((float) $bill->total, 2) }}</td>
-                        <td class="px-4 py-3"><x-admin.status-pill :value="$bill->status" /></td>
-                        <td class="px-4 py-3 text-right">
-                            <a href="{{ route('admin.bills.show', $bill) }}" class="font-semibold text-teal-700">Open</a>
-                        </td>
+                        <th class="col-idx">#</th>
+                        <th>Bill</th>
+                        <th>Patient</th>
+                        <th class="col-when">Date</th>
+                        <th class="col-num">Total</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-open">Open</th>
                     </tr>
-                @empty
-                    <tr><td colspan="6" class="px-4 py-10 text-center text-ink-600">No bills yet.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse ($bills as $bill)
+                        <tr>
+                            <td class="col-idx">{{ ($bills->firstItem() ?? 1) + $loop->index }}</td>
+                            <td>
+                                <span class="col-primary">{{ $bill->bill_no }}</span>
+                                <span class="cell-sub">{{ $bill->appointment?->doctor?->name ?: 'Desk bill' }}</span>
+                            </td>
+                            <td>
+                                <span>{{ $bill->patient?->full_name }}</span>
+                                <span class="cell-sub">{{ $bill->patient?->phone ?: '—' }}</span>
+                            </td>
+                            <td class="col-when">
+                                <span>{{ $bill->bill_date?->format('d M Y') }}</span>
+                                @if ($bill->issued_at)
+                                    <span class="cell-sub">Issued {{ $bill->issued_at->format('d M Y') }}</span>
+                                @endif
+                            </td>
+                            <td class="col-num">
+                                <span>{{ number_format((float) $bill->total, 2) }}</span>
+                                <span class="cell-sub">Paid {{ number_format((float) $bill->paid_amount, 2) }}</span>
+                            </td>
+                            <td class="col-status"><x-admin.status-pill :value="$bill->status" /></td>
+                            <td class="col-open">
+                                <a href="{{ route('admin.bills.show', $bill) }}">Open</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr class="is-empty"><td colspan="7">No bills yet.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="mt-6">{{ $bills->links() }}</div>
+    <div class="table-pager">{{ $bills->links() }}</div>
 @endsection

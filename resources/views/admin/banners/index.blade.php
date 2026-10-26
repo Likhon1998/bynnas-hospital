@@ -2,32 +2,54 @@
 @section('title', 'Banners')
 @section('heading', 'Banners')
 @section('content')
-    <div class="mb-6 flex justify-end">
-        <a href="{{ route('admin.banners.create') }}" class="inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">Add banner</a>
-    </div>
-    <div class="overflow-hidden rounded-3xl bg-white ring-1 ring-sand-100">
-        <table class="min-w-full text-left text-sm">
-            <thead class="bg-sand-50 text-xs uppercase tracking-wide text-ink-400">
-                <tr><th class="px-4 py-3">Title</th><th class="px-4 py-3">Placement</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"></th></tr>
-            </thead>
-            <tbody class="divide-y divide-sand-100">
-                @forelse ($banners as $banner)
+    <div class="table-frame table-frame--fill">
+        <div class="table-toolbar">
+            <p class="table-count">{{ $banners->total() }} {{ \Illuminate\Support\Str::plural('banner', $banners->total()) }}</p>
+            <a href="{{ route('admin.banners.create') }}" class="admin-action">Add banner</a>
+        </div>
+        <div class="table-scroll admin-scroll">
+            <table class="pro-table">
+                <thead>
                     <tr>
-                        <td class="px-4 py-3 font-medium text-navy-900">{{ $banner->title }}</td>
-                        <td class="px-4 py-3 text-ink-600">{{ $banner->placement }}</td>
-                        <td class="px-4 py-3"><x-admin.status-pill :value="$banner->is_active ? 'active' : 'inactive'" /></td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center justify-end gap-4">
-                                <a href="{{ route('admin.banners.edit', $banner) }}" class="font-semibold text-teal-700">Edit</a>
-                                <x-admin.delete-button :action="route('admin.banners.destroy', $banner)" />
-                            </div>
-                        </td>
+                        <th class="col-idx">#</th>
+                        <th>Banner</th>
+                        <th>Placement</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-action">Action</th>
                     </tr>
-                @empty
-                    <tr><td colspan="4" class="px-4 py-10 text-center text-ink-600">No banners yet.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse ($banners as $banner)
+                        <tr>
+                            <td class="col-idx">{{ ($banners->firstItem() ?? 1) + $loop->index }}</td>
+                            <td>
+                                <span class="col-primary">{{ $banner->title }}</span>
+                                <span class="cell-sub">{{ $banner->subtitle ?: ($banner->cta_label ?: 'Banner') }}</span>
+                            </td>
+                            <td>
+                                <span>{{ ucfirst(str_replace('_', ' ', (string) $banner->placement)) }}</span>
+                                <span class="cell-sub">
+                                    @if ($banner->starts_at || $banner->ends_at)
+                                        {{ $banner->starts_at?->format('d M Y') ?: 'Open' }}–{{ $banner->ends_at?->format('d M Y') ?: 'Open' }}
+                                    @else
+                                        Always on
+                                    @endif
+                                </span>
+                            </td>
+                            <td class="col-status"><x-admin.status-pill :value="$banner->is_active ? 'active' : 'inactive'" /></td>
+                            <td class="col-action">
+                                <div class="table-actions">
+                                    <a href="{{ route('admin.banners.edit', $banner) }}">Edit</a>
+                                    <x-admin.delete-button :action="route('admin.banners.destroy', $banner)" />
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr class="is-empty"><td colspan="5">No banners yet.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="mt-6">{{ $banners->links() }}</div>
+    <div class="table-pager">{{ $banners->links() }}</div>
 @endsection

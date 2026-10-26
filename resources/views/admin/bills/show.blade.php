@@ -18,23 +18,25 @@
                 <p class="mt-4 text-sm text-ink-600">Appointment</p>
                 <p class="font-medium text-navy-900">{{ $bill->appointment->appointment_no }} · {{ $bill->appointment->doctor?->name }}</p>
             @endif
-            <div class="mt-6 overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead class="text-xs uppercase tracking-wide text-ink-400">
+            <div class="table-frame table-frame--fit mt-6">
+                <table class="pro-table">
+                    <thead>
                         <tr>
-                            <th class="py-2 pr-3">Item</th>
-                            <th class="py-2 pr-3">Qty</th>
-                            <th class="py-2 pr-3">Unit</th>
-                            <th class="py-2">Total</th>
+                            <th class="col-idx">#</th>
+                            <th>Item</th>
+                            <th class="col-count">Qty</th>
+                            <th class="col-num">Unit</th>
+                            <th class="col-num">Total</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-sand-100">
+                    <tbody>
                         @foreach ($bill->billItems as $item)
                             <tr>
-                                <td class="py-2 pr-3">{{ $item->description }}</td>
-                                <td class="py-2 pr-3">{{ $item->quantity }}</td>
-                                <td class="py-2 pr-3">{{ number_format((float) $item->unit_price, 2) }}</td>
-                                <td class="py-2">{{ number_format((float) $item->line_total, 2) }}</td>
+                                <td class="col-idx">{{ $loop->iteration }}</td>
+                                <td>{{ $item->description }}</td>
+                                <td class="col-count">{{ $item->quantity }}</td>
+                                <td class="col-num">{{ number_format((float) $item->unit_price, 2) }}</td>
+                                <td class="col-num">{{ number_format((float) $item->line_total, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

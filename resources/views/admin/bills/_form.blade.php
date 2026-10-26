@@ -11,98 +11,97 @@
     );
 @endphp
 
-<form method="POST" action="{{ $action }}" class="space-y-6" data-bill-form>
-    @csrf
-    @if ($method !== 'POST')
-        @method($method)
-    @endif
+<x-admin.form-page
+    :action="$action"
+    :method="$method"
+    :cancel="route('admin.bills.index')"
+    submit="Issue bill"
+    submit-name="action"
+    submit-value="issue"
+    lede="Attach the patient and visit first, then add every charge as a line so the bill is ready to issue."
+    data-bill-form
+>
+    <x-slot:actions>
+        <button type="submit" name="action" value="draft" class="form-btn form-btn--navy">Save draft</button>
+    </x-slot:actions>
 
-    <section class="space-y-5 rounded-3xl bg-white p-6 ring-1 ring-sand-100">
-        <div>
-            <label for="patient_id" class="text-sm font-medium text-navy-900">Patient</label>
-            <select id="patient_id" name="patient_id" required data-bill-patient class="mt-2 w-full rounded-2xl border border-sand-100 bg-sand-50 px-4 py-3 text-sm">
-                <option value="">Select patient</option>
-                @foreach ($patients as $patient)
-                    <option value="{{ $patient->id }}" @selected((string) old('patient_id', $bill->patient_id) === (string) $patient->id)>{{ $patient->full_name }} · {{ $patient->phone }}</option>
-                @endforeach
-            </select>
-            @error('patient_id') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
-        </div>
-        <div>
-            <label for="appointment_id" class="text-sm font-medium text-navy-900">Linked appointment (optional)</label>
-            <select id="appointment_id" name="appointment_id" data-bill-appointment class="mt-2 w-full rounded-2xl border border-sand-100 bg-sand-50 px-4 py-3 text-sm">
-                <option value="">None</option>
-                @foreach ($appointments as $appointment)
-                    <option
-                        value="{{ $appointment->id }}"
-                        data-patient-id="{{ $appointment->patient_id }}"
-                        data-consultation-fee="{{ $appointment->doctor?->consultation_fee ?? 0 }}"
-                        data-doctor-name="{{ $appointment->doctor?->name }}"
-                        @selected((string) old('appointment_id', $bill->appointment_id) === (string) $appointment->id)
-                    >{{ $appointment->appointment_no }} · {{ $appointment->appointment_date?->format('d M Y') }} {{ substr((string) $appointment->start_time, 0, 5) }}</option>
-                @endforeach
-            </select>
-            @error('appointment_id') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
-        </div>
+    <x-admin.form-section title="Patient and visit" note="The bill stays linked to one patient. An appointment is optional.">
+        <x-form.select name="patient_id" label="Patient" required data-bill-patient>
+            <option value="">Select patient</option>
+            @foreach ($patients as $patient)
+                <option value="{{ $patient->id }}" @selected((string) old('patient_id', $bill->patient_id) === (string) $patient->id)>{{ $patient->full_name }} · {{ $patient->phone }}</option>
+            @endforeach
+        </x-form.select>
+        <x-form.select name="appointment_id" label="Linked appointment" data-bill-appointment>
+            <option value="">None</option>
+            @foreach ($appointments as $appointment)
+                <option
+                    value="{{ $appointment->id }}"
+                    data-patient-id="{{ $appointment->patient_id }}"
+                    data-consultation-fee="{{ $appointment->doctor?->consultation_fee ?? 0 }}"
+                    data-doctor-name="{{ $appointment->doctor?->name }}"
+                    @selected((string) old('appointment_id', $bill->appointment_id) === (string) $appointment->id)
+                >{{ $appointment->appointment_no }} · {{ $appointment->appointment_date?->format('d M Y') }} {{ substr((string) $appointment->start_time, 0, 5) }}</option>
+            @endforeach
+        </x-form.select>
         <x-form.input name="bill_date" label="Bill date" type="date" :value="optional($bill->bill_date)->toDateString() ?? now()->toDateString()" required />
         <x-form.input name="discount" label="Discount" type="number" :value="$bill->discount ?? 0" data-bill-discount="true" />
-        <x-form.textarea name="notes" label="Notes" :value="$bill->notes" />
-    </section>
-
-    <section class="rounded-3xl bg-white p-6 ring-1 ring-sand-100">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="font-display text-xl text-navy-900">Bill items</h2>
-            <div class="flex flex-wrap gap-2">
-                <select data-bill-catalog class="rounded-full border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
-                    <option value="">Add from catalog</option>
-                    <optgroup label="Services">
-                        @foreach ($services as $service)
-                            <option value="service:{{ $service->id }}" data-type="service" data-id="{{ $service->id }}" data-description="{{ $service->title }}" data-price="0">{{ $service->title }}</option>
-                        @endforeach
-                    </optgroup>
-                    <optgroup label="Packages">
-                        @foreach ($packages as $package)
-                            <option value="package:{{ $package->id }}" data-type="package" data-id="{{ $package->id }}" data-description="{{ $package->title }}" data-price="{{ $package->price }}">{{ $package->title }} · {{ number_format((float) $package->price, 2) }}</option>
-                        @endforeach
-                    </optgroup>
-                    <optgroup label="Consultation">
-                        @foreach ($doctors as $doctor)
-                            <option value="consultation:{{ $doctor->id }}" data-type="consultation" data-id="{{ $doctor->id }}" data-description="Consultation — {{ $doctor->name }}" data-price="{{ $doctor->consultation_fee ?? 0 }}">{{ $doctor->name }} · {{ number_format((float) ($doctor->consultation_fee ?? 0), 2) }}</option>
-                        @endforeach
-                    </optgroup>
-                </select>
-                <button type="button" class="rounded-full bg-navy-900 px-4 py-2 text-sm font-semibold text-white" data-bill-add>Add custom item</button>
-            </div>
+        <div class="form-span-2">
+            <x-form.textarea name="notes" label="Notes" :value="$bill->notes" />
         </div>
-        @error('items') <p class="mt-3 text-sm text-red-700">{{ $message }}</p> @enderror
+    </x-admin.form-section>
 
-        <div class="mt-4 overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
-                <thead class="text-xs uppercase tracking-wide text-ink-400">
+    <x-admin.form-section title="Bill items" note="Add from the catalog or type a custom charge." :columns="false">
+        <div class="mb-4 flex flex-wrap gap-2">
+            <select data-bill-catalog class="admin-field px-3 py-2 text-sm">
+                <option value="">Add from catalog</option>
+                <optgroup label="Services">
+                    @foreach ($services as $service)
+                        <option value="service:{{ $service->id }}" data-type="service" data-id="{{ $service->id }}" data-description="{{ $service->title }}" data-price="0">{{ $service->title }}</option>
+                    @endforeach
+                </optgroup>
+                <optgroup label="Packages">
+                    @foreach ($packages as $package)
+                        <option value="package:{{ $package->id }}" data-type="package" data-id="{{ $package->id }}" data-description="{{ $package->title }}" data-price="{{ $package->price }}">{{ $package->title }} · {{ number_format((float) $package->price, 2) }}</option>
+                    @endforeach
+                </optgroup>
+                <optgroup label="Consultation">
+                    @foreach ($doctors as $doctor)
+                        <option value="consultation:{{ $doctor->id }}" data-type="consultation" data-id="{{ $doctor->id }}" data-description="Consultation — {{ $doctor->name }}" data-price="{{ $doctor->consultation_fee ?? 0 }}">{{ $doctor->name }} · {{ number_format((float) ($doctor->consultation_fee ?? 0), 2) }}</option>
+                    @endforeach
+                </optgroup>
+            </select>
+            <button type="button" class="form-btn form-btn--navy" data-bill-add>Add custom item</button>
+        </div>
+        @error('items') <p class="mb-3 text-sm text-red-700">{{ $message }}</p> @enderror
+
+        <div class="table-frame table-frame--fit">
+            <table class="pro-table pro-table--form">
+                <thead>
                     <tr>
-                        <th class="py-2 pr-3">Description</th>
-                        <th class="py-2 pr-3">Qty</th>
-                        <th class="py-2 pr-3">Unit price</th>
-                        <th class="py-2 pr-3">Line total</th>
-                        <th class="py-2"></th>
+                        <th>Description</th>
+                        <th class="col-num">Qty</th>
+                        <th class="col-num">Unit price</th>
+                        <th class="col-num">Line total</th>
+                        <th class="col-action">Action</th>
                     </tr>
                 </thead>
                 <tbody data-bill-rows>
                     @foreach ($itemRows as $index => $item)
                         <tr data-bill-row>
-                            <td class="py-2 pr-3">
+                            <td>
                                 <input type="hidden" name="items[{{ $index }}][item_type]" value="{{ $item['item_type'] ?? 'custom' }}">
                                 <input type="hidden" name="items[{{ $index }}][item_id]" value="{{ $item['item_id'] ?? '' }}">
-                                <input name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required class="w-full min-w-56 rounded-2xl border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
+                                <input name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required class="admin-field w-full min-w-56 px-3 py-2 text-sm">
                             </td>
-                            <td class="py-2 pr-3">
-                                <input type="number" min="1" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" data-bill-qty class="w-20 rounded-2xl border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
+                            <td class="col-num">
+                                <input type="number" min="1" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" data-bill-qty class="admin-field w-20 px-3 py-2 text-right text-sm">
                             </td>
-                            <td class="py-2 pr-3">
-                                <input type="number" min="0" step="0.01" name="items[{{ $index }}][unit_price]" value="{{ $item['unit_price'] ?? 0 }}" data-bill-price class="w-28 rounded-2xl border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
+                            <td class="col-num">
+                                <input type="number" min="0" step="0.01" name="items[{{ $index }}][unit_price]" value="{{ $item['unit_price'] ?? 0 }}" data-bill-price class="admin-field w-28 px-3 py-2 text-right text-sm">
                             </td>
-                            <td class="py-2 pr-3 font-medium" data-bill-line>0.00</td>
-                            <td class="py-2">
+                            <td class="col-num" data-bill-line>0.00</td>
+                            <td class="col-action">
                                 <button type="button" class="text-sm font-semibold text-red-700" data-bill-remove>Remove</button>
                             </td>
                         </tr>
@@ -111,35 +110,29 @@
             </table>
         </div>
 
-        <dl class="mt-6 flex flex-col gap-1 text-sm sm:items-end">
-            <div class="flex gap-8"><dt class="text-ink-600">Subtotal</dt><dd data-bill-subtotal>0.00</dd></div>
-            <div class="flex gap-8"><dt class="text-ink-600">Discount</dt><dd data-bill-discount-display>0.00</dd></div>
-            <div class="flex gap-8 font-semibold text-navy-900"><dt>Total</dt><dd data-bill-total>0.00</dd></div>
+        <dl class="mt-5 ml-auto max-w-xs space-y-1 text-sm">
+            <div class="flex justify-between gap-8"><dt class="text-ink-600">Subtotal</dt><dd data-bill-subtotal>0.00</dd></div>
+            <div class="flex justify-between gap-8"><dt class="text-ink-600">Discount</dt><dd data-bill-discount-display>0.00</dd></div>
+            <div class="flex justify-between gap-8 font-semibold text-navy-900"><dt>Total</dt><dd data-bill-total>0.00</dd></div>
         </dl>
-    </section>
-
-    <div class="flex flex-wrap gap-3">
-        <button type="submit" name="action" value="draft" class="rounded-full bg-navy-900 px-5 py-3 text-sm font-semibold text-white">Save draft</button>
-        <button type="submit" name="action" value="issue" class="rounded-full bg-teal-700 px-5 py-3 text-sm font-semibold text-white">Issue bill</button>
-        <a href="{{ route('admin.bills.index') }}" class="rounded-full px-5 py-3 text-sm font-semibold text-ink-600">Cancel</a>
-    </div>
-</form>
+    </x-admin.form-section>
+</x-admin.form-page>
 
 <template id="bill-row-template">
     <tr data-bill-row>
-        <td class="py-2 pr-3">
+        <td>
             <input type="hidden" name="items[__INDEX__][item_type]" value="custom">
             <input type="hidden" name="items[__INDEX__][item_id]" value="">
-            <input name="items[__INDEX__][description]" required class="w-full min-w-56 rounded-2xl border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
+            <input name="items[__INDEX__][description]" required class="admin-field w-full min-w-56 px-3 py-2 text-sm">
         </td>
-        <td class="py-2 pr-3">
-            <input type="number" min="1" name="items[__INDEX__][quantity]" value="1" data-bill-qty class="w-20 rounded-2xl border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
+        <td class="col-num">
+            <input type="number" min="1" name="items[__INDEX__][quantity]" value="1" data-bill-qty class="admin-field w-20 px-3 py-2 text-right text-sm">
         </td>
-        <td class="py-2 pr-3">
-            <input type="number" min="0" step="0.01" name="items[__INDEX__][unit_price]" value="0" data-bill-price class="w-28 rounded-2xl border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
+        <td class="col-num">
+            <input type="number" min="0" step="0.01" name="items[__INDEX__][unit_price]" value="0" data-bill-price class="admin-field w-28 px-3 py-2 text-right text-sm">
         </td>
-        <td class="py-2 pr-3 font-medium" data-bill-line>0.00</td>
-        <td class="py-2">
+        <td class="col-num" data-bill-line>0.00</td>
+        <td class="col-action">
             <button type="button" class="text-sm font-semibold text-red-700" data-bill-remove>Remove</button>
         </td>
     </tr>

@@ -16,7 +16,7 @@ class BillSeeder extends Seeder
      */
     public function run(): void
     {
-        $receptionist = User::query()->where('email', 'receptionist@demo.hospital')->first();
+        $receptionist = User::query()->where('email', 'receptionist@hospital.com')->first();
         $patient = Patient::query()->where('email', 'rahim.uddin.demo@example.test')->first();
         $appointment = Appointment::query()->with('doctor')->where('appointment_no', 'APT-DEMO-0001')->first();
         $package = HealthPackage::query()->orderBy('id')->first();

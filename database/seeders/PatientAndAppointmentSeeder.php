@@ -19,7 +19,7 @@ class PatientAndAppointmentSeeder extends Seeder
      */
     public function run(): void
     {
-        $receptionist = User::query()->where('email', 'receptionist@demo.hospital')->first();
+        $receptionist = User::query()->where('email', 'receptionist@hospital.com')->first();
 
         $patients = [
             [
