@@ -12,7 +12,7 @@ class HomePageTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_home_page_matches_medical_landing_mockup(): void
+    public function test_home_page_matches_lakeside_landing(): void
     {
         $department = Department::factory()->create([
             'name' => 'Cardiology',
@@ -38,24 +38,60 @@ class HomePageTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('$250M', false);
-        $response->assertSee('Patients Served Globally', false);
-        $response->assertSee('We Offer Pro', false);
-        $response->assertSee('DNA Testing', false);
-        $response->assertSee('DNA Reports: 5.5K', false);
-        $response->assertSee('Get Started', false);
-        $response->assertSee('Trusted', false);
-        $response->assertSee('Secure', false);
-        $response->assertSee('Testing', false);
-        $response->assertSee('99.9%', false);
-        $response->assertSee('DNA Matching Rate', false);
-        $response->assertSee('Meet Our Specialized', false);
-        $response->assertSee('Medical Team', false);
+        $response->assertSee('Exceptional Care.', false);
+        $response->assertSee('Closer to Home.', false);
+        $response->assertSee('Book an Appointment', false);
+        $response->assertSee('Our Departments', false);
+        $response->assertSee('Cardiology', false);
+        $response->assertSee('Find the Right Doctor for You', false);
+        $response->assertSee('Patient Services', false);
+        $response->assertSee('Emergency Care', false);
+        $response->assertSee('Our Expert Doctors', false);
         $response->assertSee('Dr. Hamida Jannat', false);
-        $response->assertSee('Explore Our Medical', false);
-        $response->assertSee('Departments', false);
-        $response->assertSee('Latest From Medical', false);
-        $response->assertSee('Frontlines', false);
-        $response->assertSee('Ask The Desk', false);
+        $response->assertSee('Book Your Appointment Today', false);
+        $response->assertSee('250+', false);
+        $response->assertSee('Our Locations', false);
+        $response->assertSee('Frequently Asked Questions', false);
+        $response->assertSee('News & Updates', false);
+        $response->assertSee('Your Health. Our Priority.', false);
+    }
+
+    public function test_home_page_lists_real_doctors_and_filters_by_specialty(): void
+    {
+        $cardiology = Department::factory()->create([
+            'name' => 'Cardiology',
+            'is_active' => true,
+        ]);
+        $neurology = Department::factory()->create([
+            'name' => 'Neurology',
+            'is_active' => true,
+        ]);
+
+        Doctor::factory()->create([
+            'name' => 'Dr. Hamida Jannat',
+            'department_id' => $cardiology->id,
+            'specialization' => 'Cardiologist',
+            'is_active' => true,
+            'is_featured' => true,
+        ]);
+        Doctor::factory()->create([
+            'name' => 'Dr. Nabila Rahman',
+            'department_id' => $neurology->id,
+            'specialization' => 'Neurologist',
+            'is_active' => true,
+            'is_featured' => true,
+        ]);
+
+        $home = $this->get(route('home'));
+        $home->assertOk();
+        $home->assertSee('Browse consultants', false);
+        $home->assertSee('Dr. Hamida Jannat', false);
+        $home->assertSee('Dr. Nabila Rahman', false);
+        $home->assertSee('Search by a specialty', false);
+
+        $filtered = $this->get(route('home', ['specialty' => 'Cardiology']));
+        $filtered->assertOk();
+        $filtered->assertSee('Dr. Hamida Jannat', false);
+        $filtered->assertSee('Showing consultants for Cardiology', false);
     }
 }

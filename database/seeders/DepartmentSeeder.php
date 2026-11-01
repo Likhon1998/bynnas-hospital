@@ -83,6 +83,13 @@ class DepartmentSeeder extends Seeder
                 'is_featured' => false,
                 'description' => 'Consultant clinics for urinary symptoms and men’s health.',
             ],
+            [
+                'name' => 'Emergency',
+                'slug' => 'emergency',
+                'icon' => 'spark',
+                'is_featured' => true,
+                'description' => '24/7 desk for walk-in trauma, chest pain, breathing trouble, and other urgent cases.',
+            ],
         ];
 
         foreach ($departments as $index => $department) {

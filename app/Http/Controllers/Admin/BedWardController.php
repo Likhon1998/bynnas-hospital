@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\ConcurrentBedUpdateException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\InspectBedRequest;
 use App\Http\Requests\Admin\MaintainBedRequest;
@@ -10,12 +11,14 @@ use App\Http\Requests\Admin\TransferBedRequest;
 use App\Http\Requests\Admin\UpdateBedRequest;
 use App\Models\Bed;
 use App\Models\Patient;
+use App\Support\AdmissionDesk;
 use App\Support\BedLifecycle;
 use App\Support\BedOperations;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Throwable;
 
 class BedWardController extends Controller
 {
@@ -26,7 +29,7 @@ class BedWardController extends Controller
         $search = $request->string('q')->toString();
 
         $bedsQuery = Bed::query()
-            ->with(['ward', 'patient', 'reservedPatient'])
+            ->with(['ward', 'patient', 'reservedPatient', 'currentAdmission'])
             ->when($type !== '', fn ($query) => $query->whereHas('ward', fn ($ward) => $ward->where('type', $type)))
             ->when($status === 'turnaround', fn ($query) => $query->whereIn('status', ['dirty', 'cleaning']))
             ->when(
@@ -44,7 +47,7 @@ class BedWardController extends Controller
             ->orderByRaw("CASE status WHEN 'dirty' THEN 0 WHEN 'cleaning' THEN 1 WHEN 'occupied' THEN 2 ELSE 3 END")
             ->orderBy('bed_code');
 
-        $allBeds = Bed::query()->with(['ward', 'reservedPatient'])->get();
+        $allBeds = Bed::query()->with(['ward', 'patient', 'reservedPatient'])->get();
         $totalBeds = $allBeds->count();
         $occupiedBeds = $allBeds->where('status', 'occupied')->count();
         $availableBeds = $allBeds->where('status', 'available')->count();
@@ -84,6 +87,11 @@ class BedWardController extends Controller
             ->orderBy('bed_code')
             ->get(['id', 'bed_code', 'ward_id', 'reserved_patient_id', 'lock_version']);
 
+        $icuCensus = $allBeds
+            ->filter(fn (Bed $bed): bool => $bed->ward?->type === 'icu' && $bed->status === 'occupied' && $bed->patient !== null)
+            ->sortBy(fn (Bed $bed): string => $bed->bed_code)
+            ->values();
+
         $lifecycle = app(BedLifecycle::class);
 
         return view('admin.beds.index', [
@@ -91,6 +99,7 @@ class BedWardController extends Controller
             'type' => $type,
             'status' => $status,
             'search' => $search,
+            'icuCensus' => $icuCensus,
             'typeCounts' => $typeCounts,
             'admitPatients' => $admitPatients,
             'transferTargets' => $transferTargets,
@@ -154,24 +163,43 @@ class BedWardController extends Controller
         ]);
     }
 
-    public function update(UpdateBedRequest $request, Bed $bed, BedLifecycle $lifecycle): RedirectResponse
+    public function update(UpdateBedRequest $request, Bed $bed, BedLifecycle $lifecycle, AdmissionDesk $desk): RedirectResponse
     {
         $status = $request->string('status')->toString();
         $patientId = $request->integer('patient_id') ?: null;
-        $notes = $request->string('notes')->toString() ?: null;
+        $notes = $request->string('admission_reason')->toString()
+            ?: $request->string('notes')->toString()
+            ?: null;
         $previousStatus = $bed->status;
+        $dischargedPatientId = $bed->patient_id;
 
-        try {
-            $lifecycle->apply(
-                $bed,
-                $status,
-                $patientId,
-                $request->user(),
-                $notes,
-                $request->integer('lock_version'),
-            );
-        } catch (InvalidArgumentException $exception) {
-            return back()->with('error', $exception->getMessage());
+        $result = $this->runBedMutation(
+            $bed,
+            $request->integer('lock_version'),
+            function (Bed $freshBed, int $lockVersion) use ($lifecycle, $status, $patientId, $request, $notes): void {
+                $lifecycle->apply(
+                    $freshBed,
+                    $status,
+                    $patientId,
+                    $request->user(),
+                    $notes,
+                    $lockVersion,
+                );
+            },
+        );
+
+        if ($result instanceof RedirectResponse) {
+            return $result;
+        }
+
+        $actor = $request->user();
+
+        if ($actor && $previousStatus === 'available' && $status === 'occupied') {
+            $desk->ensureFromOccupiedBed($bed->fresh() ?? $bed, $actor, 'direct', $notes);
+        }
+
+        if ($actor && $previousStatus === 'occupied' && $status === 'dirty' && $dischargedPatientId) {
+            $desk->finalizeReleasedAdmission((int) $dischargedPatientId, $actor);
         }
 
         return back()->with(
@@ -182,17 +210,23 @@ class BedWardController extends Controller
 
     public function reserve(ReserveBedRequest $request, Bed $bed, BedOperations $operations): RedirectResponse
     {
-        try {
-            $operations->reserve(
-                bed: $bed,
-                patientId: $request->integer('patient_id'),
-                actor: $request->user(),
-                note: $request->string('reservation_note')->toString() ?: null,
-                until: $request->date('reserved_until'),
-                lockVersion: $request->integer('lock_version'),
-            );
-        } catch (InvalidArgumentException $exception) {
-            return back()->with('error', $exception->getMessage());
+        $result = $this->runBedMutation(
+            $bed,
+            $request->integer('lock_version'),
+            function (Bed $freshBed, int $lockVersion) use ($operations, $request): void {
+                $operations->reserve(
+                    bed: $freshBed,
+                    patientId: $request->integer('patient_id'),
+                    actor: $request->user(),
+                    note: $request->string('reservation_note')->toString() ?: null,
+                    until: $request->date('reserved_until'),
+                    lockVersion: $lockVersion,
+                );
+            },
+        );
+
+        if ($result instanceof RedirectResponse) {
+            return $result;
         }
 
         return back()->with('status', 'Bed '.$bed->bed_code.' reserved.');
@@ -206,34 +240,53 @@ class BedWardController extends Controller
             'lock_version' => ['required', 'integer', 'min:0'],
         ]);
 
-        try {
-            $operations->cancelReservation(
-                $bed,
-                $request->user(),
-                lockVersion: (int) $validated['lock_version'],
-            );
-        } catch (InvalidArgumentException $exception) {
-            return back()->with('error', $exception->getMessage());
+        $result = $this->runBedMutation(
+            $bed,
+            (int) $validated['lock_version'],
+            function (Bed $freshBed, int $lockVersion) use ($operations, $request): void {
+                $operations->cancelReservation(
+                    $freshBed,
+                    $request->user(),
+                    lockVersion: $lockVersion,
+                );
+            },
+        );
+
+        if ($result instanceof RedirectResponse) {
+            return $result;
         }
 
         return back()->with('status', 'Reservation on '.$bed->bed_code.' cancelled.');
     }
 
-    public function transfer(TransferBedRequest $request, Bed $bed, BedOperations $operations): RedirectResponse
+    public function transfer(TransferBedRequest $request, Bed $bed, BedOperations $operations, AdmissionDesk $desk): RedirectResponse
     {
         $toBed = Bed::query()->findOrFail($request->integer('to_bed_id'));
+        $recordedTransfer = null;
 
-        try {
-            $operations->transfer(
-                fromBed: $bed,
-                toBed: $toBed,
-                actor: $request->user(),
-                reason: $request->string('reason')->toString() ?: null,
-                fromLockVersion: $request->integer('lock_version'),
-                toLockVersion: $request->integer('to_lock_version'),
-            );
-        } catch (InvalidArgumentException $exception) {
-            return back()->with('error', $exception->getMessage());
+        $result = $this->runBedMutation(
+            $bed,
+            $request->integer('lock_version'),
+            function (Bed $freshBed, int $lockVersion) use ($operations, $request, $toBed, &$recordedTransfer): void {
+                $freshTo = $toBed->fresh() ?? $toBed;
+
+                $recordedTransfer = $operations->transfer(
+                    fromBed: $freshBed,
+                    toBed: $freshTo,
+                    actor: $request->user(),
+                    reason: $request->string('reason')->toString() ?: null,
+                    fromLockVersion: $lockVersion,
+                    toLockVersion: (int) $freshTo->lock_version,
+                );
+            },
+        );
+
+        if ($result instanceof RedirectResponse) {
+            return $result;
+        }
+
+        if ($recordedTransfer) {
+            $desk->syncTransfer($recordedTransfer);
         }
 
         return back()->with('status', 'Patient transferred from '.$bed->bed_code.' to '.$toBed->bed_code.'.');
@@ -242,49 +295,108 @@ class BedWardController extends Controller
     public function inspect(InspectBedRequest $request, Bed $bed, BedLifecycle $lifecycle): RedirectResponse
     {
         $notes = $request->string('notes')->toString() ?: null;
-        $lockVersion = $request->integer('lock_version');
+        $passed = $request->string('result')->toString() === 'pass';
 
-        try {
-            if ($request->string('result')->toString() === 'pass') {
-                $lifecycle->passInspection($bed, $request->user(), $notes, $lockVersion);
-                $message = 'Inspection passed — '.$bed->bed_code.' is available.';
-            } else {
-                $lifecycle->failInspection($bed, $request->user(), $notes, $lockVersion);
-                $message = 'Inspection failed — '.$bed->bed_code.' returned to dirty.';
-            }
-        } catch (InvalidArgumentException $exception) {
-            return back()->with('error', $exception->getMessage());
+        $result = $this->runBedMutation(
+            $bed,
+            $request->integer('lock_version'),
+            function (Bed $freshBed, int $lockVersion) use ($lifecycle, $request, $notes, $passed): void {
+                if ($passed) {
+                    $lifecycle->passInspection($freshBed, $request->user(), $notes, $lockVersion);
+                } else {
+                    $lifecycle->failInspection($freshBed, $request->user(), $notes, $lockVersion);
+                }
+            },
+        );
+
+        if ($result instanceof RedirectResponse) {
+            return $result;
         }
 
-        return back()->with('status', $message);
+        return back()->with(
+            'status',
+            $passed
+                ? 'Inspection passed — '.$bed->bed_code.' is available.'
+                : 'Inspection failed — '.$bed->bed_code.' returned to dirty.'
+        );
     }
 
     public function maintain(MaintainBedRequest $request, Bed $bed, BedOperations $operations): RedirectResponse
     {
-        $lockVersion = $request->integer('lock_version');
+        $starting = $request->string('action')->toString() === 'start';
 
-        try {
-            if ($request->string('action')->toString() === 'start') {
-                $operations->startMaintenance(
-                    $bed,
-                    $request->string('reason')->toString(),
-                    $request->user(),
-                    $lockVersion,
-                );
-                $message = 'Maintenance started on '.$bed->bed_code.'.';
-            } else {
-                $operations->endMaintenance(
-                    $bed,
-                    $request->user(),
-                    $request->string('notes')->toString() ?: null,
-                    $lockVersion,
-                );
-                $message = 'Maintenance ended on '.$bed->bed_code.'.';
-            }
-        } catch (InvalidArgumentException $exception) {
-            return back()->with('error', $exception->getMessage());
+        $result = $this->runBedMutation(
+            $bed,
+            $request->integer('lock_version'),
+            function (Bed $freshBed, int $lockVersion) use ($operations, $request, $starting): void {
+                if ($starting) {
+                    $operations->startMaintenance(
+                        $freshBed,
+                        $request->string('reason')->toString(),
+                        $request->user(),
+                        $lockVersion,
+                    );
+                } else {
+                    $operations->endMaintenance(
+                        $freshBed,
+                        $request->user(),
+                        $request->string('notes')->toString() ?: null,
+                        $lockVersion,
+                    );
+                }
+            },
+        );
+
+        if ($result instanceof RedirectResponse) {
+            return $result;
         }
 
-        return back()->with('status', $message);
+        return back()->with(
+            'status',
+            $starting
+                ? 'Maintenance started on '.$bed->bed_code.'.'
+                : 'Maintenance ended on '.$bed->bed_code.'.'
+        );
+    }
+
+    /**
+     * Retry once with the freshest lock version so expired reservations / board lag
+     * do not block a still-valid floor action.
+     *
+     * @param  callable(Bed, int): void  $mutation
+     */
+    private function runBedMutation(Bed $bed, int $lockVersion, callable $mutation): ?RedirectResponse
+    {
+        try {
+            $mutation($bed, $lockVersion);
+
+            return null;
+        } catch (ConcurrentBedUpdateException) {
+            $bed->refresh();
+
+            try {
+                $mutation($bed, (int) $bed->lock_version);
+
+                return null;
+            } catch (Throwable $exception) {
+                return $this->bedMutationFailed($bed, $exception);
+            }
+        } catch (InvalidArgumentException $exception) {
+            return $this->bedMutationFailed($bed, $exception);
+        }
+    }
+
+    private function bedMutationFailed(Bed $bed, Throwable $exception): RedirectResponse
+    {
+        $message = $exception instanceof ConcurrentBedUpdateException
+            ? 'Bed '.$bed->bed_code.' changed while you were working. The board was refreshed — try the action again.'
+            : $exception->getMessage();
+
+        return redirect()
+            ->route('admin.beds.index', array_filter([
+                'q' => $bed->bed_code,
+                'status' => $bed->fresh()?->status,
+            ]))
+            ->with('error', $message);
     }
 }

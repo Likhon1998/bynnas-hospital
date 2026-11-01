@@ -26,6 +26,7 @@ class BedWardDashboardTest extends TestCase
             'patient_id' => $patient->id,
             'bed_code' => 'ICU-A-01',
             'status' => 'occupied',
+            'admission_reason' => 'Respiratory support',
         ]);
         Bed::factory()->dirty()->create([
             'ward_id' => $ward->id,
@@ -48,6 +49,10 @@ class BedWardDashboardTest extends TestCase
         $response->assertSee('>Patient</th>', false);
         $response->assertSee('>Status</th>', false);
         $response->assertSee('Action</th>', false);
+        $response->assertSee('ICU census');
+        $response->assertSee('Rahim Uddin');
+        $response->assertSee('Respiratory support');
+        $response->assertSee('ICU occupied');
         $response->assertSee(route('admin.beds.index', ['status' => 'occupied']), false);
         $response->assertSee(route('admin.beds.index', ['status' => 'turnaround']), false);
         $response->assertDontSee('Care Timeline');
@@ -56,12 +61,47 @@ class BedWardDashboardTest extends TestCase
         $response->assertDontSee('Cleaning status');
     }
 
+    public function test_icu_occupied_filter_lists_who_is_in_icu_and_why(): void
+    {
+        $user = $this->createStaffUser(['beds.view', 'beds.operate']);
+        $icu = Ward::factory()->create(['name' => 'ICU A', 'code' => 'ICU-A', 'type' => 'icu']);
+        $general = Ward::factory()->create(['name' => 'General 1', 'code' => 'GEN-1', 'type' => 'general']);
+        $icuPatient = Patient::factory()->create(['full_name' => 'ICU Census Patient']);
+        $wardPatient = Patient::factory()->create(['full_name' => 'Ward Patient']);
+
+        Bed::factory()->occupied()->create([
+            'ward_id' => $icu->id,
+            'patient_id' => $icuPatient->id,
+            'bed_code' => 'ICU-A-09',
+            'admission_reason' => 'Cardiac monitoring',
+        ]);
+        Bed::factory()->occupied()->create([
+            'ward_id' => $general->id,
+            'patient_id' => $wardPatient->id,
+            'bed_code' => 'GEN-1-09',
+            'admission_reason' => 'Observation',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('admin.beds.index', [
+            'type' => 'icu',
+            'status' => 'occupied',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('ICU Census Patient');
+        $response->assertSee('Cardiac monitoring');
+        $response->assertSee('ICU-A-09');
+        $response->assertDontSee('Ward Patient');
+        $response->assertDontSee('GEN-1-09');
+    }
+
     public function test_turnaround_filter_shows_dirty_and_cleaning_beds(): void
     {
         $user = $this->createStaffUser(['beds.view', 'beds.operate']);
-        Bed::factory()->dirty()->create(['bed_code' => 'GEN-DIRTY-1', 'status' => 'dirty']);
-        Bed::factory()->cleaning()->create(['bed_code' => 'GEN-CLEAN-1', 'status' => 'cleaning']);
-        Bed::factory()->occupied()->create(['bed_code' => 'GEN-OCC-1', 'status' => 'occupied']);
+        $general = Ward::factory()->create(['type' => 'general', 'name' => 'General 1', 'code' => 'GEN-1']);
+        Bed::factory()->dirty()->create(['ward_id' => $general->id, 'bed_code' => 'GEN-DIRTY-1', 'status' => 'dirty']);
+        Bed::factory()->cleaning()->create(['ward_id' => $general->id, 'bed_code' => 'GEN-CLEAN-1', 'status' => 'cleaning']);
+        Bed::factory()->occupied()->create(['ward_id' => $general->id, 'bed_code' => 'GEN-OCC-1', 'status' => 'occupied']);
 
         $response = $this->actingAs($user)->get(route('admin.beds.index', ['status' => 'turnaround']));
 
@@ -110,12 +150,20 @@ class BedWardDashboardTest extends TestCase
             'lock_version' => $bed->lock_version,
             'status' => 'occupied',
             'patient_id' => $patient->id,
+        ])->assertSessionHasErrors('admission_reason');
+
+        $this->actingAs($user)->put(route('admin.beds.update', $bed), [
+            'lock_version' => $bed->lock_version,
+            'status' => 'occupied',
+            'patient_id' => $patient->id,
+            'admission_reason' => 'Post-operative recovery',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('beds', [
             'id' => $bed->id,
             'status' => 'occupied',
             'patient_id' => $patient->id,
+            'admission_reason' => 'Post-operative recovery',
         ]);
         $this->assertNotNull($bed->fresh()->admitted_at);
     }
@@ -139,6 +187,7 @@ class BedWardDashboardTest extends TestCase
             'status' => 'dirty',
             'patient_id' => null,
             'admitted_at' => null,
+            'admission_reason' => null,
         ]);
     }
 

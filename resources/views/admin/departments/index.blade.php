@@ -8,6 +8,7 @@
             <div class="admin-filters">
                 <input type="search" name="q" value="{{ request('q') }}" placeholder="Search departments">
                 <button type="submit">Search</button>
+                <a href="{{ route('admin.doctors.index') }}">Doctors</a>
                 <a href="{{ route('admin.departments.create') }}" class="admin-action">Add department</a>
             </div>
         </form>

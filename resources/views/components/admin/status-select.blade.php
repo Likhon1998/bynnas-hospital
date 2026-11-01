@@ -13,7 +13,7 @@
 <form method="POST" action="{{ route('admin.appointments.update', $appointment) }}" class="inline-flex">
     @csrf
     @method('PUT')
-    <input type="hidden" name="cancellation_reason" value="Updated from the appointment list">
+    <input type="hidden" name="cancellation_reason" value="Cancelled from the appointment list">
     <select
         name="status"
         onchange="this.form.submit()"

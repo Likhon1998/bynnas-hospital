@@ -35,9 +35,9 @@
         <article class="mc-kpi mc-kpi--green">
             <div class="mc-kpi__top">
                 <div>
-                    <p class="mc-kpi__label">Unread mail</p>
-                    <p class="mc-kpi__value">{{ $counts['messages'] }}</p>
-                    <p class="mc-kpi__meta">Website inbox</p>
+                    <p class="mc-kpi__label">Critical labs</p>
+                    <p class="mc-kpi__value">{{ $counts['labs'] }}</p>
+                    <p class="mc-kpi__meta">Verified and flagged</p>
                 </div>
             </div>
         </article>

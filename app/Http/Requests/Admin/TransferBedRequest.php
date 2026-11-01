@@ -33,7 +33,7 @@ class TransferBedRequest extends FormRequest
                 Rule::notIn([$bed->id]),
                 Rule::exists('beds', 'id'),
             ],
-            'reason' => ['nullable', 'string', 'max:255'],
+            'reason' => ['required', 'string', 'max:255'],
         ];
     }
 }

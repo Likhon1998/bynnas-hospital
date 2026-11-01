@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Admission;
 use App\Models\Bed;
 use App\Models\BedEvent;
 use App\Models\Patient;
@@ -120,6 +121,7 @@ class BedLifecycle
                 'status' => 'occupied',
                 'patient_id' => $patientId,
                 'admitted_at' => now(),
+                'admission_reason' => $notes,
                 'status_changed_at' => now(),
                 'turnover_hours' => null,
                 'reserved_patient_id' => null,
@@ -158,6 +160,7 @@ class BedLifecycle
             }
 
             $patientId = $bed->patient_id;
+            $this->assertAdmissionAllowsRelease($bed, $patientId);
             $fromStatus = $bed->status;
             $turnoverHours = $bed->admitted_at !== null
                 ? round(max(0.1, $bed->admitted_at->diffInMinutes(now()) / 60), 1)
@@ -167,6 +170,7 @@ class BedLifecycle
                 'status' => 'dirty',
                 'patient_id' => null,
                 'admitted_at' => null,
+                'admission_reason' => null,
                 'status_changed_at' => now(),
                 'turnover_hours' => $turnoverHours,
             ])->save();
@@ -206,6 +210,7 @@ class BedLifecycle
                 'status' => 'cleaning',
                 'patient_id' => null,
                 'admitted_at' => null,
+                'admission_reason' => null,
                 'status_changed_at' => now(),
             ])->save();
 
@@ -242,6 +247,7 @@ class BedLifecycle
                 'status' => 'available',
                 'patient_id' => null,
                 'admitted_at' => null,
+                'admission_reason' => null,
                 'status_changed_at' => now(),
             ])->save();
 
@@ -282,6 +288,7 @@ class BedLifecycle
                 'status' => 'dirty',
                 'patient_id' => null,
                 'admitted_at' => null,
+                'admission_reason' => null,
                 'status_changed_at' => now(),
             ])->save();
 
@@ -326,6 +333,26 @@ class BedLifecycle
             patientId: $patientId,
             notes: 'Reservation expired and was cleared.',
         );
+    }
+
+    private function assertAdmissionAllowsRelease(Bed $bed, ?int $patientId): void
+    {
+        $admission = Admission::query()
+            ->open()
+            ->where(function ($query) use ($bed, $patientId): void {
+                $query->where('bed_id', $bed->id);
+
+                if ($patientId !== null) {
+                    $query->orWhere('patient_id', $patientId);
+                }
+            })
+            ->first();
+
+        if ($admission && ! $admission->isAuthorizedForRelease()) {
+            throw new InvalidArgumentException(
+                'Clinical discharge authorization is required before this bed can be released.'
+            );
+        }
     }
 
     public function actionLabel(string $fromStatus, string $toStatus): string

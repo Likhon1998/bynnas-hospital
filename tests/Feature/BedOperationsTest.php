@@ -49,6 +49,7 @@ class BedOperationsTest extends TestCase
             'lock_version' => $bed->fresh()->lock_version,
             'status' => 'occupied',
             'patient_id' => $reservedPatient->id,
+            'admission_reason' => 'OR recovery hold',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('beds', [

@@ -2,24 +2,34 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>@yield('title', $hospital->get('hospital_name') ?: 'Hospital')</title>
     <meta name="description" content="@yield('meta_description', $hospital->get('tagline') ?: 'Hospital care in Dhaka.')">
     <link rel="canonical" href="{{ url()->current() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-[#f8fafc] font-sans text-ink-900 antialiased">
-    @include('layouts.partials.topbar')
+<body class="ch-site min-h-screen bg-white font-sans text-ink-900 antialiased">
     @include('layouts.partials.header')
     <main>
         @if (session('status'))
-            <p class="border-b border-[#bbf7d0] bg-[#ecfdf3] py-3 text-center text-sm font-medium text-[#166534]"><span class="web-wrap block">{{ session('status') }}</span></p>
+            <p class="border-b border-[#bbf7d0] bg-[#ecfdf3] py-3 text-center text-sm font-medium text-[#166534]"><span class="ch-wrap block">{{ session('status') }}</span></p>
         @endif
         @if (session('error'))
-            <p class="border-b border-[#fecaca] bg-[#fef2f2] py-3 text-center text-sm font-medium text-[#991b1b]"><span class="web-wrap block">{{ session('error') }}</span></p>
+            <p class="border-b border-[#fecaca] bg-[#fef2f2] py-3 text-center text-sm font-medium text-[#991b1b]"><span class="ch-wrap block">{{ session('error') }}</span></p>
         @endif
         @yield('content')
     </main>
     @include('layouts.partials.footer')
+    @php
+        $dockPhone = $hospital->get('phone') ?: $hospital->get('emergency_phone');
+    @endphp
+    <nav class="ch-dock" aria-label="Mobile actions">
+        @if ($dockPhone)
+            <a href="tel:{{ preg_replace('/\s+/', '', $dockPhone) }}" class="ch-dock__call">
+                Call
+            </a>
+        @endif
+        <a href="{{ route('home') }}#appointment" class="ch-dock__book">Book Appointment</a>
+    </nav>
 </body>
 </html>

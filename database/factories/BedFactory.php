@@ -23,6 +23,7 @@ class BedFactory extends Factory
             'bed_code' => 'B-'.fake()->unique()->numerify('####'),
             'status' => 'available',
             'admitted_at' => null,
+            'admission_reason' => null,
             'status_changed_at' => now()->subHours(2),
             'turnover_hours' => null,
             'is_maintenance' => false,
@@ -46,6 +47,13 @@ class BedFactory extends Factory
                 'status' => 'occupied',
                 'patient_id' => Patient::factory(),
                 'admitted_at' => $admittedAt,
+                'admission_reason' => fake()->randomElement([
+                    'Respiratory support',
+                    'Cardiac monitoring',
+                    'Post-operative recovery',
+                    'Sepsis / shock',
+                    'Neuro observation',
+                ]),
                 'status_changed_at' => $admittedAt,
                 'turnover_hours' => null,
             ];

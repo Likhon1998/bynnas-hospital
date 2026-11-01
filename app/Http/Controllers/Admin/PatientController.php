@@ -32,7 +32,11 @@ class PatientController extends Controller
     {
         $patient->load([
             'appointments' => fn ($query) => $query->with(['doctor', 'department'])->latest('appointment_date')->latest('id'),
+            'visits' => fn ($query) => $query->with(['doctor', 'events'])->latest('arrived_at')->latest('id'),
             'bills' => fn ($query) => $query->latest('bill_date')->latest('id')->limit(10),
+            'bed.ward',
+            'currentAdmission',
+            'labOrders' => fn ($query) => $query->with(['test', 'result', 'visit'])->latest('id')->limit(10),
         ]);
 
         return view('admin.patients.show', compact('patient'));

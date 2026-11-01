@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             WebsiteContentSeeder::class,
             PatientAndAppointmentSeeder::class,
             BillSeeder::class,
+            LabTestSeeder::class,
             WardBedSeeder::class,
         ]);
     }

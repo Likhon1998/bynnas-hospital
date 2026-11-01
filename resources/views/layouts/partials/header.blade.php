@@ -1,51 +1,74 @@
 @php
-    $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
+    $hospitalName = $hospital->get('hospital_name') ?: 'Cityhealth Medical Center';
     $nameParts = preg_split('/\s+/', trim($hospitalName)) ?: [$hospitalName];
-    $brandMark = $nameParts[0] ?? 'Hospital';
-    $brandRest = trim(implode(' ', array_slice($nameParts, 1)));
-    $phone = $hospital->get('phone') ?: $hospital->get('emergency_phone');
+    $brandMark = $nameParts[0] ?? 'Cityhealth';
+    $brandRest = trim(implode(' ', array_slice($nameParts, 1))) ?: 'Medical Center';
+    $phone = $hospital->get('phone') ?: $hospital->get('emergency_phone') ?: '(212) 555-1212';
+    $emergency = $hospital->get('emergency_phone') ?: $phone;
+    $campus = 'Main Campus, Gulshan';
+    $hoursLabel = $workingHours['saturday'] ?? $workingHours['monday'] ?? 'Open 24 hours';
     $links = [
-        ['label' => 'Home', 'href' => route('home'), 'active' => request()->routeIs('home')],
         ['label' => 'About us', 'href' => route('about'), 'active' => request()->routeIs('about')],
+        ['label' => 'Departments', 'href' => route('home').'#departments', 'active' => false],
+        ['label' => 'Doctors', 'href' => route('home').'#doctors', 'active' => false],
+        ['label' => 'Patients & Visitors', 'href' => route('home').'#patients', 'active' => false],
         ['label' => 'Services', 'href' => route('services'), 'active' => request()->routeIs('services', 'services.show')],
-        ['label' => 'Contact', 'href' => route('home').'#contact', 'active' => false],
+        ['label' => 'Locations', 'href' => route('home').'#locations', 'active' => false],
+        ['label' => 'Contact Us', 'href' => route('home').'#contact', 'active' => false],
     ];
 @endphp
 
-<header class="sticky top-0 z-40 border-b border-[#e2e8f0] bg-white/95 backdrop-blur">
-    <div class="web-wrap flex h-[4.35rem] items-center justify-between gap-6">
-        <a href="{{ route('home') }}" class="min-w-0 leading-tight">
-            <span class="block text-[1.05rem] font-bold tracking-tight text-[#122447]">{{ $brandMark }}</span>
-            @if ($brandRest)
-                <span class="mt-0.5 block text-[11px] font-medium leading-none text-[#64748b]">{{ $brandRest }}</span>
-            @endif
+<header class="ch-top">
+    <div class="ch-rail">
+        <div class="ch-wrap ch-rail__bar">
+            <a class="ch-rail__alert" href="{{ route('emergency') }}">
+                <span class="ch-rail__pulse" aria-hidden="true"></span>
+                <span>24/7 Emergency</span>
+                <strong>{{ $emergency }}</strong>
+            </a>
+            <p class="ch-rail__meta">
+                <span>{{ $campus }}</span>
+                <span>{{ $hoursLabel }}</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="ch-wrap ch-top__bar">
+        <a href="{{ route('home') }}" class="ch-brand">
+            <span class="ch-brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 36 36" class="h-5 w-5" fill="none">
+                    <path d="M18 8v20M9 18h18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span>
+                <span class="ch-brand__name">{{ $brandMark }}</span>
+                <span class="ch-brand__sub">{{ $brandRest }}</span>
+            </span>
         </a>
 
-        <nav class="hidden items-center gap-8 md:flex" aria-label="Primary">
+        <nav class="ch-nav" aria-label="Primary">
             @foreach ($links as $link)
-                <a
-                    href="{{ $link['href'] }}"
-                    @class([
-                        'text-sm font-semibold',
-                        'text-[#16a34a]' => $link['active'],
-                        'text-[#334155] hover:text-[#16a34a]' => ! $link['active'],
-                    ])
-                >{{ $link['label'] }}</a>
+                <a href="{{ $link['href'] }}" @class(['is-active' => $link['active']])>{{ $link['label'] }}</a>
             @endforeach
         </nav>
 
-        <div class="flex items-center gap-4">
-            @if ($phone)
-                <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="hidden text-sm font-medium text-[#475569] lg:inline">
+        <div class="ch-top__actions">
+            <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="ch-phone">
+                <span class="ch-phone__icon" aria-hidden="true">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 4h4l2 5-2 1a12 12 0 0 0 6 6l1-2 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 6a2 2 0 0 1 2-2z"/>
+                    </svg>
+                </span>
+                <span>
+                    <small>Call us</small>
                     {{ $phone }}
-                </a>
-            @endif
-            <a href="{{ route('home') }}#appointment" class="site-btn site-btn--green hidden !min-h-10 !px-4 sm:inline-flex">
-                Request a visit
+                </span>
             </a>
+            <a href="{{ route('home') }}#find-doctor" class="ch-btn ch-btn--ghost ch-btn--find">Find a Doctor</a>
+            <a href="{{ route('home') }}#appointment" class="ch-btn ch-btn--solid ch-btn--header-book">Book Appointment</a>
             <button
                 type="button"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e2e8f0] text-[#122447] md:hidden"
+                class="ch-menu"
                 data-nav-toggle
                 aria-expanded="false"
                 aria-controls="mobile-navigation"
@@ -57,20 +80,23 @@
     </div>
 </header>
 
-<div id="mobile-navigation" class="fixed inset-0 z-50 hidden md:hidden" data-nav-panel>
-    <button type="button" class="absolute inset-0 bg-[#122447]/45" data-nav-close aria-label="Close menu"></button>
-    <div class="absolute inset-y-0 right-0 flex w-[min(20rem,100%)] flex-col bg-white p-6 shadow-2xl">
-        <div class="flex items-center justify-between">
-            <p class="text-base font-bold text-[#122447]">{{ $hospitalName }}</p>
-            <button type="button" class="p-2 text-[#64748b]" data-nav-close aria-label="Close menu">✕</button>
+<div id="mobile-navigation" class="ch-drawer hidden" data-nav-panel>
+    <button type="button" class="ch-drawer__mask" data-nav-close aria-label="Close menu"></button>
+    <div class="ch-drawer__panel">
+        <div class="ch-drawer__top">
+            <p>{{ $hospitalName }}</p>
+            <button type="button" data-nav-close aria-label="Close menu">✕</button>
         </div>
-        <nav class="mt-8 flex flex-col gap-4" aria-label="Mobile">
+        <a href="{{ route('emergency') }}" class="ch-drawer__alert" data-nav-close>
+            24/7 Emergency · {{ $emergency }}
+        </a>
+        <nav class="ch-drawer__nav" aria-label="Mobile">
             @foreach ($links as $link)
-                <a href="{{ $link['href'] }}" class="text-base font-medium text-[#122447]" data-nav-close>{{ $link['label'] }}</a>
+                <a href="{{ $link['href'] }}" data-nav-close>{{ $link['label'] }}</a>
             @endforeach
         </nav>
-        <a href="{{ route('home') }}#appointment" class="site-btn site-btn--green mt-8" data-nav-close>
-            Request a visit
-        </a>
+        <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="ch-btn ch-btn--wide" data-nav-close>Call {{ $phone }}</a>
+        <a href="{{ route('home') }}#find-doctor" class="ch-btn ch-btn--wide" data-nav-close>Find a Doctor</a>
+        <a href="{{ route('home') }}#appointment" class="ch-btn ch-btn--solid ch-btn--wide" data-nav-close>Book Appointment</a>
     </div>
 </div>

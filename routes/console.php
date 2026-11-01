@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('beds:expire-reservations')
     ->everyFiveMinutes()
     ->withoutOverlapping(10);
+
+Schedule::command('work:sync --escalate')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10);

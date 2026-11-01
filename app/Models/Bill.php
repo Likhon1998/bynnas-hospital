@@ -123,15 +123,17 @@ class Bill extends Model
      */
     public function syncItems(array $items): void
     {
-        $this->billItems()->delete();
+        $this->billItems()->where('item_type', '!=', 'lab')->delete();
 
-        $subtotal = 0;
+        $nextSort = ((int) $this->billItems()->max('sort_order')) + 1;
 
-        foreach (array_values($items) as $index => $item) {
+        foreach (array_values($items) as $item) {
+            if (($item['item_type'] ?? 'custom') === 'lab') {
+                continue;
+            }
+
             $quantity = max(1, (int) ($item['quantity'] ?? 1));
             $unitPrice = round((float) ($item['unit_price'] ?? 0), 2);
-            $lineTotal = round($quantity * $unitPrice, 2);
-            $subtotal += $lineTotal;
 
             $this->billItems()->create([
                 'item_type' => $item['item_type'] ?? 'custom',
@@ -139,11 +141,50 @@ class Bill extends Model
                 'description' => $item['description'],
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
-                'line_total' => $lineTotal,
-                'sort_order' => $index + 1,
+                'line_total' => round($quantity * $unitPrice, 2),
+                'sort_order' => $nextSort,
             ]);
+
+            $nextSort++;
         }
 
+        $this->recalculateTotals();
+    }
+
+    public function appendUniqueLine(
+        string $itemType,
+        int $itemId,
+        string $description,
+        int $quantity,
+        float $unitPrice,
+    ): BillItem {
+        $existing = $this->billItems()
+            ->where('item_type', $itemType)
+            ->where('item_id', $itemId)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $line = $this->billItems()->create([
+            'item_type' => $itemType,
+            'item_id' => $itemId,
+            'description' => $description,
+            'quantity' => max(1, $quantity),
+            'unit_price' => round($unitPrice, 2),
+            'line_total' => round(max(1, $quantity) * $unitPrice, 2),
+            'sort_order' => ((int) $this->billItems()->max('sort_order')) + 1,
+        ]);
+
+        $this->recalculateTotals();
+
+        return $line;
+    }
+
+    public function recalculateTotals(): void
+    {
+        $subtotal = round((float) $this->billItems()->sum('line_total'), 2);
         $discount = min((float) $this->discount, $subtotal);
         $total = max(0, round($subtotal - $discount, 2));
 

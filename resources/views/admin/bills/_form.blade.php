@@ -88,21 +88,26 @@
                 </thead>
                 <tbody data-bill-rows>
                     @foreach ($itemRows as $index => $item)
-                        <tr data-bill-row>
+                        @php $isLab = ($item['item_type'] ?? '') === 'lab'; @endphp
+                        <tr data-bill-row @if ($isLab) data-bill-locked @endif>
                             <td>
                                 <input type="hidden" name="items[{{ $index }}][item_type]" value="{{ $item['item_type'] ?? 'custom' }}">
                                 <input type="hidden" name="items[{{ $index }}][item_id]" value="{{ $item['item_id'] ?? '' }}">
-                                <input name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required class="admin-field w-full min-w-56 px-3 py-2 text-sm">
+                                <input name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required class="admin-field w-full min-w-56 px-3 py-2 text-sm" @if ($isLab) readonly @endif>
                             </td>
                             <td class="col-num">
-                                <input type="number" min="1" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" data-bill-qty class="admin-field w-20 px-3 py-2 text-right text-sm">
+                                <input type="number" min="1" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" data-bill-qty class="admin-field w-20 px-3 py-2 text-right text-sm" @if ($isLab) readonly @endif>
                             </td>
                             <td class="col-num">
-                                <input type="number" min="0" step="0.01" name="items[{{ $index }}][unit_price]" value="{{ $item['unit_price'] ?? 0 }}" data-bill-price class="admin-field w-28 px-3 py-2 text-right text-sm">
+                                <input type="number" min="0" step="0.01" name="items[{{ $index }}][unit_price]" value="{{ $item['unit_price'] ?? 0 }}" data-bill-price class="admin-field w-28 px-3 py-2 text-right text-sm" @if ($isLab) readonly @endif>
                             </td>
                             <td class="col-num" data-bill-line>0.00</td>
                             <td class="col-action">
-                                <button type="button" class="text-sm font-semibold text-red-700" data-bill-remove>Remove</button>
+                                @unless ($isLab)
+                                    <button type="button" class="text-sm font-semibold text-red-700" data-bill-remove>Remove</button>
+                                @else
+                                    <span class="text-xs font-semibold text-ink-500">Lab</span>
+                                @endunless
                             </td>
                         </tr>
                     @endforeach
@@ -214,7 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     rows.addEventListener('click', (event) => {
         if (!event.target.closest('[data-bill-remove]')) return;
-        event.target.closest('[data-bill-row]')?.remove();
+        const row = event.target.closest('[data-bill-row]');
+        if (row?.hasAttribute('data-bill-locked')) return;
+        row?.remove();
         if (!rows.children.length) addRow();
         reindex();
         totals();

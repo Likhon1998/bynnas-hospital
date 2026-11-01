@@ -20,40 +20,33 @@ class AdminLayoutComposer
             ? $this->criticalAlertFeed->for($user, 6)
             : ['alerts' => collect(), 'counts' => [], 'total' => 0];
 
-        $staffRoute = $user?->can('users.manage')
-            ? 'admin.users.index'
-            : 'admin.doctors.index';
-
-        $staffPermission = $user?->can('users.manage')
-            ? 'users.manage'
-            : 'doctors.manage';
-
-        $navigation = collect([
-            ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'permission' => null, 'group' => 'Main Menu', 'icon' => 'home'],
-            ['label' => 'Bed & Wards', 'route' => 'admin.beds.index', 'permission' => 'beds.view', 'group' => 'Main Menu', 'icon' => 'bed'],
-            ['label' => 'Bed History', 'route' => 'admin.beds.events', 'permission' => 'beds.view', 'group' => 'Main Menu', 'icon' => 'clock'],
-            ['label' => 'Emergency Flow', 'route' => 'admin.emergency', 'permission' => 'operations.manage', 'group' => 'Main Menu', 'icon' => 'spark'],
-            ['label' => 'Staff Management', 'route' => $staffRoute, 'permission' => $staffPermission, 'group' => 'Main Menu', 'icon' => 'badge'],
-            ['label' => 'Critical Alerts', 'route' => 'admin.alerts', 'permission' => 'operations.manage', 'group' => 'Monitoring & Control', 'icon' => 'megaphone'],
-            ['label' => 'Capacity Forecasts', 'route' => 'admin.forecasts', 'permission' => 'operations.manage', 'group' => 'Monitoring & Control', 'icon' => 'grid'],
-            ['label' => 'Operational Reports', 'route' => 'admin.reports', 'permission' => 'operations.manage', 'group' => 'Analytics & Reports', 'icon' => 'clock'],
-            ['label' => 'Help & Supports', 'route' => 'admin.help', 'permission' => null, 'group' => 'Analytics & Reports', 'icon' => 'help'],
-            ['label' => 'Settings', 'route' => 'admin.settings.edit', 'permission' => 'settings.manage', 'group' => 'Analytics & Reports', 'icon' => 'settings'],
-            ['label' => 'Appointments', 'route' => 'admin.appointments.index', 'permission' => 'appointments.view', 'group' => 'Patient Care', 'icon' => 'calendar'],
-            ['label' => 'Patients', 'route' => 'admin.patients.index', 'permission' => 'patients.view', 'group' => 'Patient Care', 'icon' => 'users'],
-            ['label' => 'Billing', 'route' => 'admin.bills.index', 'permission' => 'billing.manage', 'group' => 'Patient Care', 'icon' => 'receipt'],
-            ['label' => 'Website', 'route' => 'admin.services.index', 'permission' => 'content.manage', 'group' => 'Patient Care', 'icon' => 'globe'],
-        ])->filter(function (array $item) use ($user): bool {
-            return $item['permission'] === null || ($user?->can($item['permission']) ?? false);
-        })->map(function (array $item): array {
-            $item['href'] = route($item['route']);
-            $item['active'] = $this->isCurrent($item['route']);
-
-            return $item;
-        })->values();
+        $primaryAction = $this->hydrateItem($user, [
+            'label' => 'Take appointment',
+            'route' => 'admin.appointments.create',
+            'permission' => 'appointments.manage',
+            'icon' => 'clipboard-plus',
+        ]);
+        $dashboardItem = $this->hydrateItem($user, [
+            'label' => 'Dashboard',
+            'route' => 'admin.dashboard',
+            'permission' => null,
+            'icon' => 'pulse',
+        ]);
+        $navSections = $this->navigationSections($user);
+        $navigation = collect([$primaryAction, $dashboardItem])
+            ->filter()
+            ->concat(collect($navSections)->flatMap(function (array $section) {
+                return collect($section['items'])->flatMap(function (array $item) {
+                    return collect([$item])->concat($item['children']);
+                });
+            }))
+            ->values();
 
         $view->with([
             'hospitalName' => $hospitalName,
+            'adminPrimaryAction' => $primaryAction,
+            'adminDashboardItem' => $dashboardItem,
+            'adminNavSections' => $navSections,
             'adminNavigation' => $navigation,
             'staffDisplayName' => $this->displayName($user),
             'staffRoleLabel' => $this->roleLabel($user),
@@ -62,11 +55,14 @@ class AdminLayoutComposer
             'adminSearchRoute' => $this->searchRoute($user),
             'adminSearchPlaceholder' => $this->searchPlaceholder($user),
             'adminSearchUrl' => route('admin.search'),
+            'adminNotificationsUrl' => route('admin.notifications'),
+            'adminNotificationsSeenUrl' => route('admin.notifications.seen'),
             'adminNotifications' => $alertFeed['alerts'],
             'adminNotificationCount' => $alertFeed['total'],
             'adminNotificationsHref' => $user?->can('operations.manage')
                 ? route('admin.alerts')
                 : ($user?->can('beds.view') ? route('admin.beds.index') : route('admin.dashboard')),
+            'adminCanBookAppointment' => $user?->can('appointments.manage') ?? false,
             'adminCanManageSettings' => $user?->can('settings.manage') ?? false,
             'adminCanOperateBeds' => $user?->can('beds.operate') ?? false,
             'adminCanMaintainBeds' => $user?->can('beds.maintain') ?? false,
@@ -84,6 +80,7 @@ class AdminLayoutComposer
             $user?->hasRole('super_admin') => 'Super Admin',
             $user?->hasRole('hospital_admin') => 'Hospital Admin',
             $user?->hasRole('nurse_station') => 'Nurse Station',
+            $user?->hasRole('lab_technician') => 'Lab Technician',
             $user?->hasRole('receptionist') => 'Receptionist',
             $user?->hasRole('doctor') => 'Doctor',
             $user?->hasRole('content_manager') => 'Content Manager',
@@ -102,8 +99,185 @@ class AdminLayoutComposer
             ->implode('') ?: 'ST';
     }
 
+    /**
+     * @return list<array{label: string, open: bool, items: list<array{label: string, href: string, icon: string, active: bool, current: bool, children: list<array{label: string, href: string, icon: string, active: bool, current: bool, children: list<empty>}>}>}>
+     */
+    private function navigationSections(?User $user): array
+    {
+        $sections = [];
+
+        foreach ($this->navigationTree() as $section) {
+            $items = [];
+
+            foreach ($section['items'] as $item) {
+                foreach ($this->hydrateBranch($user, $item) as $hydrated) {
+                    $items[] = $hydrated;
+                }
+            }
+
+            if ($items === []) {
+                continue;
+            }
+
+            $sections[] = [
+                'label' => $section['label'],
+                'open' => collect($items)->contains(fn (array $item): bool => $item['current']),
+                'items' => $items,
+            ];
+        }
+
+        return $sections;
+    }
+
+    /**
+     * @return list<array{label: string, items: list<array<string, mixed>>}>
+     */
+    private function navigationTree(): array
+    {
+        return [
+            [
+                'label' => 'Front desk',
+                'items' => [
+                    [
+                        'label' => 'Appointments',
+                        'route' => 'admin.appointments.index',
+                        'permission' => 'appointments.view',
+                        'icon' => 'clipboard',
+                        'children' => [
+                            ['label' => 'Check-in', 'route' => 'admin.visits.index', 'permission' => 'visits.view', 'icon' => 'clipboard-check'],
+                        ],
+                    ],
+                    [
+                        'label' => 'Patients',
+                        'route' => 'admin.patients.index',
+                        'permission' => 'patients.view',
+                        'icon' => 'users',
+                        'children' => [
+                            ['label' => 'Billing', 'route' => 'admin.bills.index', 'permission' => 'billing.manage', 'icon' => 'pill'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'label' => 'Care',
+                'items' => [
+                    [
+                        'label' => 'Admissions',
+                        'route' => 'admin.admissions.index',
+                        'permission' => 'admissions.view',
+                        'icon' => 'hospital',
+                        'children' => [
+                            ['label' => 'Beds', 'route' => 'admin.beds.index', 'permission' => 'beds.view', 'icon' => 'bed'],
+                            ['label' => 'Bed history', 'route' => 'admin.beds.events', 'permission' => 'beds.view', 'icon' => 'clipboard-clock'],
+                        ],
+                    ],
+                    ['label' => 'Nursing', 'route' => 'admin.nursing.index', 'permission' => 'nursing.view', 'icon' => 'syringe'],
+                    ['label' => 'Laboratory', 'route' => 'admin.labs.index', 'permission' => 'lab.view', 'icon' => 'flask'],
+                ],
+            ],
+            [
+                'label' => 'Hospital',
+                'items' => [
+                    ['label' => 'Emergency', 'route' => 'admin.emergency', 'permission' => 'operations.manage', 'icon' => 'ambulance'],
+                    ['label' => 'Doctors', 'route' => 'admin.doctors.index', 'permission' => 'doctors.manage', 'icon' => 'stethoscope'],
+                    ['label' => 'Staff', 'route' => 'admin.users.index', 'permission' => 'users.manage', 'icon' => 'nurse'],
+                ],
+            ],
+            [
+                'label' => 'Reports',
+                'items' => [
+                    ['label' => 'Queue history', 'route' => 'admin.work.history', 'permission' => null, 'icon' => 'clipboard-clock'],
+                    ['label' => 'Critical alerts', 'route' => 'admin.alerts', 'permission' => 'operations.manage', 'icon' => 'pulse'],
+                    ['label' => 'Capacity forecasts', 'route' => 'admin.forecasts', 'permission' => 'operations.manage', 'icon' => 'hospital'],
+                    ['label' => 'Operational reports', 'route' => 'admin.reports', 'permission' => 'operations.manage', 'icon' => 'thermometer'],
+                ],
+            ],
+            [
+                'label' => 'System',
+                'items' => [
+                    ['label' => 'Website', 'route' => 'admin.services.index', 'permission' => 'content.manage', 'icon' => 'first-aid'],
+                    ['label' => 'Settings', 'route' => 'admin.settings.edit', 'permission' => 'settings.manage', 'icon' => 'settings'],
+                    ['label' => 'Help', 'route' => 'admin.help', 'permission' => null, 'icon' => 'help'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param  array{label: string, route: string, permission: ?string, icon: string, children?: list<array<string, mixed>>}  $item
+     * @return list<array{label: string, href: string, icon: string, active: bool, current: bool, children: list<array{label: string, href: string, icon: string, active: bool, current: bool, children: list<empty>}>}>
+     */
+    private function hydrateBranch(?User $user, array $item): array
+    {
+        $children = [];
+
+        foreach ($item['children'] ?? [] as $child) {
+            $hydratedChild = $this->hydrateItem($user, $child);
+
+            if ($hydratedChild !== null) {
+                $children[] = $hydratedChild;
+            }
+        }
+
+        $parent = $this->hydrateItem($user, $item);
+
+        if ($parent === null) {
+            return $children;
+        }
+
+        $parent['children'] = $children;
+        $parent['current'] = $parent['active'] || collect($children)->contains(fn (array $child): bool => $child['current']);
+
+        return [$parent];
+    }
+
+    /**
+     * @param  array{label: string, route: string, permission: ?string, icon: string}  $item
+     * @return array{label: string, href: string, icon: string, active: bool, current: bool, children: list<empty>}|null
+     */
+    private function hydrateItem(?User $user, array $item): ?array
+    {
+        if ($item['permission'] !== null && ! ($user?->can($item['permission']) ?? false)) {
+            return null;
+        }
+
+        $active = $this->isCurrent($item['route']);
+
+        return [
+            'label' => $item['label'],
+            'href' => route($item['route']),
+            'icon' => $item['icon'],
+            'active' => $active,
+            'current' => $active,
+            'children' => [],
+        ];
+    }
+
     private function isCurrent(string $route): bool
     {
+        if ($route === 'admin.appointments.create') {
+            return request()->routeIs('admin.appointments.create');
+        }
+
+        if ($route === 'admin.appointments.index') {
+            return request()->routeIs('admin.appointments.index')
+                || request()->routeIs('admin.appointments.show');
+        }
+
+        if ($route === 'admin.beds.index') {
+            return request()->routeIs('admin.beds.index')
+                || request()->routeIs('admin.beds.show');
+        }
+
+        if ($route === 'admin.beds.events') {
+            return request()->routeIs('admin.beds.events');
+        }
+
+        if ($route === 'admin.doctors.index') {
+            return request()->routeIs('admin.doctors.*')
+                || request()->routeIs('admin.departments.*');
+        }
+
         if ($route === 'admin.services.index') {
             return request()->routeIs('admin.services.*')
                 || request()->routeIs('admin.health-packages.*')
@@ -121,12 +295,24 @@ class AdminLayoutComposer
 
     private function searchRoute(?User $user): string
     {
-        if ($user?->can('beds.view') || $user?->can('operations.manage')) {
-            return route('admin.beds.index');
+        if ($user?->hasRole('receptionist') && $user->can('appointments.view')) {
+            return route('admin.appointments.index');
+        }
+
+        if ($user?->hasRole('nurse_station') && $user->can('nursing.view')) {
+            return route('admin.nursing.index');
         }
 
         if ($user?->can('appointments.view')) {
             return route('admin.appointments.index');
+        }
+
+        if ($user?->can('nursing.view')) {
+            return route('admin.nursing.index');
+        }
+
+        if ($user?->can('beds.view') || $user?->can('operations.manage')) {
+            return route('admin.beds.index');
         }
 
         if ($user?->can('patients.view')) {
@@ -138,12 +324,16 @@ class AdminLayoutComposer
 
     private function searchPlaceholder(?User $user): string
     {
-        if ($user?->can('beds.view') || $user?->can('operations.manage')) {
-            return 'Search beds or patients';
+        if ($user?->hasRole('receptionist') || $user?->can('appointments.view')) {
+            return 'Search patients or appointments';
         }
 
-        if ($user?->can('appointments.view')) {
-            return 'Search visits, patients or doctors';
+        if ($user?->can('nursing.view')) {
+            return 'Search wards or patients';
+        }
+
+        if ($user?->can('beds.view') || $user?->can('operations.manage')) {
+            return 'Search beds or patients';
         }
 
         if ($user?->can('patients.view')) {

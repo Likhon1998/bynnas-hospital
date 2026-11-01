@@ -40,6 +40,12 @@ class UpdateBedRequest extends FormRequest
                 Rule::exists('patients', 'id')->where(fn ($query) => $query->where('is_active', true)),
                 Rule::unique('beds', 'patient_id')->ignore($bed->id),
             ],
+            'admission_reason' => [
+                Rule::requiredIf(fn (): bool => $nextStatus === 'occupied'),
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'notes' => [
                 Rule::requiredIf($requiresInspectionNote),
                 'nullable',
@@ -83,6 +89,7 @@ class UpdateBedRequest extends FormRequest
             'patient_id.required' => 'Select a patient before occupying the bed.',
             'patient_id.unique' => 'That patient is already assigned to another bed.',
             'patient_id.exists' => 'Choose an active patient from the hospital census.',
+            'admission_reason.required' => 'Enter why this bed is being occupied.',
             'notes.required' => 'Provide a reason when failing a cleaning inspection.',
         ];
     }

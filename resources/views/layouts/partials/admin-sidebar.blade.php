@@ -4,14 +4,14 @@
 @endphp
 
 <div id="admin-sidebar" class="fixed inset-0 z-40 hidden lg:static lg:block lg:h-dvh" data-admin-sidebar>
-    <button type="button" class="absolute inset-0 bg-[#0f172a]/40 lg:hidden" data-admin-sidebar-close aria-label="Close menu"></button>
-    <aside class="admin-sidebar absolute inset-y-0 left-0 flex h-full w-[min(14rem,88%)] flex-col lg:static lg:h-dvh lg:w-auto">
+    <button type="button" class="absolute inset-0 bg-lilac-950/40 lg:hidden" data-admin-sidebar-close aria-label="Close menu"></button>
+    <aside class="admin-sidebar absolute inset-y-0 left-0 flex h-full w-[min(15.25rem,88%)] flex-col lg:static lg:h-dvh lg:w-auto">
         <div class="admin-brand-row">
             <a href="{{ route('admin.dashboard') }}" class="admin-brand">
                 <span class="admin-brand__mark" aria-hidden="true">
                     <svg viewBox="0 0 32 32" fill="none">
-                        <path d="M8 22 16 6l8 16H8Z" fill="#f59e0b"/>
-                        <path d="M12 22 20 8l8 14H12Z" fill="#fb923c" opacity="0.9"/>
+                        <rect x="3" y="3" width="26" height="26" rx="8" fill="#D09DE0"/>
+                        <path d="M16 9v14M9 16h14" stroke="#43244B" stroke-width="2.6" stroke-linecap="round"/>
                     </svg>
                 </span>
                 <span class="admin-brand__name">{{ $brandMark }}</span>
@@ -30,34 +30,77 @@
             </button>
         </div>
 
-        <nav class="admin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-3" aria-label="Admin">
-            @foreach ($adminNavigation->groupBy('group') as $group => $items)
-                <div class="admin-nav-group">
-                    <p class="admin-nav-label">{{ $group }}</p>
-                    <div class="grid gap-0.5">
-                        @foreach ($items as $item)
-                            <a
-                                href="{{ $item['href'] }}"
-                                @class(['admin-nav-link', 'is-active' => $item['active']])
-                                title="{{ $item['label'] }}"
-                            >
-                                <x-admin.nav-icon :name="$item['icon']" class="h-[17px] w-[17px]" />
-                                <span>{{ $item['label'] }}</span>
-                            </a>
+        <nav class="admin-scroll admin-nav min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-label="Hospital menu">
+            @if ($adminPrimaryAction)
+                <a
+                    href="{{ $adminPrimaryAction['href'] }}"
+                    @class(['admin-nav-link', 'is-book', 'is-active' => $adminPrimaryAction['active']])
+                    title="{{ $adminPrimaryAction['label'] }}"
+                >
+                    <x-admin.nav-icon :name="$adminPrimaryAction['icon']" class="h-4 w-4" />
+                    <span>{{ $adminPrimaryAction['label'] }}</span>
+                </a>
+            @endif
+
+            @if ($adminDashboardItem)
+                <a
+                    href="{{ $adminDashboardItem['href'] }}"
+                    @class(['admin-nav-link', 'is-active' => $adminDashboardItem['active']])
+                    title="{{ $adminDashboardItem['label'] }}"
+                >
+                    <x-admin.nav-icon :name="$adminDashboardItem['icon']" class="h-4 w-4" />
+                    <span>{{ $adminDashboardItem['label'] }}</span>
+                </a>
+            @endif
+
+            @foreach ($adminNavSections as $section)
+                <section
+                    @class(['admin-nav-section', 'is-open' => $section['open']])
+                    data-admin-nav-section
+                >
+                    <button
+                        type="button"
+                        class="admin-nav-section__toggle"
+                        data-admin-nav-toggle
+                        aria-expanded="{{ $section['open'] ? 'true' : 'false' }}"
+                    >
+                        <span>{{ $section['label'] }}</span>
+                        <svg class="admin-nav-section__chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+
+                    <div class="admin-nav-section__body">
+                        @foreach ($section['items'] as $item)
+                            <div @class(['admin-nav-item', 'has-sub' => $item['children'] !== [], 'is-open' => collect($item['children'])->contains(fn (array $child): bool => $child['active'])])>
+                                <a
+                                    href="{{ $item['href'] }}"
+                                    @class(['admin-nav-link', 'is-active' => $item['active']])
+                                    title="{{ $item['label'] }}"
+                                >
+                                    <x-admin.nav-icon :name="$item['icon']" class="h-4 w-4" />
+                                    <span>{{ $item['label'] }}</span>
+                                </a>
+
+                                @if ($item['children'] !== [])
+                                    <div class="admin-nav-sub">
+                                        @foreach ($item['children'] as $child)
+                                            <a
+                                                href="{{ $child['href'] }}"
+                                                @class(['admin-nav-link', 'is-sub', 'is-active' => $child['active']])
+                                                title="{{ $child['label'] }}"
+                                            >
+                                                <x-admin.nav-icon :name="$child['icon']" class="h-3.5 w-3.5" />
+                                                <span>{{ $child['label'] }}</span>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
                         @endforeach
                     </div>
-                </div>
+                </section>
             @endforeach
         </nav>
-
-        <div class="admin-staff">
-            <form method="POST" action="{{ route('admin.logout') }}">
-                @csrf
-                <button type="submit" class="admin-nav-link w-full" title="Sign out">
-                    <x-admin.nav-icon name="logout" class="h-[17px] w-[17px]" />
-                    <span>Sign out</span>
-                </button>
-            </form>
-        </div>
     </aside>
 </div>

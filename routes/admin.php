@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdmissionController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\BannerController;
@@ -19,12 +20,23 @@ use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\HealthPackageController;
 use App\Http\Controllers\Admin\HelpSupportController;
 use App\Http\Controllers\Admin\HospitalSettingController;
+use App\Http\Controllers\Admin\LabOrderController;
+use App\Http\Controllers\Admin\LabResultController;
+use App\Http\Controllers\Admin\LabTestController;
+use App\Http\Controllers\Admin\MedicationAdministrationController;
+use App\Http\Controllers\Admin\NotificationFeedController;
+use App\Http\Controllers\Admin\NursingController;
+use App\Http\Controllers\Admin\NursingHandoverController;
+use App\Http\Controllers\Admin\NursingObservationController;
+use App\Http\Controllers\Admin\NursingTaskController;
 use App\Http\Controllers\Admin\OperationalReportController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VisitController;
+use App\Http\Controllers\Admin\WorkItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function (): void {
@@ -42,6 +54,11 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware(['auth', 'staff'])->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('search', SearchController::class)->name('search');
+        Route::get('notifications', [NotificationFeedController::class, 'index'])->name('notifications');
+        Route::post('notifications/seen', [NotificationFeedController::class, 'markSeen'])->name('notifications.seen');
+        Route::get('work/history', [WorkItemController::class, 'history'])->name('work.history');
+        Route::post('work/{workItem}/acknowledge', [WorkItemController::class, 'acknowledge'])->name('work.acknowledge');
+        Route::post('work/{workItem}/escalate', [WorkItemController::class, 'escalate'])->name('work.escalate');
         Route::get('help', HelpSupportController::class)->name('help');
 
         Route::middleware('permission:beds.view')->group(function (): void {
@@ -69,7 +86,90 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         });
 
         Route::middleware('permission:appointments.view')->group(function (): void {
-            Route::resource('appointments', AppointmentController::class)->only(['index', 'show', 'update']);
+            Route::resource('appointments', AppointmentController::class)->only(['index', 'show', 'create', 'store', 'update']);
+        });
+
+        Route::middleware('permission:visits.checkin')->group(function (): void {
+            Route::post('appointments/{appointment}/check-in', [VisitController::class, 'checkIn'])->name('appointments.check-in');
+            Route::get('visits/create', [VisitController::class, 'create'])->name('visits.create');
+            Route::post('visits', [VisitController::class, 'store'])->name('visits.store');
+        });
+
+        Route::middleware('permission:visits.view')->group(function (): void {
+            Route::get('visits', [VisitController::class, 'index'])->name('visits.index');
+            Route::get('visits/{visit}', [VisitController::class, 'show'])->name('visits.show');
+        });
+
+        Route::middleware('permission:visits.triage')->group(function (): void {
+            Route::post('visits/{visit}/vitals', [VisitController::class, 'vitals'])->name('visits.vitals');
+        });
+
+        Route::middleware('permission:visits.clinical')->group(function (): void {
+            Route::post('visits/{visit}/clinical', [VisitController::class, 'clinical'])->name('visits.clinical');
+        });
+
+        Route::middleware('permission:nursing.view')->group(function (): void {
+            Route::get('nursing', [NursingController::class, 'index'])->name('nursing.index');
+            Route::get('nursing/wards/{ward}', [NursingController::class, 'ward'])->name('nursing.wards.show');
+            Route::get('nursing/patients/{patient}', [NursingController::class, 'chart'])->name('nursing.patients.show');
+        });
+
+        Route::middleware('permission:nursing.chart')->group(function (): void {
+            Route::post('nursing/patients/{patient}/observations', [NursingObservationController::class, 'store'])->name('nursing.observations.store');
+            Route::post('nursing/patients/{patient}/tasks', [NursingTaskController::class, 'store'])->name('nursing.tasks.store');
+            Route::patch('nursing/tasks/{task}', [NursingTaskController::class, 'update'])->name('nursing.tasks.update');
+        });
+
+        Route::middleware('permission:nursing.handover')->group(function (): void {
+            Route::post('nursing/wards/{ward}/handovers', [NursingHandoverController::class, 'store'])->name('nursing.handovers.store');
+        });
+
+        Route::middleware('permission:nursing.meds')->group(function (): void {
+            Route::post('nursing/patients/{patient}/medications', [MedicationAdministrationController::class, 'store'])->name('nursing.medications.store');
+        });
+
+        Route::middleware('permission:admissions.admit')->group(function (): void {
+            Route::get('admissions/create', [AdmissionController::class, 'create'])->name('admissions.create');
+            Route::post('admissions', [AdmissionController::class, 'store'])->name('admissions.store');
+        });
+
+        Route::middleware('permission:admissions.view')->group(function (): void {
+            Route::get('admissions', [AdmissionController::class, 'index'])->name('admissions.index');
+            Route::get('admissions/{admission}', [AdmissionController::class, 'show'])->name('admissions.show');
+            Route::post('admissions/{admission}/discharge', [AdmissionController::class, 'discharge'])->name('admissions.discharge');
+        });
+
+        Route::middleware('permission:beds.operate')->group(function (): void {
+            Route::post('admissions/{admission}/transfers', [AdmissionController::class, 'transfer'])->name('admissions.transfers.store');
+        });
+
+        Route::middleware('permission:admissions.discharge')->group(function (): void {
+            Route::post('admissions/{admission}/authorize', [AdmissionController::class, 'authorizeDischarge'])->name('admissions.authorize');
+        });
+
+        Route::middleware('permission:lab.order')->group(function (): void {
+            Route::get('labs/create', [LabOrderController::class, 'create'])->name('labs.create');
+            Route::post('labs', [LabOrderController::class, 'store'])->name('labs.store');
+        });
+
+        Route::middleware('permission:lab.report')->group(function (): void {
+            Route::get('labs/tests/create', [LabTestController::class, 'create'])->name('labs.tests.create');
+            Route::post('labs/tests', [LabTestController::class, 'store'])->name('labs.tests.store');
+            Route::get('labs/tests/{labTest}/edit', [LabTestController::class, 'edit'])->name('labs.tests.edit');
+            Route::put('labs/tests/{labTest}', [LabTestController::class, 'update'])->name('labs.tests.update');
+            Route::post('labs/{labOrder}/process', [LabOrderController::class, 'process'])->name('labs.process');
+            Route::post('labs/{labOrder}/results', [LabResultController::class, 'store'])->name('labs.results.store');
+        });
+
+        Route::middleware('permission:lab.view')->group(function (): void {
+            Route::get('labs', [LabOrderController::class, 'index'])->name('labs.index');
+            Route::get('labs/tests', [LabTestController::class, 'index'])->name('labs.tests.index');
+            Route::get('labs/{labOrder}', [LabOrderController::class, 'show'])->name('labs.show');
+            Route::post('labs/{labOrder}/cancel', [LabOrderController::class, 'cancel'])->name('labs.cancel');
+        });
+
+        Route::middleware('permission:lab.collect')->group(function (): void {
+            Route::post('labs/{labOrder}/collect', [LabOrderController::class, 'collect'])->name('labs.collect');
         });
 
         Route::middleware('permission:patients.view')->group(function (): void {

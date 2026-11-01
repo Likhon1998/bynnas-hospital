@@ -234,11 +234,13 @@ class BedOperations
 
             $patientId = $from->patient_id;
             $admittedAt = $from->admitted_at ?? now();
+            $admissionReason = $from->admission_reason;
 
             $from->fill([
                 'status' => 'dirty',
                 'patient_id' => null,
                 'admitted_at' => null,
+                'admission_reason' => null,
                 'status_changed_at' => now(),
                 'turnover_hours' => round(max(0.1, $admittedAt->diffInMinutes(now()) / 60), 1),
             ])->save();
@@ -247,6 +249,7 @@ class BedOperations
                 'status' => 'occupied',
                 'patient_id' => $patientId,
                 'admitted_at' => $admittedAt,
+                'admission_reason' => $admissionReason,
                 'status_changed_at' => now(),
                 'turnover_hours' => null,
                 'reserved_patient_id' => null,

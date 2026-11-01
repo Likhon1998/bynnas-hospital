@@ -31,7 +31,7 @@ class BedHardeningTest extends TestCase
         $response->assertSee('Housekeeping started on GEN-9-01');
     }
 
-    public function test_stale_lock_version_is_rejected(): void
+    public function test_stale_lock_version_is_retried_when_bed_is_still_available(): void
     {
         $user = $this->createStaffUser(['beds.view', 'beds.operate']);
         $patient = Patient::factory()->create();
@@ -45,13 +45,40 @@ class BedHardeningTest extends TestCase
             'lock_version' => 2,
             'status' => 'occupied',
             'patient_id' => $patient->id,
-        ])->assertRedirect()->assertSessionHas('error');
+            'admission_reason' => 'Cardiac monitoring',
+        ])->assertRedirect()->assertSessionHas('status');
 
         $this->assertDatabaseHas('beds', [
             'id' => $bed->id,
-            'status' => 'available',
-            'patient_id' => null,
-            'lock_version' => 3,
+            'status' => 'occupied',
+            'patient_id' => $patient->id,
+            'lock_version' => 4,
+        ]);
+    }
+
+    public function test_stale_lock_fails_when_bed_was_taken_by_another_user(): void
+    {
+        $user = $this->createStaffUser(['beds.view', 'beds.operate']);
+        $patient = Patient::factory()->create();
+        $otherPatient = Patient::factory()->create();
+        $bed = Bed::factory()->occupied()->create([
+            'bed_code' => 'ICU-LOCK-2',
+            'patient_id' => $otherPatient->id,
+            'status' => 'occupied',
+            'lock_version' => 5,
+        ]);
+
+        $this->actingAs($user)->put(route('admin.beds.update', $bed), [
+            'lock_version' => 4,
+            'status' => 'occupied',
+            'patient_id' => $patient->id,
+        ])->assertRedirect()->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('beds', [
+            'id' => $bed->id,
+            'status' => 'occupied',
+            'patient_id' => $otherPatient->id,
+            'lock_version' => 5,
         ]);
     }
 

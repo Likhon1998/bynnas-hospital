@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AppointmentStatusRequest;
+use App\Http\Requests\Admin\StoreAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\Doctor;
+use App\Models\Patient;
+use App\Support\AppointmentDesk;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,14 +17,21 @@ class AppointmentController extends Controller
 {
     public function index(Request $request): View
     {
+        $status = $request->string('status')->toString();
+        $source = $request->string('source')->toString();
+
+        if (! array_key_exists($status, Appointment::STATUSES)) {
+            $status = '';
+        }
+
+        if (! array_key_exists($source, Appointment::SOURCES)) {
+            $source = '';
+        }
+
         $appointments = Appointment::query()
             ->with(['patient', 'doctor', 'department'])
-            ->when($request->string('status')->toString(), function ($query, string $status): void {
-                $query->where('status', $status);
-            })
-            ->when($request->string('source')->toString(), function ($query, string $source): void {
-                $query->where('source', $source);
-            })
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($source !== '', fn ($query) => $query->where('source', $source))
             ->when($request->string('q')->toString(), function ($query, string $term): void {
                 $query->where(function ($builder) use ($term): void {
                     $builder->where('appointment_no', 'like', '%'.$term.'%')
@@ -37,25 +48,40 @@ class AppointmentController extends Controller
         return view('admin.appointments.index', compact('appointments'));
     }
 
+    public function create(Request $request): View
+    {
+        abort_unless($request->user()?->can('appointments.manage') ?? false, 403);
+
+        return view('admin.appointments.create', [
+            'patients' => Patient::query()->active()->orderBy('full_name')->orderBy('id')->get(),
+            'doctors' => Doctor::query()->active()->whereNotNull('department_id')->with('department')->orderBy('name')->orderBy('id')->get(),
+            'selectedPatientId' => $request->integer('patient_id') ?: null,
+        ]);
+    }
+
+    public function store(StoreAppointmentRequest $request, AppointmentDesk $desk): RedirectResponse
+    {
+        $actor = $request->user();
+        abort_unless($actor !== null, 403);
+
+        $appointment = $desk->book($request->validated(), $actor);
+
+        return redirect()
+            ->route('admin.appointments.show', $appointment)
+            ->with('status', 'Visit booked.');
+    }
+
     public function show(Appointment $appointment): View
     {
-        $appointment->load(['patient', 'doctor.department', 'department', 'createdBy']);
+        $appointment->load(['patient', 'doctor.department', 'department', 'createdBy', 'visits']);
 
         return view('admin.appointments.show', compact('appointment'));
     }
 
-    public function update(AppointmentStatusRequest $request, Appointment $appointment): RedirectResponse
+    public function update(AppointmentStatusRequest $request, Appointment $appointment, AppointmentDesk $desk): RedirectResponse
     {
-        $status = $request->validated('status');
+        $desk->updateVisit($appointment, $request->validated());
 
-        $appointment->update([
-            'status' => $status,
-            'notes' => $request->exists('notes') ? $request->validated('notes') : $appointment->notes,
-            'cancelled_at' => $status === 'cancelled' ? ($appointment->cancelled_at ?? now()) : null,
-            'cancellation_reason' => $status === 'cancelled' ? $request->validated('cancellation_reason') : null,
-            'booking_key' => $status === 'cancelled' ? null : $appointment->booking_key,
-        ]);
-
-        return back()->with('status', 'Appointment status updated.');
+        return back()->with('status', 'Appointment updated.');
     }
 }

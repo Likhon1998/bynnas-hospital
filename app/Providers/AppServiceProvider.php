@@ -70,6 +70,56 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        Gate::define('visits.view', function (?User $user): bool {
+            return (bool) (
+                $user?->hasPermission('visits.view')
+                || $user?->hasPermission('visits.checkin')
+                || $user?->hasPermission('visits.triage')
+                || $user?->hasPermission('visits.clinical')
+            );
+        });
+
+        Gate::define('visits.checkin', fn (?User $user) => (bool) $user?->hasPermission('visits.checkin'));
+        Gate::define('visits.triage', fn (?User $user) => (bool) $user?->hasPermission('visits.triage'));
+        Gate::define('visits.clinical', fn (?User $user) => (bool) $user?->hasPermission('visits.clinical'));
+
+        Gate::define('nursing.view', function (?User $user): bool {
+            return (bool) (
+                $user?->hasPermission('nursing.view')
+                || $user?->hasPermission('nursing.chart')
+                || $user?->hasPermission('nursing.handover')
+                || $user?->hasPermission('nursing.meds')
+            );
+        });
+
+        Gate::define('nursing.chart', fn (?User $user) => (bool) $user?->hasPermission('nursing.chart'));
+        Gate::define('nursing.handover', fn (?User $user) => (bool) $user?->hasPermission('nursing.handover'));
+        Gate::define('nursing.meds', fn (?User $user) => (bool) $user?->hasPermission('nursing.meds'));
+
+        Gate::define('admissions.view', function (?User $user): bool {
+            return (bool) (
+                $user?->hasPermission('admissions.view')
+                || $user?->hasPermission('admissions.admit')
+                || $user?->hasPermission('admissions.discharge')
+            );
+        });
+
+        Gate::define('admissions.admit', fn (?User $user) => (bool) $user?->hasPermission('admissions.admit'));
+        Gate::define('admissions.discharge', fn (?User $user) => (bool) $user?->hasPermission('admissions.discharge'));
+
+        Gate::define('lab.view', function (?User $user): bool {
+            return (bool) (
+                $user?->hasPermission('lab.view')
+                || $user?->hasPermission('lab.order')
+                || $user?->hasPermission('lab.collect')
+                || $user?->hasPermission('lab.report')
+            );
+        });
+
+        Gate::define('lab.order', fn (?User $user) => (bool) $user?->hasPermission('lab.order'));
+        Gate::define('lab.collect', fn (?User $user) => (bool) $user?->hasPermission('lab.collect'));
+        Gate::define('lab.report', fn (?User $user) => (bool) $user?->hasPermission('lab.report'));
+
         RateLimiter::for('admin-login', function (Request $request) {
             return Limit::perMinute(5)->by(Str::transliterate(
                 Str::lower($request->string('email')->toString()).'|'.$request->ip()

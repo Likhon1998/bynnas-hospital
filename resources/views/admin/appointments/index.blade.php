@@ -2,6 +2,10 @@
 @section('title', 'Appointments')
 @section('heading', 'Appointments')
 @section('content')
+    @if ($errors->any())
+        <p class="admin-flash admin-flash--error">{{ $errors->first() }}</p>
+    @endif
+
     <div class="table-frame table-frame--fill">
         <form method="GET" class="table-toolbar">
             <p class="table-count">{{ $appointments->total() }} {{ \Illuminate\Support\Str::plural('visit', $appointments->total()) }}</p>
@@ -9,16 +13,20 @@
                 <input type="search" name="q" value="{{ request('q') }}" placeholder="Search appointments">
                 <select name="status">
                     <option value="">All statuses</option>
-                    @foreach (['pending' => 'Pending', 'confirmed' => 'Confirmed', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'no_show' => 'No show'] as $status => $label)
+                    @foreach (\App\Models\Appointment::STATUSES as $status => $label)
                         <option value="{{ $status }}" @selected(request('status') === $status)>{{ $label }}</option>
                     @endforeach
                 </select>
                 <select name="source">
                     <option value="">All sources</option>
-                    <option value="web" @selected(request('source') === 'web')>Website</option>
-                    <option value="admin" @selected(request('source') === 'admin')>Desk</option>
+                    @foreach (\App\Models\Appointment::SOURCES as $source => $label)
+                        <option value="{{ $source }}" @selected(request('source') === $source)>{{ $label }}</option>
+                    @endforeach
                 </select>
                 <button type="submit">Filter</button>
+                @can('appointments.manage')
+                    <a href="{{ route('admin.appointments.create') }}" class="admin-action">Take appointment</a>
+                @endcan
             </div>
         </form>
         <div class="table-scroll admin-scroll">
@@ -53,9 +61,9 @@
                             </td>
                             <td class="col-when">
                                 <span>{{ $appointment->appointment_date?->format('d M Y') }}</span>
-                                <span class="cell-sub">{{ substr((string) $appointment->start_time, 0, 5) }}–{{ substr((string) $appointment->end_time, 0, 5) }}</span>
+                                <span class="cell-sub">{{ $appointment->timeRangeLabel() }}</span>
                             </td>
-                            <td class="col-from">{{ $appointment->source === 'web' ? 'Website' : 'Desk' }}</td>
+                            <td class="col-from">{{ $appointment->sourceLabel() }}</td>
                             <td class="col-status">
                                 @can('appointments.manage')
                                     <x-admin.status-select :appointment="$appointment" />

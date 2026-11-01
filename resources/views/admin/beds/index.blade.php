@@ -89,12 +89,39 @@
             </div>
             <div class="mc-status-chips" aria-label="Bed status">
                 <a href="{{ route('admin.beds.index', array_filter(['type' => $type ?: null])) }}" @class(['is-active' => $status === ''])>All</a>
+                <a href="{{ route('admin.beds.index', ['type' => 'icu', 'status' => 'occupied']) }}" @class(['is-active' => $type === 'icu' && $status === 'occupied'])>ICU occupied · {{ $icuCensus->count() }}</a>
                 <a href="{{ route('admin.beds.index', array_filter(['type' => $type ?: null, 'status' => 'available'])) }}" @class(['is-active' => $status === 'available'])>Available · {{ $statusCounts['available'] }}</a>
-                <a href="{{ route('admin.beds.index', array_filter(['type' => $type ?: null, 'status' => 'occupied'])) }}" @class(['is-active' => $status === 'occupied'])>Occupied · {{ $statusCounts['occupied'] }}</a>
+                <a href="{{ route('admin.beds.index', array_filter(['type' => $type ?: null, 'status' => 'occupied'])) }}" @class(['is-active' => $status === 'occupied' && $type !== 'icu'])>Occupied · {{ $statusCounts['occupied'] }}</a>
                 <a href="{{ route('admin.beds.index', array_filter(['type' => $type ?: null, 'status' => 'dirty'])) }}" @class(['is-active' => $status === 'dirty'])>Dirty · {{ $statusCounts['dirty'] }}</a>
                 <a href="{{ route('admin.beds.index', array_filter(['type' => $type ?: null, 'status' => 'cleaning'])) }}" @class(['is-active' => $status === 'cleaning'])>Cleaning · {{ $statusCounts['cleaning'] }}</a>
             </div>
         </div>
+
+        <section class="mc-census" aria-label="ICU census">
+            <div class="mc-census__head">
+                <div>
+                    <h3>ICU census</h3>
+                    <p>{{ $icuCensus->count() }} occupied · who is in and why</p>
+                </div>
+                <a href="{{ route('admin.beds.index', ['type' => 'icu', 'status' => 'occupied']) }}" class="mc-link-btn">Open ICU occupied</a>
+            </div>
+            @if ($icuCensus->isEmpty())
+                <p class="mc-census__empty">No ICU beds are occupied right now.</p>
+            @else
+                <ul class="mc-census__list">
+                    @foreach ($icuCensus as $icuBed)
+                        <li>
+                            <a href="{{ route('admin.beds.index', ['type' => 'icu', 'status' => 'occupied']) }}#bed-{{ $icuBed->id }}">
+                                <span class="mc-census__bed">{{ $icuBed->bed_code }}</span>
+                                <span class="mc-census__who">{{ $icuBed->patient?->full_name }}</span>
+                                <span class="mc-census__why">{{ $icuBed->admission_reason ?: 'Reason not recorded' }}</span>
+                                <span class="mc-census__stay">{{ $icuBed->lengthOfStayLabel() }}</span>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </section>
 
         <div class="mc-board-scroll">
             <table class="mc-beds">
@@ -128,8 +155,22 @@
                             <td>
                                 @if ($bed->patient)
                                     <div class="mc-beds__person">
-                                        <span class="mc-beds__name">{{ $bed->patient->full_name }}</span>
+                                        @can('patients.view')
+                                            <a href="{{ route('admin.patients.show', $bed->patient) }}" class="mc-beds__name mc-beds__name--link">{{ $bed->patient->full_name }}</a>
+                                        @else
+                                            <span class="mc-beds__name">{{ $bed->patient->full_name }}</span>
+                                        @endcan
                                         <span class="mc-beds__meta">Stay {{ $bed->lengthOfStayLabel() }}@if ($bed->patient->phone) · {{ $bed->patient->phone }}@endif</span>
+                                        @if ($bed->admission_reason)
+                                            <span class="mc-beds__why">{{ $bed->admission_reason }}</span>
+                                        @endif
+                                        @if ($bed->patient->careFlagLabels() !== [])
+                                            <span class="mc-beds__flags">
+                                                @foreach ($bed->patient->careFlagLabels() as $flag)
+                                                    <em>{{ $flag }}</em>
+                                                @endforeach
+                                            </span>
+                                        @endif
                                     </div>
                                 @elseif ($bed->hasActiveReservation())
                                     <div class="mc-beds__person">
@@ -157,169 +198,208 @@
                             <td class="mc-beds__action">
                                 <div class="mc-ops">
                                     @if ($adminCanOperateBeds && $bed->status === 'available' && ! $bed->is_maintenance)
-                                        @if ($admitPatients->isEmpty() && ! $bed->hasActiveReservation())
-                                            <div class="mc-ops-primary">
-                                                <span class="mc-beds__meta">No free patients</span>
-                                                @can('patients.manage')
-                                                    <a href="{{ route('admin.patients.create', ['return_to' => 'beds']) }}" class="mc-link-btn">New patient</a>
-                                                @endcan
-                                            </div>
-                                        @else
-                                            <form method="POST" action="{{ route('admin.beds.update', $bed) }}" class="mc-bed-actions">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                <input type="hidden" name="status" value="occupied">
-                                                <select name="patient_id" required class="mc-input mc-input--compact" aria-label="Patient for {{ $bed->bed_code }}">
-                                                    <option value="">Select patient</option>
-                                                    @foreach ($admitPatients as $patient)
-                                                        @if (! $bed->hasActiveReservation() || $bed->reserved_patient_id === $patient->id)
-                                                            <option value="{{ $patient->id }}">{{ $patient->full_name }}</option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
-                                                <button type="submit" class="mc-btn mc-btn--primary">Admit</button>
-                                            </form>
-                                        @endif
+                                        @php
+                                            $eligiblePatients = $admitPatients->when(
+                                                $bed->hasActiveReservation(),
+                                                fn ($patients) => $patients->where('id', $bed->reserved_patient_id)->values(),
+                                                fn ($patients) => $patients
+                                            );
+                                        @endphp
 
-                                        <div class="mc-ops-secondary">
-                                            @if ($bed->hasActiveReservation())
-                                                <form method="POST" action="{{ route('admin.beds.reservation.cancel', $bed) }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                    <button type="submit" class="mc-link-btn">Cancel hold</button>
-                                                </form>
-                                            @else
-                                                @can('patients.manage')
-                                                    @if ($admitPatients->isNotEmpty() || $bed->hasActiveReservation())
-                                                        <a href="{{ route('admin.patients.create', ['return_to' => 'beds']) }}" class="mc-link-btn">New patient</a>
-                                                    @endif
-                                                @endcan
-                                                <button type="button" class="mc-link-btn" data-mc-reveal="reserve-{{ $bed->id }}" aria-expanded="false">Reserve</button>
-                                                @if ($adminCanMaintainBeds)
-                                                    <button type="button" class="mc-link-btn" data-mc-reveal="maintain-{{ $bed->id }}" aria-expanded="false">Maintenance</button>
-                                                @endif
-                                            @endif
-                                        </div>
-
-                                        @unless ($bed->hasActiveReservation())
-                                            <div id="reserve-{{ $bed->id }}" class="mc-reveal" hidden>
-                                                <form method="POST" action="{{ route('admin.beds.reserve', $bed) }}" class="mc-bed-actions">
-                                                    @csrf
-                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                    <select name="patient_id" required class="mc-input mc-input--compact">
-                                                        <option value="">Reserve for</option>
-                                                        @foreach ($admitPatients as $patient)
-                                                            <option value="{{ $patient->id }}">{{ $patient->full_name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <button type="submit" class="mc-btn mc-btn--dark">Confirm</button>
-                                                </form>
-                                            </div>
-                                            @if ($adminCanMaintainBeds)
-                                                <div id="maintain-{{ $bed->id }}" class="mc-reveal" hidden>
-                                                    <form method="POST" action="{{ route('admin.beds.maintain', $bed) }}" class="mc-bed-actions">
+                                        <div class="mc-ops-group">
+                                            <div class="mc-ops-toolbar">
+                                                @if ($eligiblePatients->isEmpty())
+                                                    <span class="mc-ops-note">No free patients</span>
+                                                    @can('patients.manage')
+                                                        <a href="{{ route('admin.patients.create', ['return_to' => 'beds']) }}" class="mc-btn">New patient</a>
+                                                    @endcan
+                                                @else
+                                                    <form method="POST" action="{{ route('admin.beds.update', $bed) }}" class="mc-alloc">
                                                         @csrf
+                                                        @method('PUT')
                                                         <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                        <input type="hidden" name="action" value="start">
-                                                        <input type="text" name="reason" required class="mc-input mc-input--compact" placeholder="Reason">
-                                                        <button type="submit" class="mc-btn mc-btn--dark">Start</button>
+                                                        <input type="hidden" name="status" value="occupied">
+                                                        <select name="patient_id" required class="mc-input mc-input--compact" aria-label="Patient for {{ $bed->bed_code }}">
+                                                            <option value="">Select patient</option>
+                                                            @foreach ($eligiblePatients as $patient)
+                                                                <option
+                                                                    value="{{ $patient->id }}"
+                                                                    @selected($bed->reserved_patient_id === $patient->id)
+                                                                >{{ $patient->full_name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <input
+                                                            list="admit-reasons"
+                                                            name="admission_reason"
+                                                            required
+                                                            class="mc-input mc-input--compact"
+                                                            placeholder="Why occupied"
+                                                            aria-label="Admission reason for {{ $bed->bed_code }}"
+                                                        >
+                                                        <button type="submit" class="mc-btn">Admit</button>
                                                     </form>
-                                                </div>
-                                            @endif
-                                        @endunless
+                                                    @can('patients.manage')
+                                                        <a href="{{ route('admin.patients.create', ['return_to' => 'beds']) }}" class="mc-ops-chip">New patient</a>
+                                                    @endcan
+                                                @endif
+
+                                                @if ($bed->hasActiveReservation())
+                                                    <form method="POST" action="{{ route('admin.beds.reservation.cancel', $bed) }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                        <button type="submit" class="mc-ops-chip mc-ops-chip--danger">Cancel hold</button>
+                                                    </form>
+                                                @else
+                                                    @if ($admitPatients->isNotEmpty())
+                                                        <button type="button" class="mc-ops-chip" data-mc-reveal="reserve-{{ $bed->id }}" aria-expanded="false">Reserve</button>
+                                                    @endif
+                                                    @if ($adminCanMaintainBeds)
+                                                        <button type="button" class="mc-ops-chip" data-mc-reveal="maintain-{{ $bed->id }}" aria-expanded="false">Maintenance</button>
+                                                    @endif
+                                                @endif
+                                            </div>
+
+                                            @unless ($bed->hasActiveReservation())
+                                                @if ($admitPatients->isNotEmpty())
+                                                    <div id="reserve-{{ $bed->id }}" class="mc-reveal" hidden>
+                                                        <form method="POST" action="{{ route('admin.beds.reserve', $bed) }}" class="mc-alloc">
+                                                            @csrf
+                                                            <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                            <select name="patient_id" required class="mc-input mc-input--compact" aria-label="Reserve {{ $bed->bed_code }} for patient">
+                                                                <option value="">Reserve for</option>
+                                                                @foreach ($admitPatients as $patient)
+                                                                    <option value="{{ $patient->id }}">{{ $patient->full_name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <button type="submit" class="mc-btn">Confirm</button>
+                                                        </form>
+                                                    </div>
+                                                @endif
+                                                @if ($adminCanMaintainBeds)
+                                                    <div id="maintain-{{ $bed->id }}" class="mc-reveal" hidden>
+                                                        <form method="POST" action="{{ route('admin.beds.maintain', $bed) }}" class="mc-alloc">
+                                                            @csrf
+                                                            <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                            <input type="hidden" name="action" value="start">
+                                                            <input type="text" name="reason" required class="mc-input mc-input--compact" placeholder="Reason" aria-label="Maintenance reason for {{ $bed->bed_code }}">
+                                                            <button type="submit" class="mc-btn">Start</button>
+                                                        </form>
+                                                    </div>
+                                                @endif
+                                            @endunless
+                                        </div>
                                     @endif
 
                                     @if ($adminCanMaintainBeds && $bed->status === 'available' && $bed->is_maintenance)
-                                        <form method="POST" action="{{ route('admin.beds.maintain', $bed) }}">
-                                            @csrf
-                                            <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                            <input type="hidden" name="action" value="end">
-                                            <button type="submit" class="mc-btn mc-btn--primary">End maintenance</button>
-                                        </form>
+                                        <div class="mc-ops-group">
+                                            <div class="mc-ops-toolbar">
+                                                <form method="POST" action="{{ route('admin.beds.maintain', $bed) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                    <input type="hidden" name="action" value="end">
+                                                    <button type="submit" class="mc-btn">End maintenance</button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     @endif
 
                                     @if ($adminCanOperateBeds && $bed->status === 'occupied')
-                                        <div class="mc-ops-primary">
-                                            <form method="POST" action="{{ route('admin.beds.update', $bed) }}">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                <input type="hidden" name="status" value="dirty">
-                                                <button type="submit" class="mc-btn mc-btn--primary">Discharge</button>
-                                            </form>
+                                        <div class="mc-ops-group">
+                                            <div class="mc-ops-toolbar">
+                                                @if ($bed->currentAdmission && ! $bed->currentAdmission->isAuthorizedForRelease())
+                                                    @can('admissions.view')
+                                                        <a href="{{ route('admin.admissions.show', $bed->currentAdmission) }}" class="mc-btn">Open admission</a>
+                                                    @else
+                                                        <span class="mc-ops-chip">Needs discharge authorization</span>
+                                                    @endcan
+                                                @else
+                                                    <form method="POST" action="{{ route('admin.beds.update', $bed) }}">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                        <input type="hidden" name="status" value="dirty">
+                                                        <button type="submit" class="mc-btn">Discharge</button>
+                                                    </form>
+                                                @endif
+                                                @if ($transferTargets->where('id', '!=', $bed->id)->isNotEmpty())
+                                                    <button type="button" class="mc-ops-chip" data-mc-reveal="transfer-{{ $bed->id }}" aria-expanded="false">Transfer</button>
+                                                @endif
+                                            </div>
                                             @if ($transferTargets->where('id', '!=', $bed->id)->isNotEmpty())
-                                                <button type="button" class="mc-link-btn" data-mc-reveal="transfer-{{ $bed->id }}" aria-expanded="false">Transfer</button>
+                                                <div id="transfer-{{ $bed->id }}" class="mc-reveal" hidden>
+                                                    <form method="POST" action="{{ route('admin.beds.transfer', $bed) }}" class="mc-alloc">
+                                                        @csrf
+                                                        <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                        <input type="hidden" name="to_lock_version" value="">
+                                                        <select
+                                                            name="to_bed_id"
+                                                            required
+                                                            class="mc-input mc-input--compact"
+                                                            aria-label="Transfer {{ $bed->bed_code }} to bed"
+                                                            onchange="this.form.to_lock_version.value=this.selectedOptions[0]?.dataset.lockVersion||''"
+                                                        >
+                                                            <option value="">Choose bed</option>
+                                                            @foreach ($transferTargets->where('id', '!=', $bed->id) as $target)
+                                                                <option value="{{ $target->id }}" data-lock-version="{{ $target->lock_version }}">{{ $target->bed_code }} · {{ $target->ward?->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <input type="text" name="reason" required class="mc-input mc-input--compact" placeholder="Transfer reason">
+                                                        <button type="submit" class="mc-btn">Confirm</button>
+                                                    </form>
+                                                </div>
                                             @endif
                                         </div>
-                                        @if ($transferTargets->where('id', '!=', $bed->id)->isNotEmpty())
-                                            <div id="transfer-{{ $bed->id }}" class="mc-reveal" hidden>
-                                                <form method="POST" action="{{ route('admin.beds.transfer', $bed) }}" class="mc-bed-actions">
-                                                    @csrf
-                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                    <input type="hidden" name="to_lock_version" value="">
-                                                    <select
-                                                        name="to_bed_id"
-                                                        required
-                                                        class="mc-input mc-input--compact"
-                                                        onchange="this.form.to_lock_version.value=this.selectedOptions[0]?.dataset.lockVersion||''"
-                                                    >
-                                                        <option value="">Choose bed</option>
-                                                        @foreach ($transferTargets->where('id', '!=', $bed->id) as $target)
-                                                            <option value="{{ $target->id }}" data-lock-version="{{ $target->lock_version }}">{{ $target->bed_code }} · {{ $target->ward?->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <button type="submit" class="mc-btn mc-btn--dark">Confirm</button>
-                                                </form>
-                                            </div>
-                                        @endif
                                     @endif
 
                                     @if ($adminCanOperateBeds && $bed->status === 'dirty')
-                                        <div class="mc-ops-primary">
-                                            <form method="POST" action="{{ route('admin.beds.update', $bed) }}">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                <input type="hidden" name="status" value="cleaning">
-                                                <button type="submit" class="mc-btn mc-btn--primary">Start cleaning</button>
-                                            </form>
+                                        <div class="mc-ops-group">
+                                            <div class="mc-ops-toolbar">
+                                                <form method="POST" action="{{ route('admin.beds.update', $bed) }}">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                    <input type="hidden" name="status" value="cleaning">
+                                                    <button type="submit" class="mc-btn">Start cleaning</button>
+                                                </form>
+                                                @if ($adminCanMaintainBeds && ! $bed->is_maintenance)
+                                                    <button type="button" class="mc-ops-chip" data-mc-reveal="maintain-{{ $bed->id }}" aria-expanded="false">Maintenance</button>
+                                                @endif
+                                            </div>
                                             @if ($adminCanMaintainBeds && ! $bed->is_maintenance)
-                                                <button type="button" class="mc-link-btn" data-mc-reveal="maintain-{{ $bed->id }}" aria-expanded="false">Maintenance</button>
+                                                <div id="maintain-{{ $bed->id }}" class="mc-reveal" hidden>
+                                                    <form method="POST" action="{{ route('admin.beds.maintain', $bed) }}" class="mc-alloc">
+                                                        @csrf
+                                                        <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                        <input type="hidden" name="action" value="start">
+                                                        <input type="text" name="reason" required class="mc-input mc-input--compact" placeholder="Reason" aria-label="Maintenance reason for {{ $bed->bed_code }}">
+                                                        <button type="submit" class="mc-btn">Start</button>
+                                                    </form>
+                                                </div>
                                             @endif
                                         </div>
-                                        @if ($adminCanMaintainBeds && ! $bed->is_maintenance)
-                                            <div id="maintain-{{ $bed->id }}" class="mc-reveal" hidden>
-                                                <form method="POST" action="{{ route('admin.beds.maintain', $bed) }}" class="mc-bed-actions">
-                                                    @csrf
-                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                    <input type="hidden" name="action" value="start">
-                                                    <input type="text" name="reason" required class="mc-input mc-input--compact" placeholder="Reason">
-                                                    <button type="submit" class="mc-btn mc-btn--dark">Start</button>
-                                                </form>
-                                            </div>
-                                        @endif
                                     @endif
 
                                     @if ($adminCanOperateBeds && $bed->status === 'cleaning')
-                                        <div class="mc-ops-primary">
-                                            <form method="POST" action="{{ route('admin.beds.inspect', $bed) }}">
-                                                @csrf
-                                                <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                <input type="hidden" name="result" value="pass">
-                                                <button type="submit" class="mc-btn mc-btn--primary">Pass inspection</button>
-                                            </form>
-                                            <button type="button" class="mc-link-btn" data-mc-reveal="fail-{{ $bed->id }}" aria-expanded="false">Fail</button>
-                                        </div>
-                                        <div id="fail-{{ $bed->id }}" class="mc-reveal" hidden>
-                                            <form method="POST" action="{{ route('admin.beds.inspect', $bed) }}" class="mc-bed-actions">
-                                                @csrf
-                                                <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
-                                                <input type="hidden" name="result" value="fail">
-                                                <input type="text" name="notes" required class="mc-input mc-input--compact" placeholder="Fail reason">
-                                                <button type="submit" class="mc-btn mc-btn--dark">Confirm</button>
-                                            </form>
+                                        <div class="mc-ops-group">
+                                            <div class="mc-ops-toolbar">
+                                                <form method="POST" action="{{ route('admin.beds.inspect', $bed) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                    <input type="hidden" name="result" value="pass">
+                                                    <button type="submit" class="mc-btn">Pass inspection</button>
+                                                </form>
+                                                <button type="button" class="mc-ops-chip mc-ops-chip--danger" data-mc-reveal="fail-{{ $bed->id }}" aria-expanded="false">Fail</button>
+                                            </div>
+                                            <div id="fail-{{ $bed->id }}" class="mc-reveal" hidden>
+                                                <form method="POST" action="{{ route('admin.beds.inspect', $bed) }}" class="mc-alloc">
+                                                    @csrf
+                                                    <input type="hidden" name="lock_version" value="{{ $bed->lock_version }}">
+                                                    <input type="hidden" name="result" value="fail">
+                                                    <input type="text" name="notes" required class="mc-input mc-input--compact" placeholder="Fail reason" aria-label="Fail reason for {{ $bed->bed_code }}">
+                                                    <button type="submit" class="mc-btn">Confirm</button>
+                                                </form>
+                                            </div>
                                         </div>
                                     @endif
 
@@ -339,4 +419,13 @@
         </div>
         <div class="mc-pager">{{ $beds->links() }}</div>
     </section>
+
+    <datalist id="admit-reasons">
+        <option value="Respiratory support"></option>
+        <option value="Cardiac monitoring"></option>
+        <option value="Post-operative recovery"></option>
+        <option value="Sepsis / shock"></option>
+        <option value="Neuro observation"></option>
+        <option value="Isolation precautions"></option>
+    </datalist>
 @endsection

@@ -2,137 +2,68 @@
 
 namespace App\Support;
 
-use App\Models\Appointment;
-use App\Models\Bed;
-use App\Models\Bill;
-use App\Models\ContactMessage;
 use App\Models\User;
+use App\Models\WorkItem;
 use Illuminate\Support\Collection;
 
 class CriticalAlertFeed
 {
-    /** @var array<string, array{alerts: Collection<int, array{tone: string, title: string, detail: string, href: string, time: string}>, counts: array{beds: int, pending: int, unpaid: int, messages: int}, total: int}> */
-    private array $memo = [];
+    public function __construct(private WorkInbox $inbox) {}
 
     /**
-     * @return array{alerts: Collection<int, array{tone: string, title: string, detail: string, href: string, time: string}>, counts: array{beds: int, pending: int, unpaid: int, messages: int}, total: int}
+     * @return array{alerts: Collection<int, array{id: string, tone: string, title: string, detail: string, href: string, time: string}>, counts: array{beds: int, pending: int, unpaid: int, messages: int, labs: int}, total: int, ids: list<string>}
      */
     public function for(?User $user, int $limit = 30): array
     {
-        $key = 'for:'.($user?->getAuthIdentifier() ?? 'guest').':'.$limit;
+        if ($user === null) {
+            return [
+                'alerts' => Collection::make(),
+                'counts' => ['beds' => 0, 'pending' => 0, 'unpaid' => 0, 'messages' => 0, 'labs' => 0],
+                'total' => 0,
+                'ids' => [],
+            ];
+        }
 
-        return $this->memo[$key] ??= $this->build(
-            includeBeds: $user?->can('operations.manage') ?? false,
-            includePending: $user?->can('appointments.view') ?? false,
-            includeUnpaid: $user?->can('billing.manage') ?? false,
-            includeMessages: $user?->can('content.manage') ?? false,
-            limit: $limit,
-        );
+        $this->inbox->syncFor($user);
+        $alerts = $this->inbox->notificationsFor($user, $limit);
+        $counts = $this->inbox->notificationCounts($user);
+
+        return [
+            'alerts' => $alerts,
+            'counts' => $counts,
+            'total' => $this->inbox->unreadNotificationCount($user),
+            'ids' => $alerts->pluck('id')->all(),
+        ];
     }
 
     /**
-     * Full operations desk feed used by the Critical Alerts page.
-     *
-     * @return array{alerts: Collection<int, array{tone: string, title: string, detail: string, href: string, time: string}>, counts: array{beds: int, pending: int, unpaid: int, messages: int}, total: int}
+     * @return array{alerts: Collection<int, array{id: string, tone: string, title: string, detail: string, href: string, time: string}>, counts: array{beds: int, pending: int, unpaid: int, messages: int, labs: int}, total: int, ids: list<string>}
      */
     public function all(int $limit = 30): array
     {
-        return $this->build(
-            includeBeds: true,
-            includePending: true,
-            includeUnpaid: true,
-            includeMessages: true,
-            limit: $limit,
-        );
-    }
+        $this->inbox->syncAll();
 
-    /**
-     * @return array{alerts: Collection<int, array{tone: string, title: string, detail: string, href: string, time: string}>, counts: array{beds: int, pending: int, unpaid: int, messages: int}, total: int}
-     */
-    private function build(
-        bool $includeBeds,
-        bool $includePending,
-        bool $includeUnpaid,
-        bool $includeMessages,
-        int $limit,
-    ): array {
-        $alerts = Collection::make();
-        $counts = [
-            'beds' => 0,
-            'pending' => 0,
-            'unpaid' => 0,
-            'messages' => 0,
-        ];
+        $items = WorkItem::query()
+            ->open()
+            ->where('is_notification', true)
+            ->orderByRaw('case when is_critical = 1 then 0 else 1 end')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
 
-        if ($includeBeds) {
-            $counts['beds'] = Bed::query()->whereIn('status', ['dirty', 'cleaning'])->count();
-
-            Bed::query()->with('ward')->whereIn('status', ['dirty', 'cleaning'])->orderBy('bed_code')->limit(20)->get()
-                ->each(function (Bed $bed) use ($alerts): void {
-                    $alerts->push([
-                        'tone' => $bed->status === 'dirty' ? 'red' : 'orange',
-                        'title' => 'Bed '.$bed->bed_code.' is '.$bed->status,
-                        'detail' => ($bed->ward?->name ?: 'Ward').' needs turnaround.',
-                        'href' => route('admin.beds.index', ['status' => $bed->status]),
-                        'time' => $bed->updated_at?->diffForHumans() ?: '',
-                    ]);
-                });
-        }
-
-        if ($includePending) {
-            $counts['pending'] = Appointment::query()
-                ->where('status', 'pending')
-                ->whereDate('appointment_date', '>=', now()->toDateString())
-                ->count();
-
-            Appointment::query()->with('patient')->where('status', 'pending')->whereDate('appointment_date', '>=', now()->toDateString())->orderBy('appointment_date')->limit(10)->get()
-                ->each(function (Appointment $appointment) use ($alerts): void {
-                    $alerts->push([
-                        'tone' => 'orange',
-                        'title' => 'Pending visit '.$appointment->appointment_no,
-                        'detail' => ($appointment->patient?->full_name ?: 'Patient').' still needs confirmation.',
-                        'href' => route('admin.appointments.show', $appointment),
-                        'time' => $appointment->created_at?->diffForHumans() ?: '',
-                    ]);
-                });
-        }
-
-        if ($includeUnpaid) {
-            $counts['unpaid'] = Bill::query()->unpaid()->count();
-
-            Bill::query()->unpaid()->with('patient')->orderByDesc('id')->limit(8)->get()
-                ->each(function (Bill $bill) use ($alerts): void {
-                    $alerts->push([
-                        'tone' => 'red',
-                        'title' => 'Unpaid bill '.$bill->bill_no,
-                        'detail' => ($bill->patient?->full_name ?: 'Patient').' · '.number_format((float) $bill->total, 2),
-                        'href' => route('admin.bills.show', $bill),
-                        'time' => $bill->bill_date?->diffForHumans() ?: '',
-                    ]);
-                });
-        }
-
-        if ($includeMessages) {
-            $counts['messages'] = ContactMessage::query()->unread()->count();
-
-            ContactMessage::query()->unread()->orderByDesc('id')->limit(5)->get()
-                ->each(function (ContactMessage $message) use ($alerts): void {
-                    $alerts->push([
-                        'tone' => 'blue',
-                        'title' => 'Unread message from '.$message->name,
-                        'detail' => $message->subject ?: 'Website contact form',
-                        'href' => route('admin.contact-messages.show', $message),
-                        'time' => $message->created_at?->diffForHumans() ?: '',
-                    ]);
-                });
-        }
-
-        $trimmed = $alerts->take($limit)->values();
+        $alerts = $items->map(fn (WorkItem $item): array => $this->inbox->toAlert($item))->values();
 
         return [
-            'alerts' => $trimmed,
-            'counts' => $counts,
-            'total' => array_sum($counts),
+            'alerts' => $alerts,
+            'counts' => [
+                'beds' => $items->whereIn('kind', ['cleaning', 'exception'])->count(),
+                'pending' => $items->whereIn('kind', ['pending_web', 'arrival'])->count(),
+                'unpaid' => $items->where('kind', 'unpaid')->count(),
+                'messages' => $items->where('kind', 'message')->count(),
+                'labs' => $items->where('kind', 'critical')->count(),
+            ],
+            'total' => $alerts->count(),
+            'ids' => $alerts->pluck('id')->all(),
         ];
     }
 }

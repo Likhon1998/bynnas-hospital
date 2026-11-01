@@ -1,56 +1,102 @@
 @php
-    $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
-    $phone = $hospital->get('phone');
-    $emergency = $hospital->get('emergency_phone');
+    $hospitalName = $hospital->get('hospital_name') ?: 'Cityhealth Medical Center';
+    $nameParts = preg_split('/\s+/', trim($hospitalName)) ?: [$hospitalName];
+    $brandMark = $nameParts[0] ?? 'Cityhealth';
+    $brandRest = trim(implode(' ', array_slice($nameParts, 1))) ?: 'Medical Center';
+    $phone = $hospital->get('phone') ?: '(212) 555-1212';
+    $emergency = $hospital->get('emergency_phone') ?: '24/7 Emergency Care';
     $email = $hospital->get('email');
-    $address = $hospital->get('address');
-    $weekdayHours = $workingHours['saturday'] ?? $workingHours['monday'] ?? '9:00 AM – 9:00 PM';
+    $address = $hospital->get('address') ?: '12 Lakeside Avenue, Gulshan, Dhaka 1212';
 @endphp
 
-<footer id="contact" class="bg-[#122447] text-[#dbe4f0]">
-    <div class="web-wrap grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
-        <div>
-            <p class="text-base font-bold text-white">{{ $hospitalName }}</p>
-            @if ($address)
-                <p class="mt-3 text-sm leading-6 text-[#94a3b8]">{{ $address }}</p>
-            @endif
-            @if ($phone)
-                <p class="mt-3 text-sm"><a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="hover:text-white">OPD {{ $phone }}</a></p>
-            @endif
-            @if ($emergency)
-                <p class="mt-1.5 text-sm"><a href="tel:{{ preg_replace('/\s+/', '', $emergency) }}" class="font-semibold text-[#86efac] hover:text-white">Emergency {{ $emergency }}</a></p>
-            @endif
-            @if ($email)
-                <p class="mt-1.5 text-sm"><a href="mailto:{{ $email }}" class="hover:text-white">{{ $email }}</a></p>
-            @endif
+<section class="ch-priority">
+    <div class="ch-priority__pulse" aria-hidden="true"></div>
+    <div class="ch-wrap ch-priority__row">
+        <div class="ch-priority__copy">
+            <div>
+                <h2>Your Health. Our Priority.</h2>
+                <p>Experience world-class care from a trusted medical team.</p>
+            </div>
+        </div>
+        <a href="{{ route('home') }}#appointment" class="ch-btn ch-btn--light">Book Appointment Now</a>
+    </div>
+</section>
+
+<footer id="contact" class="ch-foot">
+    <div class="ch-wrap ch-foot__grid">
+        <div class="ch-foot__brand">
+            <a href="{{ route('home') }}" class="ch-brand">
+                <span class="ch-brand__mark" aria-hidden="true">
+                    <svg viewBox="0 0 36 36" class="h-5 w-5" fill="none">
+                        <path d="M18 8v20M9 18h18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span>
+                    <span class="ch-brand__name">{{ $brandMark }}</span>
+                    <span class="ch-brand__sub">{{ $brandRest }}</span>
+                </span>
+            </a>
+            <p class="mt-4">Committed to exceptional healthcare, medical integrity, and innovation.</p>
         </div>
 
         <div>
-            <p class="text-sm font-bold text-white">OPD hours</p>
-            <p class="mt-3 text-sm leading-6 text-[#94a3b8]">Saturday to Thursday<br>{{ $weekdayHours }}</p>
-            <p class="mt-3 text-sm leading-6 text-[#94a3b8]">Friday: emergency only<br>Emergency desk: open all night</p>
-        </div>
-
-        <div>
-            <p class="text-sm font-bold text-white">On this site</p>
-            <ul class="mt-3 space-y-2 text-sm text-[#94a3b8]">
-                <li><a href="{{ route('about') }}" class="hover:text-white">About the hospital</a></li>
-                <li><a href="{{ route('services') }}" class="hover:text-white">Services</a></li>
-                <li><a href="{{ route('home') }}#appointment" class="hover:text-white">Request a visit</a></li>
-                @foreach ($footerDepartments->take(3) as $department)
-                    <li>{{ $department->name }}</li>
-                @endforeach
+            <h3>Quick Links</h3>
+            <ul>
+                <li><a href="{{ route('about') }}">About Us</a></li>
+                <li><a href="{{ route('home') }}#departments">Departments</a></li>
+                <li><a href="{{ route('home') }}#doctors">Doctors</a></li>
+                <li><a href="{{ route('home') }}#locations">Locations</a></li>
+                <li><a href="{{ route('home') }}#contact">Contact Us</a></li>
             </ul>
         </div>
 
         <div>
-            <p class="text-sm font-bold text-white">If you are coming in</p>
-            <p class="mt-3 text-sm leading-6 text-[#94a3b8]">Bring a previous prescription if you have one. For a first visit, the OPD desk will open a file and send you to the right clinic.</p>
+            <h3>Patients & Visitors</h3>
+            <ul>
+                <li><a href="{{ route('home') }}#patients">Patient Portal</a></li>
+                <li><a href="{{ route('home') }}#patients">Visiting Hours</a></li>
+                <li><a href="{{ route('services') }}">Billing & Insurance</a></li>
+                <li><a href="{{ route('home') }}#faq">Patient Preparation</a></li>
+                <li><a href="{{ route('home') }}#faq">FAQ</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h3>Our Services</h3>
+            <ul>
+                <li><a href="{{ route('emergency') }}">Emergency Care</a></li>
+                <li><a href="{{ route('services') }}">Diagnostic Services</a></li>
+                <li><a href="{{ route('services') }}">Surgical Care</a></li>
+                <li><a href="{{ route('home') }}#doctors">Rehabilitation</a></li>
+                <li><a href="{{ route('home') }}#news">Wellness Programs</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h3>Contact Us</h3>
+            <p>{{ $address }}</p>
+            <p><a href="tel:{{ preg_replace('/\s+/', '', $phone) }}">{{ $phone }}</a></p>
+            @if ($email)
+                <p><a href="mailto:{{ $email }}">{{ $email }}</a></p>
+            @endif
+            <p>{{ $emergency }}</p>
+            <h3 class="mt-4">Newsletter</h3>
+            <p>Stay informed with health news and hospital updates.</p>
+            <form class="ch-news-letter" action="{{ route('home') }}#contact" method="get">
+                <label class="sr-only" for="newsletter-email">Email</label>
+                <input id="newsletter-email" type="email" name="email" placeholder="Subscribe" autocomplete="email">
+                <button type="submit">Join</button>
+            </form>
         </div>
     </div>
-    <div class="border-t border-white/10">
-        <p class="web-wrap py-4 text-xs text-[#64748b]">
-            {{ $hospitalName }} · Gulshan, Dhaka
+    <div class="ch-wrap ch-legal">
+        <p>© {{ now()->year }} {{ $hospitalName }}. All Rights Reserved.</p>
+        <p>
+            <a href="{{ route('about') }}">Terms of Use</a>
+            ·
+            <a href="{{ route('about') }}">Privacy Policy</a>
+            ·
+            <a href="{{ route('about') }}">Accessibility</a>
         </p>
     </div>
 </footer>

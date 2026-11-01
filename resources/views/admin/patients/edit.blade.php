@@ -22,6 +22,20 @@
             <div class="form-span-2">
                 <x-form.textarea name="address" label="Address" :value="$patient->address" />
             </div>
+            <x-form.select
+                name="care_flags"
+                label="Care alerts"
+                multiple
+                :size="6"
+                hint="Hold Ctrl (Windows) or Cmd (Mac) to select more than one."
+            >
+                @foreach (\App\Models\Patient::CARE_FLAGS as $value => $label)
+                    <option value="{{ $value }}" @selected(in_array($value, old('care_flags', $patient->care_flags ?? []), true))>{{ $label }}</option>
+                @endforeach
+            </x-form.select>
+            <div class="form-span-2">
+                <x-form.textarea name="allergies" label="Allergies" :value="$patient->allergies" />
+            </div>
         </x-admin.form-section>
 
         <x-admin.form-section title="Emergency contact" note="Who to call if the patient cannot be reached.">

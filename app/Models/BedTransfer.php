@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'patient_id',
+    'admission_id',
     'from_bed_id',
     'to_bed_id',
     'transferred_by',
@@ -31,6 +32,11 @@ class BedTransfer extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    public function admission(): BelongsTo
+    {
+        return $this->belongsTo(Admission::class);
     }
 
     public function fromBed(): BelongsTo

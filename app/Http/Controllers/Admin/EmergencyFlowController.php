@@ -15,11 +15,8 @@ class EmergencyFlowController extends Controller
 
         $emergencyVisits = Appointment::query()
             ->with(['patient', 'doctor', 'department'])
-            ->whereDate('appointment_date', $today)
-            ->where(function ($query): void {
-                $query->where('status', 'pending')
-                    ->orWhereHas('department', fn ($department) => $department->where('name', 'like', '%Emergency%'));
-            })
+            ->emergencyDesk($today)
+            ->whereNotIn('status', ['cancelled'])
             ->orderBy('start_time')
             ->limit(20)
             ->get();

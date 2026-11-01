@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 #[Fillable([
@@ -18,6 +19,7 @@ use Illuminate\Support\Carbon;
     'bed_code',
     'status',
     'admitted_at',
+    'admission_reason',
     'status_changed_at',
     'turnover_hours',
     'is_maintenance',
@@ -137,6 +139,14 @@ class Bed extends Model
     public function events(): HasMany
     {
         return $this->hasMany(BedEvent::class)->orderByDesc('created_at');
+    }
+
+    public function currentAdmission(): HasOne
+    {
+        return $this->hasOne(Admission::class)->ofMany(
+            ['id' => 'max'],
+            fn (Builder $query) => $query->where('status', '!=', 'discharged'),
+        );
     }
 
     /**

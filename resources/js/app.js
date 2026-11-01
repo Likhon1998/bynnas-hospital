@@ -71,6 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    document.querySelectorAll('[data-admin-nav-section]').forEach((section) => {
+        const toggle = section.querySelector('[data-admin-nav-toggle]');
+
+        if (! toggle) {
+            return;
+        }
+
+        toggle.addEventListener('click', () => {
+            const isOpen = section.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+    });
+
     const closeAllMenus = (except = null) => {
         document.querySelectorAll('[data-admin-menu]').forEach((menu) => {
             if (except && menu === except) {
@@ -86,6 +99,150 @@ document.addEventListener('DOMContentLoaded', () => {
                 trigger.setAttribute('aria-expanded', 'false');
             }
         });
+    };
+
+    const notificationsRoot = document.querySelector('[data-admin-notifications]');
+    const notificationsUrl = notificationsRoot?.getAttribute('data-admin-notifications-url');
+    const notificationsSeenUrl = notificationsRoot?.getAttribute('data-admin-notifications-seen-url');
+    const notificationsBody = notificationsRoot?.querySelector('[data-admin-notifications-body]');
+    const notificationsBadge = notificationsRoot?.querySelector('[data-admin-notification-badge]');
+    const notificationsAll = notificationsRoot?.querySelector('[data-admin-notifications-all]');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    const setNotificationBadge = (total) => {
+        if (! notificationsBadge) {
+            return;
+        }
+
+        if (total > 0) {
+            notificationsBadge.textContent = String(total);
+            notificationsBadge.classList.remove('hidden');
+            notificationsBadge.hidden = false;
+        } else {
+            notificationsBadge.textContent = '0';
+            notificationsBadge.classList.add('hidden');
+            notificationsBadge.hidden = true;
+        }
+
+        if (notificationsAll) {
+            notificationsAll.classList.toggle('hidden', total <= 0);
+            notificationsAll.hidden = total <= 0;
+        }
+    };
+
+    const renderNotifications = (alerts) => {
+        if (! notificationsBody) {
+            return;
+        }
+
+        notificationsBody.replaceChildren();
+
+        if (! Array.isArray(alerts) || alerts.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'admin-popover__empty';
+            empty.textContent = 'No critical alerts right now.';
+            notificationsBody.appendChild(empty);
+
+            return;
+        }
+
+        alerts.forEach((alert) => {
+            const link = document.createElement('a');
+            link.href = alert.href || '#';
+            link.className = `admin-notice admin-notice--${alert.tone || 'orange'}`;
+
+            if (alert.id) {
+                link.setAttribute('data-admin-notification-id', alert.id);
+            }
+
+            const title = document.createElement('span');
+            title.className = 'admin-notice__title';
+            title.textContent = alert.title || '';
+            link.appendChild(title);
+
+            if (alert.detail) {
+                const detail = document.createElement('span');
+                detail.className = 'admin-notice__detail';
+                detail.textContent = alert.detail;
+                link.appendChild(detail);
+            }
+
+            if (alert.time) {
+                const time = document.createElement('span');
+                time.className = 'admin-notice__time';
+                time.textContent = alert.time;
+                link.appendChild(time);
+            }
+
+            notificationsBody.appendChild(link);
+        });
+    };
+
+    const markNotificationsSeen = async () => {
+        if (! notificationsSeenUrl) {
+            return;
+        }
+
+        try {
+            const response = await fetch(notificationsSeenUrl, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ all: true }),
+            });
+
+            if (! response.ok) {
+                throw new Error('Unable to mark notifications seen');
+            }
+
+            const payload = await response.json();
+            setNotificationBadge(Number(payload.total || 0));
+        } catch (error) {
+            // Keep the badge if marking seen fails.
+        }
+    };
+
+    const refreshNotifications = async ({ markSeen = false } = {}) => {
+        if (! notificationsUrl) {
+            return;
+        }
+
+        try {
+            const response = await fetch(notificationsUrl, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (! response.ok) {
+                throw new Error('Notifications unavailable');
+            }
+
+            const payload = await response.json();
+            const total = Number(payload.total || 0);
+            const alerts = Array.isArray(payload.alerts) ? payload.alerts : [];
+
+            setNotificationBadge(total);
+            renderNotifications(alerts);
+
+            if (notificationsAll && payload.href) {
+                notificationsAll.setAttribute('href', payload.href);
+            }
+
+            if (markSeen && total > 0) {
+                await markNotificationsSeen();
+            }
+        } catch (error) {
+            // Keep the last rendered server-side list if refresh fails.
+            if (markSeen) {
+                await markNotificationsSeen();
+            }
+        }
     };
 
     document.querySelectorAll('[data-admin-menu]').forEach((menu) => {
@@ -105,9 +262,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 panelEl.classList.remove('hidden');
                 panelEl.hidden = false;
                 trigger.setAttribute('aria-expanded', 'true');
+
+                if (menu.hasAttribute('data-admin-notifications')) {
+                    refreshNotifications({ markSeen: true });
+                }
             }
         });
     });
+
+    if (notificationsUrl) {
+        window.setInterval(() => refreshNotifications(), 30000);
+        document.addEventListener('visibilitychange', () => {
+            if (! document.hidden) {
+                refreshNotifications();
+            }
+        });
+    }
 
     document.addEventListener('click', () => closeAllMenus());
     document.addEventListener('keydown', (event) => {
@@ -279,9 +449,75 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const scope = trigger.closest('.mc-ops') || document;
             const willOpen = panel.hidden;
+
+            scope.querySelectorAll('[data-mc-reveal]').forEach((otherTrigger) => {
+                if (otherTrigger === trigger) {
+                    return;
+                }
+
+                const otherId = otherTrigger.getAttribute('data-mc-reveal');
+                const otherPanel = otherId ? document.getElementById(otherId) : null;
+
+                if (otherPanel) {
+                    otherPanel.hidden = true;
+                }
+
+                otherTrigger.setAttribute('aria-expanded', 'false');
+            });
+
             panel.hidden = ! willOpen;
             trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+    });
+
+    const appointmentDoctor = document.querySelector('#appointment select[name="doctor"]');
+
+    document.querySelectorAll('[data-book-doctor]').forEach((link) => {
+        link.addEventListener('click', () => {
+            if (appointmentDoctor && link.dataset.bookDoctor) {
+                appointmentDoctor.value = link.dataset.bookDoctor;
+            }
+        });
+    });
+
+    const doctorSpecialty = document.querySelector('[data-doctor-specialty]');
+    const doctorList = document.querySelector('[data-doctor-list]');
+
+    if (doctorSpecialty && doctorList) {
+        const syncDoctorOptions = () => {
+            const specialty = doctorSpecialty.value;
+
+            [...doctorList.options].forEach((option) => {
+                if (option.value === '') {
+                    return;
+                }
+
+                option.hidden = specialty !== '' && option.dataset.specialty !== specialty;
+            });
+
+            if (doctorList.selectedOptions[0]?.hidden) {
+                doctorList.value = '';
+            }
+        };
+
+        doctorSpecialty.addEventListener('change', syncDoctorOptions);
+        syncDoctorOptions();
+    }
+
+    document.querySelectorAll('.mc-ops form').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            if (form.dataset.submitting === '1') {
+                event.preventDefault();
+
+                return;
+            }
+
+            form.dataset.submitting = '1';
+            form.querySelectorAll('button[type="submit"], .mc-btn').forEach((button) => {
+                button.setAttribute('aria-busy', 'true');
+            });
         });
     });
 });

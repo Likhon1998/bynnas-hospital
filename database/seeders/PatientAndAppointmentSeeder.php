@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Appointment;
+use App\Models\Department;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\Patient;
@@ -144,6 +145,39 @@ class PatientAndAppointmentSeeder extends Seeder
                     'cancellation_reason' => $cancelled ? 'Cancelled in demo dataset' : null,
                 ],
             );
+        }
+
+        $emergency = Department::query()->where('slug', 'emergency')->first();
+        $dutyDoctor = Doctor::query()->active()->orderBy('id')->first();
+
+        if ($emergency && $dutyDoctor && $patientIds !== []) {
+            $deskVisits = [
+                ['no' => 'ER-DEMO-0001', 'patient' => 1, 'start' => '08:15:00', 'reason' => 'Chest pain since dawn', 'status' => 'pending'],
+                ['no' => 'ER-DEMO-0002', 'patient' => 2, 'start' => '09:40:00', 'reason' => 'Shortness of breath', 'status' => 'confirmed'],
+            ];
+
+            foreach ($deskVisits as $visit) {
+                Appointment::query()->updateOrCreate(
+                    ['appointment_no' => $visit['no']],
+                    [
+                        'patient_id' => $patientIds[$visit['patient']],
+                        'doctor_id' => $dutyDoctor->id,
+                        'department_id' => $emergency->id,
+                        'appointment_date' => now()->toDateString(),
+                        'start_time' => $visit['start'],
+                        'end_time' => Carbon::createFromFormat('H:i:s', $visit['start'])->addMinutes(30)->format('H:i:s'),
+                        'reason' => $visit['reason'],
+                        'status' => $visit['status'],
+                        'notes' => 'Walk-in emergency desk visit (demo).',
+                        'source' => 'emergency',
+                        'created_by' => $receptionist?->id,
+                        'confirmation_token' => (string) Str::uuid(),
+                        'booking_key' => null,
+                        'cancelled_at' => null,
+                        'cancellation_reason' => null,
+                    ],
+                );
+            }
         }
     }
 

@@ -23,6 +23,13 @@ class WardBedSeeder extends Seeder
         $patients = Patient::query()->active()->orderBy('id')->get();
         $patientIndex = 0;
         $assignedPatientIds = [];
+        $admissionReasons = [
+            'Respiratory support',
+            'Cardiac monitoring',
+            'Post-operative recovery',
+            'Sepsis / shock',
+            'Neuro observation',
+        ];
 
         foreach ($wards as $wardData) {
             $ward = Ward::query()->updateOrCreate(
@@ -48,6 +55,7 @@ class WardBedSeeder extends Seeder
 
                 $patientId = null;
                 $admittedAt = null;
+                $admissionReason = null;
                 $statusChangedAt = now()->subHours(($i % 10) + 1);
                 $turnoverHours = null;
 
@@ -61,6 +69,7 @@ class WardBedSeeder extends Seeder
                         $assignedPatientIds[] = $patientId;
                         $patientIndex++;
                         $admittedAt = now()->subHours(($i * 3) % 72 + 4);
+                        $admissionReason = $admissionReasons[$i % count($admissionReasons)];
                         $statusChangedAt = $admittedAt;
                     } else {
                         $status = 'available';
@@ -81,6 +90,7 @@ class WardBedSeeder extends Seeder
                         'patient_id' => $patientId,
                         'status' => $status,
                         'admitted_at' => $admittedAt,
+                        'admission_reason' => $admissionReason,
                         'status_changed_at' => $statusChangedAt,
                         'turnover_hours' => $turnoverHours,
                     ]

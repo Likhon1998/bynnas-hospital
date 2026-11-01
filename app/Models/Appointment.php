@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\AppointmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +44,26 @@ class Appointment extends Model
     use HasFactory;
 
     /**
+     * @var array<string, string>
+     */
+    public const STATUSES = [
+        'pending' => 'Pending',
+        'confirmed' => 'Confirmed',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+        'no_show' => 'No show',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    public const SOURCES = [
+        'web' => 'Website',
+        'admin' => 'Desk',
+        'emergency' => 'Emergency',
+    ];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -51,6 +72,57 @@ class Appointment extends Model
             'appointment_date' => 'date',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    public static function nextNumber(string $prefix = 'APT'): string
+    {
+        $stamp = $prefix.'-'.now()->format('Ymd').'-';
+
+        $last = static::query()
+            ->where('appointment_no', 'like', $stamp.'%')
+            ->lockForUpdate()
+            ->orderByDesc('appointment_no')
+            ->value('appointment_no');
+
+        $sequence = $last ? ((int) substr((string) $last, -3)) + 1 : 1;
+
+        return $stamp.str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+    }
+
+    public function sourceLabel(): string
+    {
+        return self::SOURCES[$this->source] ?? 'Desk';
+    }
+
+    public function timeRangeLabel(): string
+    {
+        return substr((string) $this->start_time, 0, 5).'–'.substr((string) $this->end_time, 0, 5);
+    }
+
+    public function timeInputValue(): string
+    {
+        return substr((string) $this->start_time, 0, 5);
+    }
+
+    public function holdsSlot(): bool
+    {
+        if ($this->status === 'cancelled') {
+            return false;
+        }
+
+        return $this->status !== 'pending' || $this->source !== 'web';
+    }
+
+    /**
+     * @param  Builder<Appointment>  $query
+     */
+    public function scopeHoldingSlot(Builder $query): void
+    {
+        $query->where('status', '!=', 'cancelled')
+            ->where(function (Builder $inner): void {
+                $inner->where('status', '!=', 'pending')
+                    ->orWhere('source', '!=', 'web');
+            });
     }
 
     public function patient(): BelongsTo
@@ -76,5 +148,33 @@ class Appointment extends Model
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(Visit::class)->orderByDesc('id');
+    }
+
+    /**
+     * @param  Builder<Appointment>  $query
+     */
+    public function scopeEmergency(Builder $query): void
+    {
+        $query->where(function (Builder $inner): void {
+            $inner->where('source', 'emergency')
+                ->orWhereHas('department', function (Builder $department): void {
+                    $department->where('slug', 'emergency')
+                        ->orWhere('name', 'like', '%Emergency%');
+                });
+        });
+    }
+
+    /**
+     * @param  Builder<Appointment>  $query
+     */
+    public function scopeEmergencyDesk(Builder $query, ?string $date = null): void
+    {
+        $query->whereDate('appointment_date', $date ?? now()->toDateString())
+            ->emergency();
     }
 }

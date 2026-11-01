@@ -1,10 +1,13 @@
 @extends('layouts.admin')
-@section('title', 'Users')
-@section('heading', 'Staff users')
+@section('title', 'Staff')
+@section('heading', 'Staff')
 @section('content')
     <div class="table-frame table-frame--fill">
         <div class="table-toolbar">
-            <p class="table-count">{{ $users->total() }} {{ \Illuminate\Support\Str::plural('user', $users->total()) }}</p>
+            <p class="table-count">{{ $users->total() }} login {{ \Illuminate\Support\Str::plural('account', $users->total()) }}</p>
+            @can('doctors.manage')
+                <a href="{{ route('admin.doctors.index') }}" class="admin-action">Doctors</a>
+            @endcan
         </div>
         <div class="table-scroll admin-scroll">
             <table class="pro-table">

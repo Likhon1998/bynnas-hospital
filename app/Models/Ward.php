@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'name',
@@ -55,6 +56,21 @@ class Ward extends Model
     public function availableBeds(): HasMany
     {
         return $this->beds()->where('status', 'available');
+    }
+
+    public function nursingTasks(): HasMany
+    {
+        return $this->hasMany(NursingTask::class);
+    }
+
+    public function nursingHandovers(): HasMany
+    {
+        return $this->hasMany(NursingHandover::class)->orderByDesc('handed_over_at')->orderByDesc('id');
+    }
+
+    public function latestHandover(): HasOne
+    {
+        return $this->hasOne(NursingHandover::class)->latestOfMany('handed_over_at');
     }
 
     public function occupancyPercent(): int

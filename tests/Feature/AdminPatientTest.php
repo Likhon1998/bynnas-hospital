@@ -43,6 +43,30 @@ class AdminPatientTest extends TestCase
         ]);
     }
 
+    public function test_authorized_staff_can_register_a_patient_with_multiple_care_flags(): void
+    {
+        $user = $this->createStaffUser(['patients.view', 'patients.manage']);
+
+        $response = $this->actingAs($user)->post(route('admin.patients.store'), [
+            'full_name' => 'Karim Hossain',
+            'phone' => '01930005566',
+            'is_active' => '1',
+            'care_flags' => ['diabetic', 'fall_risk', 'allergy_alert'],
+        ]);
+
+        $patient = Patient::query()->where('full_name', 'Karim Hossain')->first();
+
+        $this->assertNotNull($patient);
+        $response->assertRedirect(route('admin.patients.show', $patient));
+        $this->assertSame(['diabetic', 'fall_risk', 'allergy_alert'], $patient->care_flags);
+        $this->actingAs($user)
+            ->get(route('admin.patients.show', $patient))
+            ->assertOk()
+            ->assertSee('Diabetic')
+            ->assertSee('Fall risk')
+            ->assertSee('Allergy alert');
+    }
+
     public function test_registering_from_bed_board_returns_to_available_beds(): void
     {
         $user = $this->createStaffUser(['patients.view', 'patients.manage', 'beds.view', 'beds.operate']);
