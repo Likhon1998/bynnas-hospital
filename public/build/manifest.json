@@ -1,0 +1,77 @@
+{
+  "_dm-sans-400-normal-BwCSEQnW.woff": {
+    "file": "assets/dm-sans-400-normal-BwCSEQnW.woff",
+    "src": "_dm-sans-400-normal-BwCSEQnW.woff"
+  },
+  "_dm-sans-400-normal-CW0RaeGs.woff2": {
+    "file": "assets/dm-sans-400-normal-CW0RaeGs.woff2",
+    "src": "_dm-sans-400-normal-CW0RaeGs.woff2"
+  },
+  "_dm-sans-500-normal-B9HHJjqV.woff2": {
+    "file": "assets/dm-sans-500-normal-B9HHJjqV.woff2",
+    "src": "_dm-sans-500-normal-B9HHJjqV.woff2"
+  },
+  "_dm-sans-500-normal-Dr3UlScf.woff": {
+    "file": "assets/dm-sans-500-normal-Dr3UlScf.woff",
+    "src": "_dm-sans-500-normal-Dr3UlScf.woff"
+  },
+  "_dm-sans-600-normal-Aqo67rzb.woff2": {
+    "file": "assets/dm-sans-600-normal-Aqo67rzb.woff2",
+    "src": "_dm-sans-600-normal-Aqo67rzb.woff2"
+  },
+  "_dm-sans-600-normal-BmdmIIQ2.woff": {
+    "file": "assets/dm-sans-600-normal-BmdmIIQ2.woff",
+    "src": "_dm-sans-600-normal-BmdmIIQ2.woff"
+  },
+  "_dm-sans-700-normal-CUSSCpQX.woff": {
+    "file": "assets/dm-sans-700-normal-CUSSCpQX.woff",
+    "src": "_dm-sans-700-normal-CUSSCpQX.woff"
+  },
+  "_dm-sans-700-normal-DvUfVpUG.woff2": {
+    "file": "assets/dm-sans-700-normal-DvUfVpUG.woff2",
+    "src": "_dm-sans-700-normal-DvUfVpUG.woff2"
+  },
+  "_fonts-C496VYUI.css": {
+    "file": "assets/fonts-C496VYUI.css",
+    "src": "_fonts-C496VYUI.css"
+  },
+  "_fraunces-500-normal-BTR4KCeb.woff": {
+    "file": "assets/fraunces-500-normal-BTR4KCeb.woff",
+    "src": "_fraunces-500-normal-BTR4KCeb.woff"
+  },
+  "_fraunces-500-normal-DnGCNyPD.woff2": {
+    "file": "assets/fraunces-500-normal-DnGCNyPD.woff2",
+    "src": "_fraunces-500-normal-DnGCNyPD.woff2"
+  },
+  "_fraunces-600-normal-BFCDtZfi.woff2": {
+    "file": "assets/fraunces-600-normal-BFCDtZfi.woff2",
+    "src": "_fraunces-600-normal-BFCDtZfi.woff2"
+  },
+  "_fraunces-600-normal-DL5QCzvS.woff": {
+    "file": "assets/fraunces-600-normal-DL5QCzvS.woff",
+    "src": "_fraunces-600-normal-DL5QCzvS.woff"
+  },
+  "_fraunces-700-normal-CEOla-zY.woff2": {
+    "file": "assets/fraunces-700-normal-CEOla-zY.woff2",
+    "src": "_fraunces-700-normal-CEOla-zY.woff2"
+  },
+  "_fraunces-700-normal-DTjk5d1Q.woff": {
+    "file": "assets/fraunces-700-normal-DTjk5d1Q.woff",
+    "src": "_fraunces-700-normal-DTjk5d1Q.woff"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-C-zndpkH.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-CGIQ7AoP.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}
