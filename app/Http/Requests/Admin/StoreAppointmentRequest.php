@@ -62,12 +62,17 @@ class StoreAppointmentRequest extends FormRequest
                     return;
                 }
 
-                if (app(AppointmentDesk::class)->slotTaken(
-                    (int) $doctor->id,
+                $doctor->loadMissing(['doctorSchedules', 'doctorLeaves']);
+
+                $reason = app(AppointmentDesk::class)->unavailableReason(
+                    $doctor,
                     $this->string('appointment_date')->toString(),
                     $this->string('start_time')->toString(),
-                )) {
-                    $validator->errors()->add('start_time', 'That slot is already booked for this doctor.');
+                    $this->string('source')->toString(),
+                );
+
+                if ($reason !== null) {
+                    $validator->errors()->add('start_time', $reason);
                 }
             },
         ];

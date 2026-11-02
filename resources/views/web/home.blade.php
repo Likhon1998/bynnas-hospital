@@ -159,7 +159,7 @@
 
         return $position === false ? 100 : $position;
     })->values()->take(12);
-    $times = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
+    $times = \App\Support\AppointmentDesk::FALLBACK_SLOTS;
     $previewDoctors = collect($directoryDoctors ?? $doctors);
     if (request()->filled('specialty')) {
         $matchedPreview = $previewDoctors
@@ -187,7 +187,7 @@
             </div>
 
             <div class="ch-hero__card">
-                <form id="appointment" class="ch-card" method="POST" action="{{ route('appointment-requests.store') }}">
+                <form id="appointment" class="ch-card" method="POST" action="{{ route('appointment-requests.store') }}" data-appointment-slots="{{ route('appointment-slots') }}">
                     @csrf
                     <div class="ch-card__head">
                         <h2>Book an Appointment</h2>
@@ -214,9 +214,12 @@
                         <select class="ch-input" name="doctor">
                             <option value="">Select doctor</option>
                             @foreach ($directoryDoctors ?? $doctors as $doctor)
-                                <option value="{{ $doctor->id }}">{{ $doctor->name }} — {{ $doctor->specialization ?: $doctor->department?->name }}</option>
+                                <option value="{{ $doctor->id }}" @selected((string) old('doctor') === (string) $doctor->id)>{{ $doctor->name }} — {{ $doctor->specialization ?: $doctor->department?->name }}</option>
                             @endforeach
                         </select>
+                        @error('doctor')
+                            <span class="ch-error">{{ $message }}</span>
+                        @enderror
                     </label>
                     <label class="ch-field">
                         <span>Select Service</span>
@@ -230,22 +233,28 @@
                             <span class="ch-error">{{ $message }}</span>
                         @enderror
                     </label>
-                    <label class="ch-field">
-                        <span>Select Date</span>
-                        <input class="ch-input" type="date" name="date" value="{{ old('date') }}" min="{{ now()->toDateString() }}" required>
-                        @error('date')
-                            <span class="ch-error">{{ $message }}</span>
-                        @enderror
-                    </label>
-                    <label class="ch-field">
-                        <span>Preferred Time</span>
-                        <select class="ch-input" name="time">
-                            <option value="">Preferred time</option>
-                            @foreach ($times as $time)
-                                <option value="{{ $time }}">{{ $time }}</option>
-                            @endforeach
-                        </select>
-                    </label>
+                    <div class="ch-field-row">
+                        <label class="ch-field">
+                            <span>Select Date</span>
+                            <input class="ch-input" type="date" name="date" value="{{ old('date') }}" min="{{ now()->toDateString() }}" max="{{ now()->addMonths(3)->subDay()->toDateString() }}" required>
+                            @error('date')
+                                <span class="ch-error">{{ $message }}</span>
+                            @enderror
+                        </label>
+                        <label class="ch-field">
+                            <span>Preferred Time</span>
+                            <select class="ch-input" name="time" data-old-time="{{ old('time') }}">
+                                <option value="">Preferred time</option>
+                                @foreach ($times as $time)
+                                    <option value="{{ $time }}" @selected(old('time') === $time)>{{ $time }}</option>
+                                @endforeach
+                            </select>
+                            @error('time')
+                                <span class="ch-error">{{ $message }}</span>
+                            @enderror
+                        </label>
+                    </div>
+                    <p class="ch-slot-note" data-slot-note hidden></p>
                     <button type="submit" class="ch-btn ch-btn--solid ch-btn--wide">Book Appointment</button>
                     </div>
                 </form>

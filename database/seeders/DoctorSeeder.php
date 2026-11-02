@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Department;
 use App\Models\Doctor;
+use App\Models\DoctorLeave;
 use App\Models\DoctorSchedule;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -287,6 +288,25 @@ class DoctorSeeder extends Seeder
                     ],
                 );
             }
+        }
+
+        $leaveDoctor = Doctor::query()->where('slug', 'dr-omar-faruk')->first();
+
+        if ($leaveDoctor) {
+            $startsOn = now()->addMonths(2)->startOfMonth();
+
+            DoctorLeave::query()->updateOrCreate(
+                [
+                    'doctor_id' => $leaveDoctor->id,
+                    'starts_on' => $startsOn->toDateString(),
+                ],
+                [
+                    'ends_on' => $startsOn->copy()->addDays(9)->toDateString(),
+                    'type' => 'vacation',
+                    'reason' => 'Annual leave (demo)',
+                    'is_active' => true,
+                ],
+            );
         }
     }
 }

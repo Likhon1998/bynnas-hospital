@@ -106,11 +106,7 @@ class Appointment extends Model
 
     public function holdsSlot(): bool
     {
-        if ($this->status === 'cancelled') {
-            return false;
-        }
-
-        return $this->status !== 'pending' || $this->source !== 'web';
+        return $this->status !== 'cancelled';
     }
 
     /**
@@ -118,11 +114,7 @@ class Appointment extends Model
      */
     public function scopeHoldingSlot(Builder $query): void
     {
-        $query->where('status', '!=', 'cancelled')
-            ->where(function (Builder $inner): void {
-                $inner->where('status', '!=', 'pending')
-                    ->orWhere('source', '!=', 'web');
-            });
+        $query->where('status', '!=', 'cancelled');
     }
 
     public function patient(): BelongsTo

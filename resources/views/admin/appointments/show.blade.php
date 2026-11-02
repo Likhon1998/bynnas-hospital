@@ -5,7 +5,7 @@
     <div class="form-workspace">
         <p class="form-lede">
             @if ($appointment->source === 'web' && $appointment->status === 'pending')
-                Website request — confirm a real slot before this visit is held on the doctor’s list.
+                Website request — this time is already held for the patient. Confirm it, move it, or cancel if they do not need the slot.
             @else
                 Review the visit, set the time if needed, then update the status so reception and billing stay aligned.
             @endif

@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\CriticalAlertController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DoctorController;
+use App\Http\Controllers\Admin\DoctorLeaveController;
 use App\Http\Controllers\Admin\EmergencyFlowController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\HealthPackageController;
@@ -187,6 +188,10 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::middleware('permission:doctors.manage')->group(function (): void {
             Route::resource('departments', DepartmentController::class)->except(['show']);
             Route::resource('doctors', DoctorController::class)->except(['show']);
+            Route::post('doctors/{doctor}/leaves', [DoctorLeaveController::class, 'store'])->name('doctors.leaves.store');
+            Route::delete('doctors/{doctor}/leaves/{doctorLeave}', [DoctorLeaveController::class, 'destroy'])
+                ->scopeBindings()
+                ->name('doctors.leaves.destroy');
         });
 
         Route::middleware('permission:content.manage')->group(function (): void {

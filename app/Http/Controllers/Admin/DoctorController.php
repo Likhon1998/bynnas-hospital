@@ -50,6 +50,8 @@ class DoctorController extends Controller
 
     public function edit(Doctor $doctor): View
     {
+        $doctor->load(['doctorLeaves' => fn ($query) => $query->orderByDesc('starts_on')->orderByDesc('id')]);
+
         return view('admin.doctors.edit', [
             'doctor' => $doctor,
             'departments' => Department::query()->orderBy('name')->get(),

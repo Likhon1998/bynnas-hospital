@@ -472,12 +472,114 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const appointmentForm = document.querySelector('#appointment[data-appointment-slots]');
     const appointmentDoctor = document.querySelector('#appointment select[name="doctor"]');
+    const appointmentDate = document.querySelector('#appointment input[name="date"]');
+    const appointmentTime = document.querySelector('#appointment select[name="time"]');
+    const appointmentSlotNote = document.querySelector('#appointment [data-slot-note]');
+    const fallbackTimes = appointmentTime
+        ? [...appointmentTime.options].filter((option) => option.value !== '').map((option) => option.value)
+        : [];
+
+    const setSlotNote = (message, blocked = false) => {
+        if (! appointmentSlotNote) {
+            return;
+        }
+
+        appointmentSlotNote.textContent = message || '';
+        appointmentSlotNote.classList.toggle('is-blocked', blocked);
+        appointmentSlotNote.hidden = ! blocked && ! message;
+    };
+
+    const fillTimeOptions = (slots, preferred) => {
+        if (! appointmentTime) {
+            return;
+        }
+
+        const selected = preferred || appointmentTime.dataset.oldTime || appointmentTime.value;
+        appointmentTime.replaceChildren();
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = slots.length ? 'Choose an open time' : 'No open times';
+        appointmentTime.appendChild(placeholder);
+
+        slots.forEach((slot) => {
+            const option = document.createElement('option');
+            option.value = slot;
+            option.textContent = slot;
+            option.selected = slot === selected;
+            appointmentTime.appendChild(option);
+        });
+    };
+
+    const refreshAppointmentSlots = async () => {
+        if (! appointmentForm || ! appointmentDoctor || ! appointmentDate || ! appointmentTime) {
+            return;
+        }
+
+        const slotsUrl = appointmentForm.getAttribute('data-appointment-slots');
+        const doctorId = appointmentDoctor.value;
+        const date = appointmentDate.value;
+
+        if (! slotsUrl || ! doctorId || ! date) {
+            fillTimeOptions(fallbackTimes, appointmentTime.dataset.oldTime);
+            setSlotNote('');
+
+            return;
+        }
+
+        try {
+            const url = new URL(slotsUrl, window.location.origin);
+            url.searchParams.set('doctor', doctorId);
+            url.searchParams.set('date', date);
+
+            const response = await fetch(url.toString(), {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (! response.ok) {
+                throw new Error('Slots unavailable');
+            }
+
+            const payload = await response.json();
+            const slots = Array.isArray(payload.slots) ? payload.slots : [];
+
+            fillTimeOptions(slots, appointmentTime.dataset.oldTime);
+
+            if (payload.reason) {
+                setSlotNote(payload.reason, true);
+            } else if (slots.length) {
+                setSlotNote('');
+            } else {
+                setSlotNote('No open slots remain for this doctor on that day.', true);
+            }
+        } catch (error) {
+            fillTimeOptions(fallbackTimes, appointmentTime.dataset.oldTime);
+            setSlotNote('');
+        }
+    };
+
+    if (appointmentDoctor) {
+        appointmentDoctor.addEventListener('change', refreshAppointmentSlots);
+    }
+
+    if (appointmentDate) {
+        appointmentDate.addEventListener('change', refreshAppointmentSlots);
+    }
+
+    if (appointmentForm) {
+        refreshAppointmentSlots();
+    }
 
     document.querySelectorAll('[data-book-doctor]').forEach((link) => {
         link.addEventListener('click', () => {
             if (appointmentDoctor && link.dataset.bookDoctor) {
                 appointmentDoctor.value = link.dataset.bookDoctor;
+                refreshAppointmentSlots();
             }
         });
     });

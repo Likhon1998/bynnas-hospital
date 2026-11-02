@@ -75,17 +75,25 @@ class AppointmentStatusRequest extends FormRequest
                     return;
                 }
 
-                $willHold = $status !== 'pending' || $appointment->source !== 'web';
+                $appointment->loadMissing(['doctor.doctorSchedules', 'doctor.doctorLeaves']);
+                $doctor = $appointment->doctor;
 
-                if ($willHold && app(AppointmentDesk::class)->slotTaken(
-                    (int) $appointment->doctor_id,
+                if ($doctor === null) {
+                    return;
+                }
+
+                $reason = app(AppointmentDesk::class)->unavailableReason(
+                    $doctor,
                     $date,
                     $start,
+                    (string) $appointment->source,
                     $appointment->id,
-                )) {
+                );
+
+                if ($reason !== null) {
                     $validator->errors()->add(
                         $this->filled('start_time') ? 'start_time' : 'status',
-                        'That slot is already booked for this doctor.',
+                        $reason,
                     );
                 }
             },

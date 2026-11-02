@@ -7,7 +7,7 @@
         method="POST"
         :cancel="route('admin.appointments.index')"
         submit="Take appointment"
-        lede="Book a desk or emergency visit for a registered patient. Website requests stay on the list until you confirm a time."
+        lede="Book a desk or emergency visit for a registered patient. Off days, vacation, and a slot already held by another patient are blocked. Emergency can use an off day, but not a doctor who is away."
     >
         <x-admin.form-section title="Who is coming" note="Choose the patient and the clinician they will see.">
             <x-form.select name="patient_id" label="Patient" required>
@@ -28,7 +28,7 @@
             </x-form.select>
         </x-admin.form-section>
 
-        <x-admin.form-section title="When" note="Each visit is booked for 30 minutes. Overlapping times for the same doctor are blocked.">
+        <x-admin.form-section title="When" note="Each visit is 30 minutes. The same doctor cannot be double-booked, booked on an off day, or booked while on leave.">
             <x-form.input name="appointment_date" label="Date" type="date" :value="old('appointment_date', now()->toDateString())" required />
             <x-form.input name="start_time" label="Start time" type="time" :value="old('start_time', '09:00')" required />
             <x-form.select name="status" label="Status" required>

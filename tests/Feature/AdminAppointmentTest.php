@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Appointment;
 use App\Models\Department;
 use App\Models\Doctor;
+use App\Models\DoctorLeave;
+use App\Models\DoctorSchedule;
 use App\Models\Patient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -100,7 +102,7 @@ class AdminAppointmentTest extends TestCase
         $this->assertModelExists($first);
     }
 
-    public function test_pending_website_request_does_not_block_a_desk_slot(): void
+    public function test_pending_website_request_blocks_the_same_desk_slot(): void
     {
         $this->travelTo('2026-10-28 10:00:00');
 
@@ -114,16 +116,109 @@ class AdminAppointmentTest extends TestCase
             'source' => 'web',
         ]);
 
-        $this->actingAs($user)->post(route('admin.appointments.store'), [
+        $response = $this->actingAs($user)->post(route('admin.appointments.store'), [
             'patient_id' => Patient::factory()->create()->id,
             'doctor_id' => $doctor->id,
             'appointment_date' => '2026-10-28',
             'start_time' => '09:00',
             'status' => 'confirmed',
             'source' => 'admin',
+        ]);
+
+        $response->assertSessionHasErrors('start_time');
+        $this->assertSame(1, Appointment::query()->count());
+    }
+
+    public function test_desk_booking_rejects_an_off_day_when_the_doctor_has_clinic_hours(): void
+    {
+        $this->travelTo('2026-10-28 10:00:00');
+
+        $user = $this->createStaffUser(['appointments.view', 'appointments.manage']);
+        $doctor = Doctor::factory()->create();
+        DoctorSchedule::factory()->recycle($doctor)->create([
+            'weekday' => 'saturday',
+            'start_time' => '09:00:00',
+            'end_time' => '13:00:00',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.appointments.store'), [
+            'patient_id' => Patient::factory()->create()->id,
+            'doctor_id' => $doctor->id,
+            'appointment_date' => '2026-10-29',
+            'start_time' => '09:00',
+            'status' => 'confirmed',
+            'source' => 'admin',
+        ]);
+
+        $response->assertSessionHasErrors('start_time');
+        $this->assertSame(0, Appointment::query()->count());
+    }
+
+    public function test_desk_booking_rejects_a_doctor_on_vacation(): void
+    {
+        $this->travelTo('2026-10-28 10:00:00');
+
+        $user = $this->createStaffUser(['appointments.view', 'appointments.manage']);
+        $doctor = Doctor::factory()->create();
+        DoctorLeave::factory()->recycle($doctor)->create([
+            'starts_on' => '2026-10-28',
+            'ends_on' => '2026-11-04',
+            'type' => 'vacation',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.appointments.store'), [
+            'patient_id' => Patient::factory()->create()->id,
+            'doctor_id' => $doctor->id,
+            'appointment_date' => '2026-10-28',
+            'start_time' => '11:00',
+            'status' => 'confirmed',
+            'source' => 'admin',
+        ]);
+
+        $response->assertSessionHasErrors('start_time');
+        $this->assertSame(0, Appointment::query()->count());
+    }
+
+    public function test_emergency_can_book_an_off_day_but_not_vacation(): void
+    {
+        $this->travelTo('2026-10-28 10:00:00');
+
+        $user = $this->createStaffUser(['appointments.view', 'appointments.manage']);
+        $doctor = Doctor::factory()->create();
+        DoctorSchedule::factory()->recycle($doctor)->create([
+            'weekday' => 'saturday',
+            'start_time' => '09:00:00',
+            'end_time' => '13:00:00',
+        ]);
+
+        $this->actingAs($user)->post(route('admin.appointments.store'), [
+            'patient_id' => Patient::factory()->create()->id,
+            'doctor_id' => $doctor->id,
+            'appointment_date' => '2026-10-29',
+            'start_time' => '21:00',
+            'status' => 'confirmed',
+            'source' => 'emergency',
         ])->assertRedirect();
 
-        $this->assertSame(2, Appointment::query()->count());
+        $this->assertSame(1, Appointment::query()->count());
+
+        DoctorLeave::factory()->recycle($doctor)->create([
+            'starts_on' => '2026-10-30',
+            'ends_on' => '2026-11-02',
+            'type' => 'vacation',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.appointments.store'), [
+            'patient_id' => Patient::factory()->create()->id,
+            'doctor_id' => $doctor->id,
+            'appointment_date' => '2026-10-30',
+            'start_time' => '21:00',
+            'status' => 'confirmed',
+            'source' => 'emergency',
+        ]);
+
+        $response->assertSessionHasErrors('start_time');
+        $this->assertSame(1, Appointment::query()->count());
     }
 
     public function test_staff_can_confirm_a_website_request_with_a_real_slot(): void
