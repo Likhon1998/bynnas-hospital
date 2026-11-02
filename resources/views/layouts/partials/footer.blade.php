@@ -38,7 +38,7 @@
 <footer id="contact" class="ch-foot">
     <div class="ch-wrap ch-foot__grid">
         <div class="ch-foot__brand">
-            <a href="{{ route('home') }}" class="ch-brand">
+            <a href="{{ route('home') }}" @class(['ch-brand', 'has-logo' => filled($logo)])>
                 @if (filled($logo))
                     <img src="{{ $logo }}" alt="{{ $hospitalName }}" class="ch-brand__logo">
                 @else

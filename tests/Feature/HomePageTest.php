@@ -54,6 +54,11 @@ class HomePageTest extends TestCase
         $response->assertSee('Frequently Asked Questions', false);
         $response->assertSee('News & Updates', false);
         $response->assertSee('Your Health. Our Priority.', false);
+        $response->assertSee('data-nav-toggle', false);
+        $response->assertSee('id="mobile-navigation"', false);
+        $response->assertSee('ch-menu__label', false);
+        $response->assertSee('ch-dock', false);
+        $response->assertSee('width=device-width', false);
     }
 
     public function test_home_expert_doctors_shows_eight_and_ignores_finder_search(): void

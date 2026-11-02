@@ -603,19 +603,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewportHeight = window.innerHeight;
         const spaceBelow = viewportHeight - rect.bottom - pad;
         const spaceAbove = rect.top - pad;
-        const optionCount = visibleSelectOptions(entry.select).length;
-        const useSheet = viewportWidth < 720 && (Math.max(spaceBelow, spaceAbove) < 240 || optionCount > 8);
+        const useSheet = viewportWidth < 720;
 
         entry.menu.classList.toggle('is-sheet', useSheet);
         selectBackdrop.classList.toggle('is-open', useSheet);
 
         if (useSheet) {
+            const dock = viewportWidth < 1100 ? 76 : 0;
+
             entry.menu.style.left = `${pad}px`;
             entry.menu.style.right = `${pad}px`;
             entry.menu.style.width = 'auto';
             entry.menu.style.top = 'auto';
-            entry.menu.style.bottom = `${pad}px`;
-            entry.menu.style.maxHeight = `${Math.min(viewportHeight * 0.72, viewportHeight - pad * 2)}px`;
+            entry.menu.style.bottom = `${pad + dock}px`;
+            entry.menu.style.maxHeight = `${Math.min(viewportHeight * 0.68, viewportHeight - pad * 2 - dock)}px`;
 
             return;
         }

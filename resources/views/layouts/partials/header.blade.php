@@ -41,7 +41,7 @@
     </div>
 
     <div class="ch-wrap ch-top__bar">
-        <a href="{{ route('home') }}" class="ch-brand">
+        <a href="{{ route('home') }}" @class(['ch-brand', 'has-logo' => filled($logo)])>
             @if (filled($logo))
                 <img src="{{ $logo }}" alt="{{ $hospitalName }}" class="ch-brand__logo">
             @else
@@ -88,6 +88,7 @@
                 aria-label="Open menu"
             >
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+                <span class="ch-menu__label">Menu</span>
             </button>
         </div>
     </div>

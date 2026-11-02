@@ -11,6 +11,7 @@
     background: #fff;
     color: var(--ch-ink);
     overflow-x: clip;
+    max-width: 100%;
 }
 
 .ch-wrap {
@@ -100,9 +101,11 @@
 }
 
 .ch-top__bar {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.85rem;
+    width: 100%;
     min-height: 4.7rem;
 }
 
@@ -139,22 +142,30 @@
     border-radius: 999px;
 }
 
+.ch-brand > span {
+    min-width: 0;
+}
+
 .ch-brand__logo {
-    width: 2.65rem;
-    height: 2.65rem;
-    border-radius: 999px;
-    object-fit: cover;
-    background: #eef2f7;
+    width: auto;
+    height: 2.45rem;
+    max-width: 9.5rem;
+    border-radius: 0.4rem;
+    object-fit: contain;
+    background: transparent;
     flex-shrink: 0;
 }
 
 .ch-brand__name {
     display: block;
+    overflow: hidden;
     color: var(--ch-ink);
     font-size: 1.08rem;
     font-weight: 800;
     letter-spacing: -0.04em;
     line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ch-brand__sub {
@@ -214,8 +225,8 @@
 .ch-top__actions {
     display: flex;
     align-items: center;
+    justify-self: end;
     gap: 0.6rem;
-    margin-left: auto;
     flex-shrink: 0;
 }
 
@@ -307,13 +318,21 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
+    gap: 0.35rem;
+    min-width: 2.6rem;
     height: 2.5rem;
+    padding: 0 0.8rem;
     border: 0;
     border-radius: 999px;
     background: var(--ch-brand);
     color: #fff;
     flex-shrink: 0;
+}
+
+.ch-menu__label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
 }
 
 @media (max-width: 1099px) {
@@ -417,7 +436,15 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 1.75rem;
+    width: 100%;
     padding: 2.4rem 0 2.8rem;
+}
+
+.ch-hero__copy,
+.ch-hero__card {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
 }
 
 .ch-hero__copy {
@@ -438,7 +465,8 @@
     font-size: clamp(2.2rem, 5vw, 3.55rem);
     font-weight: 700;
     letter-spacing: -0.05em;
-    line-height: 1.05;
+    line-height: 1.12;
+    overflow-wrap: break-word;
 }
 
 .ch-hero__lead {
@@ -447,6 +475,7 @@
     color: #5a6b80;
     font-size: 0.98rem;
     line-height: 1.6;
+    overflow-wrap: break-word;
 }
 
 .ch-hero__copy .ch-more {
@@ -489,6 +518,7 @@
 .ch-card {
     position: relative;
     width: min(24rem, 100%);
+    max-width: 100%;
     overflow: hidden;
     padding: 0;
     border-radius: 1.15rem;
@@ -1106,6 +1136,10 @@ body.ch-cal-lock {
 }
 
 @media (max-width: 639px) {
+    .ch-wrap {
+        width: min(1200px, calc(100% - 1.5rem));
+    }
+
     .ch-cal-modal {
         place-items: end center;
         padding: 0;
@@ -1113,9 +1147,37 @@ body.ch-cal-lock {
 
     .ch-cal-modal__panel {
         width: 100%;
-        max-height: 88dvh;
-        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        max-height: calc(88dvh - 4.6rem);
+        margin-bottom: calc(4.4rem + env(safe-area-inset-bottom));
+        padding-bottom: 1rem;
         border-radius: 1.15rem 1.15rem 0 0;
+    }
+
+    .ch-hero .ch-field-row,
+    .ch-field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ch-find__people {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ch-brand.has-logo > span {
+        display: none;
+    }
+
+    .ch-brand.has-logo .ch-brand__logo {
+        height: 2.15rem;
+        max-width: min(12.5rem, calc(100vw - 6.5rem));
+    }
+
+    .ch-drawer__panel {
+        width: 100%;
+    }
+
+    .ch-faq summary {
+        align-items: flex-start;
+        white-space: normal;
     }
 }
 
@@ -2861,6 +2923,7 @@ body.ch-cal-lock {
 
 .ch-map iframe {
     width: 100%;
+    max-width: 100%;
     height: 100%;
     min-height: 15rem;
     border: 0;
@@ -3187,8 +3250,8 @@ body.ch-cal-lock {
         bottom: 0;
         left: 0;
         z-index: 40;
-        display: grid;
-        grid-template-columns: 7.5rem minmax(0, 1fr);
+        display: flex;
+        align-items: stretch;
         gap: 0.55rem;
         padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom));
         background: rgb(255 255 255 / 0.96);
@@ -3207,6 +3270,15 @@ body.ch-cal-lock {
         font-size: 0.86rem;
         font-weight: 800;
         text-decoration: none;
+    }
+
+    .ch-dock__call {
+        flex: 0 1 7.25rem;
+    }
+
+    .ch-dock__book {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .ch-dock__call {
@@ -3231,18 +3303,22 @@ body.ch-cal-lock {
     .ch-rail__bar {
         min-height: 2.2rem;
         padding: 0.3rem 0;
+        min-width: 0;
     }
 
     .ch-rail__alert {
         flex-wrap: wrap;
+        min-width: 0;
         letter-spacing: 0.02em;
     }
 
     .ch-top__bar {
         min-height: 3.9rem;
+        min-width: 0;
     }
 
     .ch-brand {
+        flex: 1 1 auto;
         gap: 0.55rem;
     }
 
@@ -3266,16 +3342,20 @@ body.ch-cal-lock {
     }
 
     .ch-hero__grid {
+        width: 100%;
         gap: 1.1rem;
         padding: 1.15rem 0 1.25rem;
     }
 
     .ch-hero h1 {
-        font-size: clamp(1.85rem, 9vw, 2.35rem);
+        max-width: 100%;
+        font-size: clamp(1.42rem, 5.9vw, 1.85rem);
+        letter-spacing: -0.03em;
     }
 
     .ch-hero__lead {
         margin-top: 0.55rem;
+        max-width: 100%;
         font-size: 0.9rem;
     }
 
@@ -3291,15 +3371,41 @@ body.ch-cal-lock {
     .ch-hero__card,
     .ch-card {
         width: 100%;
+        max-width: 100%;
     }
 
     .ch-field-row {
         grid-template-columns: 1fr;
     }
 
-    .ch-hero .ch-field-row {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
+    .ch-brand.has-logo > span {
+        display: none;
+    }
+
+    .ch-brand.has-logo .ch-brand__logo {
+        height: 2.2rem;
+        max-width: min(11.5rem, calc(100vw - 6.25rem));
+    }
+
+    .ch-select__option {
+        min-height: 2.75rem;
+        padding: 0.72rem 0.85rem;
+    }
+
+    .ch-select__filter {
+        min-height: 2.75rem;
+        font-size: 1rem;
+    }
+
+    .ch-select__menu.is-sheet {
+        left: 0.75rem;
+        right: 0.75rem;
+        padding-bottom: 0.55rem;
+    }
+
+    .ch-map iframe,
+    .ch-locs iframe {
+        max-width: 100%;
     }
 
     .ch-hero .ch-card input,
@@ -3497,6 +3603,19 @@ body.ch-cal-lock {
     }
 }
 
+@media (max-width: 899px) {
+    .ch-docs,
+    .ch-find__people {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ch-news,
+    .ch-trio,
+    .ch-services {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 @media (min-width: 1100px) {
     .ch-nav {
         display: flex;
@@ -3507,6 +3626,7 @@ body.ch-cal-lock {
     }
 
     .ch-top__bar {
+        grid-template-columns: auto minmax(0, 1fr) auto;
         gap: 1rem;
     }
 
