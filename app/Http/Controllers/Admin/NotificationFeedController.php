@@ -13,7 +13,7 @@ class NotificationFeedController extends Controller
     public function index(Request $request, CriticalAlertFeed $feed): JsonResponse
     {
         $user = $request->user();
-        $payload = $feed->for($user, 8);
+        $payload = $feed->for($user);
 
         return response()->json([
             'total' => $payload['total'],
@@ -44,7 +44,7 @@ class NotificationFeedController extends Controller
             (bool) ($validated['all'] ?? false),
         );
 
-        $payload = $feed->for($user, 8);
+        $payload = $feed->for($user);
 
         return response()->json([
             'ok' => true,

@@ -83,16 +83,24 @@
                         <div class="admin-popover admin-popover--end hidden" data-admin-menu-panel hidden>
                             <div class="admin-popover__head">
                                 <p class="admin-popover__title">Notifications</p>
-                                <a
-                                    href="{{ $adminNotificationsHref }}"
-                                    class="admin-popover__link{{ $adminNotificationCount > 0 ? '' : ' hidden' }}"
-                                    data-admin-notifications-all
-                                    @if ($adminNotificationCount === 0) hidden @endif
-                                >View all</a>
+                                <div class="admin-popover__actions">
+                                    <button
+                                        type="button"
+                                        class="admin-popover__link{{ $adminNotificationCount > 0 ? '' : ' hidden' }}"
+                                        data-admin-notifications-read
+                                        @if ($adminNotificationCount === 0) hidden @endif
+                                    >Mark all as read</button>
+                                    <a
+                                        href="{{ $adminNotificationsHref }}"
+                                        class="admin-popover__link{{ $adminNotifications->isEmpty() ? ' hidden' : '' }}"
+                                        data-admin-notifications-all
+                                        @if ($adminNotifications->isEmpty()) hidden @endif
+                                    >View all</a>
+                                </div>
                             </div>
                             <div class="admin-popover__body" data-admin-notifications-body>
                                 @forelse ($adminNotifications as $notice)
-                                    <a href="{{ $notice['href'] }}" class="admin-notice admin-notice--{{ $notice['tone'] }}" data-admin-notification-id="{{ $notice['id'] }}">
+                                    <a href="{{ $notice['href'] }}" class="admin-notice admin-notice--{{ $notice['tone'] }}{{ ! empty($notice['read']) ? ' is-read' : '' }}" data-admin-notification-id="{{ $notice['id'] }}">
                                         <span class="admin-notice__title">{{ $notice['title'] }}</span>
                                         <span class="admin-notice__detail">{{ $notice['detail'] }}</span>
                                         @if ($notice['time'] !== '')
@@ -100,7 +108,7 @@
                                         @endif
                                     </a>
                                 @empty
-                                    <p class="admin-popover__empty">No critical alerts right now.</p>
+                                    <p class="admin-popover__empty">No notifications yet.</p>
                                 @endforelse
                             </div>
                         </div>

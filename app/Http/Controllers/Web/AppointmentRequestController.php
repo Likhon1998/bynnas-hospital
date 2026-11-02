@@ -30,10 +30,14 @@ class AppointmentRequestController extends Controller
                 ->with('error', 'The desk cannot take website requests until a doctor is on the roster.');
         }
 
-        $appointment = $desk->requestFromWebsite($request->validated(), $service);
+        $appointment = $desk->requestFromWebsite($request->validated(), $service)->loadMissing(['patient', 'doctor']);
+        $when = $appointment->appointment_date?->format('d M Y') ?: 'the clinic day';
+        $time = substr((string) $appointment->start_time, 0, 5);
+        $doctorName = $appointment->doctor?->name ?: 'the clinic';
+        $phone = $appointment->patient?->phone ?: 'the number you gave';
 
         return redirect()
             ->to(route('home').'#appointment')
-            ->with('status', 'Request received. The desk will call '.$appointment->patient?->phone.' to confirm.');
+            ->with('status', 'Request '.$appointment->appointment_no.' received for '.$when.' at '.$time.' with '.$doctorName.'. The desk will call '.$phone.'.');
     }
 }

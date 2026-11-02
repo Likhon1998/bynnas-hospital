@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Banner;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class BannerRequest extends FormRequest
 {
@@ -22,7 +24,7 @@ class BannerRequest extends FormRequest
             'image' => ['required', 'string', 'max:2048'],
             'cta_label' => ['nullable', 'string', 'max:255'],
             'cta_url' => ['nullable', 'string', 'max:2048'],
-            'placement' => ['required', 'string', 'max:50'],
+            'placement' => ['required', 'string', Rule::in(array_keys(Banner::placements()))],
             'is_active' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0'],
             'starts_at' => ['nullable', 'date'],

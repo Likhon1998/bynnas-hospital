@@ -2,29 +2,32 @@
 
 @php
     $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
+    $tagline = $hospital->get('tagline') ?: 'Compassionate care for every family';
     $aboutContent = $hospital->get('about_content')
         ?: 'We run consultant clinics, a diagnostic floor, and an emergency desk that stays open at night.';
     $phone = $hospital->get('phone') ?: $hospital->get('emergency_phone');
-    $storyImage = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=1200&q=80';
+    $emergency = $hospital->get('emergency_phone') ?: $phone;
+    $address = $hospital->get('address') ?: 'Main Campus';
+    $email = $hospital->get('email');
+    $clinicHours = $workingHours['saturday'] ?? $workingHours['monday'] ?? '9:00 AM – 9:00 PM';
+    $emergencyHours = $workingHours['emergency'] ?? '24/7';
+    $storyImage = 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1400&q=80';
     $values = [
         [
-            'title' => 'Say the plan out loud',
-            'text' => 'Before a test or admission, the doctor should tell you what happens next in ordinary words. If that does not happen, ask the desk.',
+            'icon' => 'stethoscope',
+            'title' => 'Named consultants',
+            'text' => 'You book a real doctor from the roster — not a placeholder. The same name stays on your visit from clinic to follow-up.',
         ],
         [
-            'title' => 'Keep labs in the building',
-            'text' => 'Reports should not travel across town if we can help it. Clinics and diagnostics sit on the same campus.',
+            'icon' => 'flask',
+            'title' => 'Care on one campus',
+            'text' => 'Clinics, diagnostics, and the emergency desk sit together. Reports should not travel across town if we can help it.',
         ],
         [
-            'title' => 'Someone is always at emergency',
+            'icon' => 'siren',
+            'title' => 'Emergency never closes',
             'text' => 'The night desk does not close on Friday. If it is urgent, come in. Do not wait for OPD hours.',
         ],
-    ];
-    $statItems = [
-        ['value' => (string) ($stats['doctors'] ?: 0), 'label' => 'Doctors'],
-        ['value' => (string) ($stats['departments'] ?: 0), 'label' => 'Departments'],
-        ['value' => (string) ($stats['services'] ?: 0), 'label' => 'Services'],
-        ['value' => 'Night', 'label' => 'Emergency cover'],
     ];
 @endphp
 
@@ -32,88 +35,105 @@
 @section('meta_description', 'How '.$hospitalName.' works, who practises here, and how to reach the desk.')
 
 @section('content')
-    <x-web.page-intro
-        kicker="About the hospital"
-        title="About us"
-        :note="$hospitalName.' is in Gulshan. Families come here for a named consultant, a blood test, or because something cannot wait until morning.'"
-    />
-
-    <section class="site-block">
-        <div class="web-wrap grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
-            <div class="max-w-xl">
-                <div class="site-section-head">
-                    <h2>Our story</h2>
+    <section class="ch-clinics-hero">
+        <div class="ch-wrap">
+            <p class="ch-find__kicker">About the hospital</p>
+            <div class="ch-clinics-hero__row">
+                <div>
+                    <h1>About us</h1>
+                    <p>{{ $tagline }}. Families come here for a named consultant, a blood test, or because something cannot wait until morning.</p>
                 </div>
-                <p class="text-[0.95rem] leading-7 text-[#475569]">{{ $aboutContent }}</p>
-                <p class="mt-4 text-[0.95rem] leading-7 text-[#475569]">
-                    The building is ordinary on purpose. Reception is on the ground floor. If you have old papers, bring them. It saves a second visit.
-                </p>
-                <div class="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
-                    <a href="{{ route('home') }}#appointment" class="site-btn site-btn--green">Request a visit</a>
-                    @if ($phone)
-                        <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="text-sm font-semibold text-[#16a34a]">
-                            Call {{ $phone }}
-                        </a>
-                    @endif
+                <div class="ch-clinics-hero__actions">
+                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#find-doctor">Find a doctor</a>
+                    <a class="ch-btn" href="{{ route('home') }}#appointment">Book appointment</a>
                 </div>
             </div>
-            <img
-                src="{{ $storyImage }}"
-                alt="A doctor at {{ $hospitalName }}"
-                referrerpolicy="no-referrer"
-                class="aspect-[5/4] w-full rounded-[1.5rem] bg-[#dbe4f0] object-cover object-center shadow-[0_24px_50px_-36px_rgb(15_23_42_/_0.55)]"
-            >
+            <p class="ch-clinics-hero__count">
+                {{ $stats['doctors'] }} {{ \Illuminate\Support\Str::plural('consultant', $stats['doctors']) }}
+                · {{ $stats['departments'] }} {{ \Illuminate\Support\Str::plural('specialty', $stats['departments']) }}
+                · Emergency {{ $emergencyHours }}
+            </p>
         </div>
     </section>
 
-    <section class="site-block site-block--soft">
-        <div class="web-wrap">
-            <div class="site-section-head">
-                <h2>How we try to work</h2>
+    <section class="ch-about-story">
+        <div class="ch-wrap ch-about-story__grid">
+            <div class="ch-about-story__copy">
+                <p class="ch-find__kicker">Our campus</p>
+                <h2 class="ch-sec__title">Our story</h2>
+                <p>{{ $aboutContent }}</p>
+                <p>Reception is on the ground floor. If you have old papers, bring them — it often saves a second visit.</p>
+                <div class="ch-profile__cta">
+                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Request a visit</a>
+                    @if ($phone)
+                        <a class="ch-btn" href="tel:{{ preg_replace('/\s+/', '', $phone) }}">Call {{ $phone }}</a>
+                    @endif
+                </div>
             </div>
-            <div class="grid gap-5 sm:grid-cols-3">
+            <figure class="ch-about-story__media">
+                <img src="{{ $storyImage }}" alt="{{ $hospitalName }} campus" referrerpolicy="no-referrer">
+                <figcaption>
+                    <strong>Main campus</strong>
+                    <span>{{ $address }}</span>
+                </figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section class="ch-about-values">
+        <div class="ch-wrap">
+            <div class="ch-sec__head">
+                <div>
+                    <p class="ch-find__kicker">How we work</p>
+                    <h2 class="ch-sec__title">Care you can follow</h2>
+                    <p class="ch-depts-intro">Simple rules the desk tries to keep every day.</p>
+                </div>
+            </div>
+            <div class="ch-values">
                 @foreach ($values as $value)
-                    <div class="rounded-[1.35rem] border border-[#e2e8f0] bg-white p-5 shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)]">
-                        <h3 class="text-base font-bold text-[#122447]">{{ $value['title'] }}</h3>
-                        <p class="mt-3 text-sm leading-6 text-[#64748b]">{{ $value['text'] }}</p>
-                    </div>
+                    <article class="ch-value">
+                        <span class="ch-value__icon"><x-icon :name="$value['icon']" /></span>
+                        <h3>{{ $value['title'] }}</h3>
+                        <p>{{ $value['text'] }}</p>
+                    </article>
                 @endforeach
             </div>
         </div>
     </section>
 
-    <section class="site-stats">
-        <div class="web-wrap site-stats__row">
-            @foreach ($statItems as $stat)
-                <div>
-                    <strong>{{ $stat['value'] }}</strong>
-                    <span>{{ $stat['label'] }}</span>
-                </div>
-            @endforeach
-        </div>
-    </section>
+    <x-web.campus-band
+        :stats="$stats"
+        :headline="$hospitalName"
+        :note="$stats['summary']"
+        :cta-href="route('home').'#appointment'"
+    />
 
     @if ($doctors->isNotEmpty())
-        <section class="site-block">
-            <div class="web-wrap">
-                <div class="site-section-head flex flex-wrap items-end justify-between gap-4">
-                    <h2>Consultants you may meet</h2>
-                    <a href="{{ route('services') }}" class="text-sm font-semibold text-[#16a34a]">Explore services</a>
+        <section class="ch-docs-sec">
+            <div class="ch-wrap">
+                <div class="ch-sec__head">
+                    <div>
+                        <p class="ch-find__kicker">The people you meet</p>
+                        <h2 class="ch-sec__title">Consultants on the roster</h2>
+                        <p class="ch-depts-intro">Open a profile to see clinic hours, then book a free slot.</p>
+                    </div>
+                    <a class="ch-more" href="{{ route('doctors') }}">View all Doctors →</a>
                 </div>
-                <div class="site-doctors site-doctors--grid">
+                <div class="ch-docs ch-docs--all">
                     @foreach ($doctors as $doctor)
-                        <article class="site-doctor">
-                            <div class="site-doctor__photo">
-                                <img
-                                    src="{{ filled($doctor->photo) ? $doctor->photo : 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=800&q=80' }}"
-                                    alt="Portrait of {{ $doctor->name }}"
-                                    loading="lazy"
-                                    referrerpolicy="no-referrer"
-                                >
-                            </div>
-                            <div class="site-doctor__card">
-                                <h3>{{ $doctor->name }}</h3>
-                                <p>{{ $doctor->department?->name ?: ($doctor->designation ?: 'Consultant') }}</p>
+                        <article class="ch-doc">
+                            <a class="ch-doc__profile" href="{{ route('doctors.show', $doctor) }}">
+                                @if ($doctor->photo)
+                                    <img src="{{ $doctor->photo }}" alt="{{ $doctor->name }}">
+                                @else
+                                    <span class="ch-doc__initials" aria-hidden="true">{{ $doctor->initials() }}</span>
+                                @endif
+                                <strong>{{ $doctor->name }}</strong>
+                                <em>{{ $doctor->specialization ?: $doctor->department?->name ?: 'Consultant' }}</em>
+                            </a>
+                            <div class="ch-doc__actions">
+                                <a class="ch-doc__book" href="{{ route('doctors.show', $doctor) }}">Profile</a>
+                                <a class="ch-doc__book" href="{{ route('home', ['doctor' => $doctor->id]) }}#appointment">Book</a>
                             </div>
                         </article>
                     @endforeach
@@ -123,17 +143,68 @@
     @endif
 
     @if ($departments->isNotEmpty())
-        <section class="site-block site-block--soft">
-            <div class="web-wrap">
-                <div class="site-section-head">
-                    <h2>Departments in the building</h2>
+        <section class="ch-depts-sec">
+            <div class="ch-wrap">
+                <div class="ch-sec__head">
+                    <div>
+                        <p class="ch-find__kicker">Specialist clinics</p>
+                        <h2 class="ch-sec__title">Departments in the building</h2>
+                        <p class="ch-depts-intro">Choose a clinic to see the doctors you can book.</p>
+                    </div>
+                    <a class="ch-more" href="{{ route('departments') }}">View all Departments →</a>
                 </div>
-                <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="ch-depts">
                     @foreach ($departments as $department)
-                        <li class="rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 font-semibold text-[#122447]">{{ $department->name }}</li>
+                        <a class="ch-dept" href="{{ route('doctors', ['specialty' => $department->name]) }}" title="{{ $department->description ?: $department->name }}">
+                            <span class="ch-dept__icon"><x-icon :name="$department->icon ?: 'hospital'" /></span>
+                            <strong>{{ $department->name }}</strong>
+                        </a>
                     @endforeach
-                </ul>
+                </div>
             </div>
         </section>
     @endif
+
+    <section class="ch-about-visit">
+        <div class="ch-wrap">
+            <div class="ch-sec__head">
+                <div>
+                    <p class="ch-find__kicker">Before you arrive</p>
+                    <h2 class="ch-sec__title">Visit the campus</h2>
+                </div>
+                <a class="ch-more" href="{{ route('emergency') }}">Emergency desk →</a>
+            </div>
+            <div class="ch-visit">
+                <article class="ch-visit__card">
+                    <span class="ch-visit__icon"><x-icon name="pin" /></span>
+                    <h3>Address</h3>
+                    <p>{{ $address }}</p>
+                </article>
+                <article class="ch-visit__card">
+                    <span class="ch-visit__icon"><x-icon name="clock" /></span>
+                    <h3>Clinic hours</h3>
+                    <p>{{ $clinicHours }}</p>
+                    <p>Friday: {{ $workingHours['friday'] ?? 'Emergency only' }}</p>
+                </article>
+                <article class="ch-visit__card ch-visit__card--urgent">
+                    <span class="ch-visit__icon"><x-icon name="ambulance" /></span>
+                    <h3>Emergency</h3>
+                    <p>Open {{ $emergencyHours }}.</p>
+                    @if ($emergency)
+                        <a href="tel:{{ preg_replace('/\s+/', '', $emergency) }}">{{ $emergency }}</a>
+                    @endif
+                </article>
+                <article class="ch-visit__card">
+                    <span class="ch-visit__icon"><x-icon name="phone" /></span>
+                    <h3>Desk</h3>
+                    @if ($phone)
+                        <p><a href="tel:{{ preg_replace('/\s+/', '', $phone) }}">{{ $phone }}</a></p>
+                    @endif
+                    @if ($email)
+                        <p><a href="mailto:{{ $email }}">{{ $email }}</a></p>
+                    @endif
+                </article>
+            </div>
+        </div>
+    </section>
 @endsection

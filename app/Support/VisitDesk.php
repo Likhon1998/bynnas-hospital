@@ -19,6 +19,14 @@ class VisitDesk
         return DB::transaction(function () use ($appointment, $actor): Visit {
             $this->assertPatientHasNoOpenVisit((int) $appointment->patient_id);
 
+            if ($appointment->status === 'pending') {
+                $appointment->update([
+                    'status' => 'confirmed',
+                    'cancelled_at' => null,
+                    'cancellation_reason' => null,
+                ]);
+            }
+
             $visit = Visit::query()->create([
                 'visit_no' => Visit::nextNumber(),
                 'patient_id' => $appointment->patient_id,
@@ -218,7 +226,7 @@ class VisitDesk
 
     private function assertAppointmentCanCheckIn(Appointment $appointment): void
     {
-        if (in_array($appointment->status, ['cancelled', 'no_show'], true)) {
+        if (in_array($appointment->status, ['cancelled', 'no_show', 'completed'], true)) {
             throw ValidationException::withMessages([
                 'appointment' => 'This appointment cannot be checked in.',
             ]);

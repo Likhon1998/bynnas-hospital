@@ -56,4 +56,19 @@ class DoctorLeaveTest extends TestCase
 
         $this->assertSame(0, DoctorLeave::query()->count());
     }
+
+    public function test_linked_doctor_cannot_record_leave_for_another_doctor(): void
+    {
+        $user = $this->createStaffUser(['appointments.view'], 'doctor');
+        Doctor::factory()->create(['user_id' => $user->id]);
+        $other = Doctor::factory()->create();
+
+        $this->actingAs($user)->post(route('admin.doctors.leaves.store', $other), [
+            'starts_on' => '2026-12-01',
+            'ends_on' => '2026-12-10',
+            'type' => 'vacation',
+        ])->assertForbidden();
+
+        $this->assertSame(0, DoctorLeave::query()->count());
+    }
 }

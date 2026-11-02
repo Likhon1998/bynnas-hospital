@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\User;
+use App\Support\PublicPhoto;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -111,7 +112,7 @@ class BlogSeeder extends Seeder
                     'title' => $post['title'],
                     'excerpt' => $post['excerpt'],
                     'body' => DemoContent::articleBody($post['body']),
-                    'cover_image' => DemoContent::image($post['title'], 1200, 700),
+                    'cover_image' => PublicPhoto::article(null, $index),
                     'is_published' => true,
                     'published_at' => now()->subDays(10 - $index)->setTime(10, 0),
                 ],

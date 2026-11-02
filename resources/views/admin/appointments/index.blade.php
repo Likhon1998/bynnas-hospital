@@ -7,10 +7,25 @@
     @endif
 
     <div class="table-frame table-frame--fill">
-        <form method="GET" class="table-toolbar">
-            <p class="table-count">{{ $appointments->total() }} {{ \Illuminate\Support\Str::plural('visit', $appointments->total()) }}</p>
+        <form method="GET" class="table-toolbar" data-live-filter>
+            <p class="table-count">
+                {{ $appointments->total() }} {{ \Illuminate\Support\Str::plural('visit', $appointments->total()) }}
+                @if ($selectedDoctor)
+                    · {{ $selectedDoctor->name }}
+                @endif
+                @if ($selectedDate)
+                    · {{ $selectedDate->format('d M Y') }}
+                @endif
+            </p>
             <div class="admin-filters">
                 <input type="search" name="q" value="{{ request('q') }}" placeholder="Search appointments">
+                <select name="doctor" aria-label="Filter by doctor">
+                    <option value="">All doctors</option>
+                    @foreach ($doctors as $doctor)
+                        <option value="{{ $doctor->id }}" @selected((int) request('doctor') === $doctor->id)>{{ $doctor->name }}</option>
+                    @endforeach
+                </select>
+                <input type="date" name="date" value="{{ $selectedDate?->toDateString() }}" aria-label="Filter by date">
                 <select name="status">
                     <option value="">All statuses</option>
                     @foreach (\App\Models\Appointment::STATUSES as $status => $label)
@@ -56,7 +71,11 @@
                                 <span class="cell-sub">{{ $appointment->patient?->phone }}</span>
                             </td>
                             <td>
-                                <span>{{ $appointment->doctor?->name }}</span>
+                                @if ($appointment->doctor)
+                                    <a href="{{ route('admin.appointments.index', array_filter(['doctor' => $appointment->doctor_id, 'date' => $selectedDate?->toDateString()])) }}">{{ $appointment->doctor->name }}</a>
+                                @else
+                                    <span>—</span>
+                                @endif
                                 <span class="cell-sub">{{ $appointment->department?->name ?: '—' }}</span>
                             </td>
                             <td class="col-when">
@@ -76,7 +95,19 @@
                             </td>
                         </tr>
                     @empty
-                        <tr class="is-empty"><td colspan="8">No appointments found.</td></tr>
+                        <tr class="is-empty">
+                            <td colspan="8">
+                                @if ($selectedDoctor && $selectedDate)
+                                    No appointments found for {{ $selectedDoctor->name }} on {{ $selectedDate->format('d M Y') }}.
+                                @elseif ($selectedDoctor)
+                                    No appointments found for {{ $selectedDoctor->name }}.
+                                @elseif ($selectedDate)
+                                    No appointments found on {{ $selectedDate->format('d M Y') }}.
+                                @else
+                                    No appointments found.
+                                @endif
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>

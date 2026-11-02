@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\DoctorRequest;
 use App\Models\Department;
 use App\Models\Doctor;
+use App\Models\DoctorSchedule;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -50,12 +51,16 @@ class DoctorController extends Controller
 
     public function edit(Doctor $doctor): View
     {
-        $doctor->load(['doctorLeaves' => fn ($query) => $query->orderByDesc('starts_on')->orderByDesc('id')]);
+        $doctor->load([
+            'doctorLeaves' => fn ($query) => $query->orderByDesc('starts_on')->orderByDesc('id'),
+            'doctorSchedules',
+        ]);
 
         return view('admin.doctors.edit', [
             'doctor' => $doctor,
             'departments' => Department::query()->orderBy('name')->get(),
             'users' => User::query()->orderBy('name')->get(['id', 'name', 'email']),
+            'hours' => DoctorSchedule::formStateFor($doctor),
         ]);
     }
 

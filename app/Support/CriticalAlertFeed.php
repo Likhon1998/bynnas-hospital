@@ -11,9 +11,9 @@ class CriticalAlertFeed
     public function __construct(private WorkInbox $inbox) {}
 
     /**
-     * @return array{alerts: Collection<int, array{id: string, tone: string, title: string, detail: string, href: string, time: string}>, counts: array{beds: int, pending: int, unpaid: int, messages: int, labs: int}, total: int, ids: list<string>}
+     * @return array{alerts: Collection<int, array{id: string, tone: string, title: string, detail: string, href: string, time: string, read: bool}>, counts: array{beds: int, pending: int, unpaid: int, messages: int, labs: int}, total: int, ids: list<string>}
      */
-    public function for(?User $user, int $limit = 30): array
+    public function for(?User $user, int $limit = WorkInbox::RECENT_NOTIFICATIONS): array
     {
         if ($user === null) {
             return [

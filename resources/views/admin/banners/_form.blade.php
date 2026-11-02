@@ -17,8 +17,12 @@
         <x-form.input name="cta_url" label="Button URL" :value="$banner->cta_url" />
     </x-admin.form-section>
 
-    <x-admin.form-section title="Schedule" note="Placement and the dates this banner should run.">
-        <x-form.input name="placement" label="Placement" :value="$banner->placement ?? 'hero'" required />
+    <x-admin.form-section title="Schedule" note="Choose where this banner appears, then set the dates it should run.">
+        <x-form.select name="placement" label="Placement" required hint="Hero is the homepage photo. Emergency sits in the top bar. Promo is the dark band above the footer.">
+            @foreach ($placements as $value => $label)
+                <option value="{{ $value }}" @selected(old('placement', $banner->placement) === $value)>{{ $label }}</option>
+            @endforeach
+        </x-form.select>
         <x-form.input name="sort_order" label="Sort order" type="number" :value="$banner->sort_order ?? 0" />
         <x-form.input name="starts_at" label="Starts at" type="datetime-local" :value="optional($banner->starts_at)->format('Y-m-d\TH:i')" />
         <x-form.input name="ends_at" label="Ends at" type="datetime-local" :value="optional($banner->ends_at)->format('Y-m-d\TH:i')" />

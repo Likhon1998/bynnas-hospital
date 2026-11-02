@@ -5,13 +5,12 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Doctor;
-use App\Models\Patient;
-use App\Models\Service;
+use App\Support\PublicCampusStats;
 use Illuminate\View\View;
 
 class AboutController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(PublicCampusStats $campusStats): View
     {
         $featuredDoctors = Doctor::query()
             ->active()
@@ -32,13 +31,14 @@ class AboutController extends Controller
 
         return view('web.about', [
             'doctors' => $featuredDoctors,
-            'departments' => Department::query()->active()->orderBy('sort_order')->limit(6)->get(),
-            'stats' => [
-                'doctors' => Doctor::query()->active()->count(),
-                'departments' => Department::query()->active()->count(),
-                'patients' => Patient::query()->active()->count(),
-                'services' => Service::query()->active()->count(),
-            ],
+            'departments' => Department::query()
+                ->active()
+                ->orderByDesc('is_featured')
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->limit(8)
+                ->get(),
+            'stats' => $campusStats->snapshot(),
         ]);
     }
 }

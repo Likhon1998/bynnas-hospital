@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreDoctorLeaveRequest;
 use App\Models\Doctor;
 use App\Models\DoctorLeave;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class DoctorLeaveController extends Controller
 {
@@ -18,19 +19,24 @@ class DoctorLeaveController extends Controller
             'created_by' => $request->user()?->id,
         ]);
 
-        return redirect()
-            ->route('admin.doctors.edit', $doctor)
-            ->with('status', 'Leave recorded. Website and desk booking will block those dates.');
+        return DoctorScheduleController::redirectAfterChange(
+            $request,
+            $doctor,
+            'Leave recorded. Website and desk booking will block those dates.',
+        );
     }
 
-    public function destroy(Doctor $doctor, DoctorLeave $doctorLeave): RedirectResponse
+    public function destroy(Request $request, Doctor $doctor, DoctorLeave $doctorLeave): RedirectResponse
     {
         abort_unless($doctorLeave->doctor_id === $doctor->id, 404);
+        abort_unless($request->user()?->can('clinic-hours.manage', $doctor), 403);
 
         $doctorLeave->delete();
 
-        return redirect()
-            ->route('admin.doctors.edit', $doctor)
-            ->with('status', 'Leave removed. Those dates are open again.');
+        return DoctorScheduleController::redirectAfterChange(
+            $request,
+            $doctor,
+            'Leave removed. Those dates are open again.',
+        );
     }
 }

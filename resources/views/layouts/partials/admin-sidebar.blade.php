@@ -21,8 +21,8 @@
                 type="button"
                 class="admin-collapse-btn"
                 data-admin-sidebar-collapse
-                aria-label="Squeeze sidebar"
-                title="Squeeze sidebar"
+                aria-label="Collapse sidebar"
+                data-label="Collapse sidebar"
             >
                 <svg class="admin-collapse-btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M15 6 9 12l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -30,12 +30,13 @@
             </button>
         </div>
 
-        <nav class="admin-scroll admin-nav min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-label="Hospital menu">
+        <nav class="admin-scroll admin-nav min-h-0 flex-1 overscroll-contain" aria-label="Hospital menu">
             @if ($adminPrimaryAction)
                 <a
                     href="{{ $adminPrimaryAction['href'] }}"
                     @class(['admin-nav-link', 'is-book', 'is-active' => $adminPrimaryAction['active']])
-                    title="{{ $adminPrimaryAction['label'] }}"
+                    aria-label="{{ $adminPrimaryAction['label'] }}"
+                    data-label="{{ $adminPrimaryAction['label'] }}"
                 >
                     <x-admin.nav-icon :name="$adminPrimaryAction['icon']" class="h-4 w-4" />
                     <span>{{ $adminPrimaryAction['label'] }}</span>
@@ -46,7 +47,8 @@
                 <a
                     href="{{ $adminDashboardItem['href'] }}"
                     @class(['admin-nav-link', 'is-active' => $adminDashboardItem['active']])
-                    title="{{ $adminDashboardItem['label'] }}"
+                    aria-label="{{ $adminDashboardItem['label'] }}"
+                    data-label="{{ $adminDashboardItem['label'] }}"
                 >
                     <x-admin.nav-icon :name="$adminDashboardItem['icon']" class="h-4 w-4" />
                     <span>{{ $adminDashboardItem['label'] }}</span>
@@ -72,11 +74,15 @@
 
                     <div class="admin-nav-section__body">
                         @foreach ($section['items'] as $item)
-                            <div @class(['admin-nav-item', 'has-sub' => $item['children'] !== [], 'is-open' => collect($item['children'])->contains(fn (array $child): bool => $child['active'])])>
+                            @php
+                                $childIsCurrent = collect($item['children'])->contains(fn (array $child): bool => $child['active']);
+                            @endphp
+                            <div @class(['admin-nav-item', 'has-sub' => $item['children'] !== [], 'is-open' => $childIsCurrent])>
                                 <a
                                     href="{{ $item['href'] }}"
-                                    @class(['admin-nav-link', 'is-active' => $item['active']])
-                                    title="{{ $item['label'] }}"
+                                    @class(['admin-nav-link', 'is-active' => $item['active'] && ! $childIsCurrent, 'is-branch' => $childIsCurrent])
+                                    aria-label="{{ $item['label'] }}"
+                                    data-label="{{ $item['label'] }}"
                                 >
                                     <x-admin.nav-icon :name="$item['icon']" class="h-4 w-4" />
                                     <span>{{ $item['label'] }}</span>
@@ -88,7 +94,8 @@
                                             <a
                                                 href="{{ $child['href'] }}"
                                                 @class(['admin-nav-link', 'is-sub', 'is-active' => $child['active']])
-                                                title="{{ $child['label'] }}"
+                                                aria-label="{{ $child['label'] }}"
+                                                data-label="{{ $child['label'] }}"
                                             >
                                                 <x-admin.nav-icon :name="$child['icon']" class="h-3.5 w-3.5" />
                                                 <span>{{ $child['label'] }}</span>

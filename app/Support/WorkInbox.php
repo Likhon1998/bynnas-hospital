@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 class WorkInbox
 {
+    public const RECENT_NOTIFICATIONS = 5;
+
     /**
      * @return list<string>
      */
@@ -102,6 +104,18 @@ class WorkInbox
             ->where('is_notification', true)
             ->unread()
             ->count();
+    }
+
+    public function notifyAppointmentRequest(Appointment $appointment): void
+    {
+        $appointment->loadMissing(['patient', 'doctor']);
+
+        $this->upsert($this->websiteRequestItem('reception', $appointment));
+        $this->upsert($this->websiteRequestItem('admin', $appointment));
+
+        if ($appointment->doctor_id) {
+            $this->upsert($this->websiteRequestItem('doctor', $appointment, (int) $appointment->doctor_id));
+        }
     }
 
     /**
@@ -202,14 +216,13 @@ class WorkInbox
     }
 
     /**
-     * @return Collection<int, array{id: string, tone: string, title: string, detail: string, href: string, time: string, work_id: int, can_acknowledge: bool, can_escalate: bool}>
+     * @return Collection<int, array{id: string, tone: string, title: string, detail: string, href: string, time: string, read: bool, work_id: int, can_acknowledge: bool, can_escalate: bool}>
      */
-    public function notificationsFor(User $user, int $limit = 8): Collection
+    public function notificationsFor(User $user, int $limit = self::RECENT_NOTIFICATIONS): Collection
     {
         return $this->visibleQuery($user)
-            ->open()
             ->where('is_notification', true)
-            ->unread()
+            ->orderByRaw('case when read_at is null then 0 else 1 end')
             ->orderByRaw('case when is_critical = 1 then 0 else 1 end')
             ->orderByDesc('id')
             ->limit($limit)
@@ -341,7 +354,7 @@ class WorkInbox
     }
 
     /**
-     * @return array{id: string, tone: string, title: string, detail: string, href: string, time: string, work_id: int, can_acknowledge: bool, can_escalate: bool}
+     * @return array{id: string, tone: string, title: string, detail: string, href: string, time: string, read: bool, work_id: int, can_acknowledge: bool, can_escalate: bool}
      */
     public function toAlert(WorkItem $item): array
     {
@@ -353,6 +366,7 @@ class WorkInbox
             'href' => $item->href,
             'time' => $item->due_at?->diffForHumans()
                 ?: ($item->updated_at?->diffForHumans() ?: ''),
+            'read' => $item->read_at !== null,
             'work_id' => $item->id,
             'can_acknowledge' => $item->canAcknowledge(),
             'can_escalate' => $item->canEscalate(),
@@ -453,20 +467,7 @@ class WorkInbox
      */
     private function receptionItems(): array
     {
-        $items = [];
-
-        foreach (Appointment::query()->with('patient')->where('source', 'web')->where('status', 'pending')->orderBy('id')->get() as $appointment) {
-            $items[] = $this->item(
-                desk: 'reception',
-                kind: 'pending_web',
-                source: $appointment,
-                title: 'Website request '.$appointment->appointment_no,
-                detail: ($appointment->patient?->full_name ?: 'Patient').' still needs confirmation.',
-                href: route('admin.appointments.show', $appointment),
-                tone: 'orange',
-                notify: true,
-            );
-        }
+        $items = $this->websiteRequestItems('reception');
 
         $arrivals = Appointment::query()
             ->with(['patient', 'visits'])
@@ -599,7 +600,7 @@ class WorkInbox
      */
     private function doctorItems(): array
     {
-        $items = [];
+        $items = $this->websiteRequestItems('doctor');
 
         $consults = Visit::query()
             ->with(['patient', 'doctor'])
@@ -782,7 +783,7 @@ class WorkInbox
      */
     private function adminItems(): array
     {
-        $items = [];
+        $items = $this->websiteRequestItems('admin');
 
         foreach (Bill::query()->unpaid()->with('patient')->orderByDesc('id')->get() as $bill) {
             $items[] = $this->item(
@@ -892,6 +893,62 @@ class WorkInbox
         }
 
         return $items;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function websiteRequestItems(string $desk): array
+    {
+        $items = [];
+
+        foreach ($this->pendingWebsiteAppointments() as $appointment) {
+            $items[] = $this->websiteRequestItem(
+                $desk,
+                $appointment,
+                $desk === 'doctor' ? (int) $appointment->doctor_id : null,
+            );
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return Collection<int, Appointment>
+     */
+    private function pendingWebsiteAppointments(): Collection
+    {
+        return Appointment::query()
+            ->with(['patient', 'doctor'])
+            ->where('source', 'web')
+            ->where('status', 'pending')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function websiteRequestItem(string $desk, Appointment $appointment, ?int $doctorId = null): array
+    {
+        $date = $appointment->appointment_date?->format('d M Y') ?: 'a clinic day';
+        $time = substr((string) $appointment->start_time, 0, 5);
+        $when = $time !== '' ? $date.' at '.$time : $date;
+
+        return $this->item(
+            desk: $desk,
+            kind: 'pending_web',
+            source: $appointment,
+            title: 'New appointment '.$appointment->appointment_no,
+            detail: ($appointment->patient?->full_name ?: 'Patient')
+                .' booked '.($appointment->doctor?->name ?: 'a doctor')
+                .' on '.$when,
+            href: route('admin.appointments.show', $appointment),
+            tone: 'orange',
+            notify: true,
+            patientId: $appointment->patient_id,
+            doctorId: $doctorId,
+        );
     }
 
     /**

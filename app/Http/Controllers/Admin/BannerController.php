@@ -22,7 +22,10 @@ class BannerController extends Controller
 
     public function create(): View
     {
-        return view('admin.banners.create', ['banner' => new Banner(['is_active' => true, 'placement' => 'hero', 'sort_order' => 0])]);
+        return view('admin.banners.create', [
+            'banner' => new Banner(['is_active' => true, 'placement' => 'hero', 'sort_order' => 0]),
+            'placements' => Banner::placements(),
+        ]);
     }
 
     public function store(BannerRequest $request): RedirectResponse
@@ -34,7 +37,10 @@ class BannerController extends Controller
 
     public function edit(Banner $banner): View
     {
-        return view('admin.banners.edit', compact('banner'));
+        return view('admin.banners.edit', [
+            'banner' => $banner,
+            'placements' => Banner::placements(),
+        ]);
     }
 
     public function update(BannerRequest $request, Banner $banner): RedirectResponse

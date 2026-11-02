@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Doctor;
 use App\Models\DoctorLeave;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,7 +12,10 @@ class StoreDoctorLeaveRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('doctors.manage') ?? false;
+        $doctor = $this->route('doctor');
+
+        return $doctor instanceof Doctor
+            && ($this->user()?->can('clinic-hours.manage', $doctor) ?? false);
     }
 
     /**

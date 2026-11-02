@@ -23,6 +23,18 @@ class Banner extends Model
     /**
      * @return array<string, string>
      */
+    public static function placements(): array
+    {
+        return [
+            'hero' => 'Homepage hero',
+            'emergency' => 'Top emergency bar',
+            'promo' => 'Footer promo band',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -47,5 +59,18 @@ class Banner extends Model
                 $builder->whereNull('ends_at')
                     ->orWhere('ends_at', '>=', now());
             });
+    }
+
+    public function destination(): string
+    {
+        $url = trim((string) $this->cta_url);
+
+        return match (true) {
+            $url === '', $url === '/appointments' => url('/').'#appointment',
+            $url === '/health-packages' => route('packages'),
+            $url === '/doctors' => route('doctors'),
+            $url === '/emergency' => route('emergency'),
+            default => $url,
+        };
     }
 }

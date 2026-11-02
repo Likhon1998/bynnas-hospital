@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Doctor;
 use App\Models\User;
 use App\Support\CriticalAlertFeed;
 use App\View\Composers\AdminLayoutComposer;
@@ -122,6 +123,18 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('lab.order', fn (?User $user) => (bool) $user?->hasPermission('lab.order'));
         Gate::define('lab.collect', fn (?User $user) => (bool) $user?->hasPermission('lab.collect'));
         Gate::define('lab.report', fn (?User $user) => (bool) $user?->hasPermission('lab.report'));
+
+        Gate::define('clinic-hours.manage', function (?User $user, Doctor $doctor): bool {
+            if ($user === null) {
+                return false;
+            }
+
+            if ($user->hasPermission('doctors.manage')) {
+                return true;
+            }
+
+            return $user->doctor?->is($doctor) ?? false;
+        });
 
         RateLimiter::for('admin-login', function (Request $request) {
             return Limit::perMinute(5)->by(Str::transliterate(

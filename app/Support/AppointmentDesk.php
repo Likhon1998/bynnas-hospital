@@ -23,6 +23,8 @@ class AppointmentDesk
      */
     public const FALLBACK_SLOTS = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 
+    public function __construct(private WorkInbox $inbox) {}
+
     /**
      * @param  array{patient_id: int, doctor_id: int, appointment_date: string, start_time: string, reason?: string|null, notes?: string|null, status: string, source: string}  $attributes
      */
@@ -60,39 +62,26 @@ class AppointmentDesk
             }
 
             $date = $payload['date'];
-            $requestedTime = filled($payload['time'] ?? null)
-                ? $this->normalizeTime((string) $payload['time'])
-                : null;
-            $requestedDoctorId = filled($payload['doctor'] ?? null)
-                ? (int) $payload['doctor']
-                : null;
+            $start = $this->normalizeTime((string) $payload['time']);
+            $doctor = $this->lockDoctor((int) $payload['doctor']);
 
-            $doctor = $requestedDoctorId !== null
-                ? $this->lockDoctor($requestedDoctorId)
-                : $this->lockFirstAvailableDoctor($service->department_id, $date, $requestedTime);
-
-            if ($doctor === null || $doctor->department_id === null) {
+            if ($doctor->department_id === null) {
                 throw ValidationException::withMessages([
-                    'date' => 'No doctor is available for that date and time. Try another slot.',
-                ]);
-            }
-
-            $start = $requestedTime ?? $this->firstOpenSlot($doctor, $date);
-
-            if ($start === null) {
-                throw ValidationException::withMessages([
-                    'date' => $this->dayUnavailableReason($doctor, $date)
-                        ?? 'No open slots remain for this doctor on that day.',
+                    'doctor' => 'Choose an active doctor with a department.',
                 ]);
             }
 
             $this->assertSlotOpen($doctor, $date, $start, 'web', null, 'time');
 
-            return $this->insertAppointment([
+            $appointment = $this->insertAppointment([
                 'patient_id' => $patient->id,
                 'reason' => $service->title,
                 'notes' => 'Website request. Confirm the time with the patient.',
             ], $doctor, $date, $start, 'pending', 'web', null);
+
+            $this->inbox->notifyAppointmentRequest($appointment);
+
+            return $appointment;
         });
     }
 
@@ -177,6 +166,87 @@ class AppointmentDesk
                 : null,
             'slots' => $slots,
             'clinic_days' => $clinicDays,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     view: string,
+     *     start: string,
+     *     end: string,
+     *     label: string,
+     *     clinic_days: list<string>,
+     *     weekdays: list<string>,
+     *     days: list<array{date: string, weekday: string, label: string, in_month: bool, status: string, reason: string|null, open_count: int, booked_count: int, slots: list<array{time: string, status: string}>}>
+     * }
+     */
+    public function schedule(Doctor $doctor, string $view, string $focus): array
+    {
+        $anchor = Carbon::parse($focus)->startOfDay();
+        $weekdays = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+        if ($view === 'week') {
+            $start = $anchor->copy()->startOfWeek(Carbon::SATURDAY);
+            $end = $start->copy()->addDays(6);
+            $label = $start->format('d M').' – '.$end->format('d M Y');
+        } else {
+            $monthStart = $anchor->copy()->startOfMonth();
+            $start = $monthStart->copy()->startOfWeek(Carbon::SATURDAY);
+            $end = $start->copy()->addDays(41);
+            $label = $monthStart->format('F Y');
+        }
+
+        $taken = Appointment::query()
+            ->holdingSlot()
+            ->where('doctor_id', $doctor->id)
+            ->whereDate('appointment_date', '>=', $start->toDateString())
+            ->whereDate('appointment_date', '<=', $end->toDateString())
+            ->get(['appointment_date', 'start_time', 'end_time']);
+
+        $days = [];
+        $cursor = $start->copy();
+
+        while ($cursor->lte($end)) {
+            $date = $cursor->toDateString();
+            $reason = $this->dayUnavailableReason($doctor, $date);
+            $slots = $reason === null ? $this->calendarSlots($doctor, $date, $taken) : [];
+            $openCount = collect($slots)->where('status', 'open')->count();
+            $bookedCount = collect($slots)->where('status', 'booked')->count();
+            $status = 'open';
+
+            if ($cursor->lt(now()->startOfDay())) {
+                $status = 'past';
+            } elseif ($reason !== null && $this->coveringLeave($doctor, $date) !== null) {
+                $status = 'leave';
+            } elseif ($reason !== null) {
+                $status = 'off';
+            } elseif ($openCount === 0) {
+                $status = $bookedCount > 0 ? 'full' : 'past';
+            }
+
+            $days[] = [
+                'date' => $date,
+                'weekday' => $this->weekdayFor($date),
+                'label' => $cursor->format('j'),
+                'in_month' => $view !== 'month' || $cursor->month === $anchor->month,
+                'status' => $status,
+                'reason' => $reason,
+                'open_count' => $openCount,
+                'booked_count' => $bookedCount,
+                'slots' => $slots,
+            ];
+
+            $cursor->addDay();
+        }
+
+        return [
+            'view' => $view,
+            'start' => $start->toDateString(),
+            'end' => $end->toDateString(),
+            'label' => $label,
+            'clinic_days' => $this->clinicDays($doctor),
+            'weekdays' => $weekdays,
+            'days' => $days,
         ];
     }
 
@@ -368,9 +438,10 @@ class AppointmentDesk
     }
 
     /**
+     * @param  Collection<int, Appointment>|null  $taken
      * @return list<string>
      */
-    private function openSlots(Doctor $doctor, string $date): array
+    private function openSlots(Doctor $doctor, string $date, ?Collection $taken = null): array
     {
         if ($this->dayUnavailableReason($doctor, $date) !== null) {
             return [];
@@ -379,12 +450,91 @@ class AppointmentDesk
         $open = [];
 
         foreach ($this->candidateSlots($doctor, $date) as $slot) {
+            if ($taken !== null) {
+                if ($this->slotIsOpenInMemory($doctor, $date, $slot, $taken)) {
+                    $open[] = substr($this->normalizeTime($slot), 0, 5);
+                }
+
+                continue;
+            }
+
             if ($this->unavailableReason($doctor, $date, $slot, 'web') === null) {
                 $open[] = substr($this->normalizeTime($slot), 0, 5);
             }
         }
 
         return $open;
+    }
+
+    /**
+     * @param  Collection<int, Appointment>  $taken
+     * @return list<array{time: string, status: string}>
+     */
+    private function calendarSlots(Doctor $doctor, string $date, Collection $taken): array
+    {
+        $slots = [];
+
+        foreach ($this->candidateSlots($doctor, $date) as $slot) {
+            $start = $this->normalizeTime($slot);
+            $end = $this->endTime($start);
+
+            if ($this->publishesClinicHours($doctor) && ! $this->timeFitsClinic($doctor, $date, $start)) {
+                continue;
+            }
+
+            $status = 'open';
+
+            if ($this->slotHeldInMemory($date, $start, $end, $taken)) {
+                $status = 'booked';
+            } elseif (Carbon::parse($date.' '.$start)->lt(now())) {
+                $status = 'past';
+            }
+
+            $slots[] = [
+                'time' => substr($start, 0, 5),
+                'status' => $status,
+            ];
+        }
+
+        return $slots;
+    }
+
+    /**
+     * @param  Collection<int, Appointment>  $taken
+     */
+    private function slotIsOpenInMemory(Doctor $doctor, string $date, string $slot, Collection $taken): bool
+    {
+        $start = $this->normalizeTime($slot);
+        $end = $this->endTime($start);
+
+        if (Carbon::parse($date.' '.$start)->lt(now())) {
+            return false;
+        }
+
+        if ($this->publishesClinicHours($doctor) && ! $this->timeFitsClinic($doctor, $date, $start)) {
+            return false;
+        }
+
+        return ! $this->slotHeldInMemory($date, $start, $end, $taken);
+    }
+
+    /**
+     * @param  Collection<int, Appointment>  $taken
+     */
+    private function slotHeldInMemory(string $date, string $start, string $end, Collection $taken): bool
+    {
+        return $taken->contains(function (Appointment $appointment) use ($date, $start, $end): bool {
+            $heldOn = $appointment->appointment_date instanceof Carbon
+                ? $appointment->appointment_date->toDateString()
+                : Carbon::parse((string) $appointment->appointment_date)->toDateString();
+
+            if ($heldOn !== $date) {
+                return false;
+            }
+
+            return (string) $appointment->start_time < $end
+                && (string) $appointment->end_time > $start;
+        });
     }
 
     /**

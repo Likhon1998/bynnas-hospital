@@ -146,6 +146,27 @@ class VisitEncounterTest extends TestCase
         $this->assertSame('waiting', $visit->fresh()->status);
     }
 
+    public function test_checking_in_a_pending_website_request_confirms_the_visit(): void
+    {
+        $receptionist = $this->createStaffUser(['visits.view', 'visits.checkin', 'appointments.view'], 'receptionist');
+        $appointment = Appointment::factory()->create([
+            'status' => 'pending',
+            'source' => 'web',
+            'reason' => 'General OPD',
+        ]);
+
+        $response = $this->actingAs($receptionist)
+            ->from(route('admin.appointments.show', $appointment))
+            ->post(route('admin.appointments.check-in', $appointment));
+
+        $visit = Visit::query()->first();
+        $this->assertNotNull($visit);
+        $response->assertRedirect(route('admin.visits.show', $visit));
+        $this->assertSame('waiting', $visit->status);
+        $this->assertSame($appointment->id, $visit->appointment_id);
+        $this->assertSame('confirmed', $appointment->fresh()->status);
+    }
+
     public function test_cancelled_appointment_cannot_be_checked_in(): void
     {
         $user = $this->createStaffUser(['visits.checkin']);

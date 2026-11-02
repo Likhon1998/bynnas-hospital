@@ -16,7 +16,9 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DoctorLeaveController;
+use App\Http\Controllers\Admin\DoctorScheduleController;
 use App\Http\Controllers\Admin\EmergencyFlowController;
+use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\HealthPackageController;
 use App\Http\Controllers\Admin\HelpSupportController;
@@ -188,11 +190,14 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::middleware('permission:doctors.manage')->group(function (): void {
             Route::resource('departments', DepartmentController::class)->except(['show']);
             Route::resource('doctors', DoctorController::class)->except(['show']);
-            Route::post('doctors/{doctor}/leaves', [DoctorLeaveController::class, 'store'])->name('doctors.leaves.store');
-            Route::delete('doctors/{doctor}/leaves/{doctorLeave}', [DoctorLeaveController::class, 'destroy'])
-                ->scopeBindings()
-                ->name('doctors.leaves.destroy');
         });
+
+        Route::get('clinic-hours', [DoctorScheduleController::class, 'edit'])->name('clinic-hours.edit');
+        Route::put('doctors/{doctor}/schedules', [DoctorScheduleController::class, 'update'])->name('doctors.schedules.update');
+        Route::post('doctors/{doctor}/leaves', [DoctorLeaveController::class, 'store'])->name('doctors.leaves.store');
+        Route::delete('doctors/{doctor}/leaves/{doctorLeave}', [DoctorLeaveController::class, 'destroy'])
+            ->scopeBindings()
+            ->name('doctors.leaves.destroy');
 
         Route::middleware('permission:content.manage')->group(function (): void {
             Route::resource('services', ServiceController::class)->except(['show']);
@@ -200,6 +205,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::resource('blog-categories', BlogCategoryController::class)->except(['show']);
             Route::resource('blog-posts', BlogPostController::class)->except(['show']);
             Route::resource('testimonials', TestimonialController::class)->except(['show']);
+            Route::resource('faqs', FaqController::class)->except(['show']);
             Route::resource('galleries', GalleryController::class)->except(['show']);
             Route::resource('banners', BannerController::class)->except(['show']);
             Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'update', 'destroy']);

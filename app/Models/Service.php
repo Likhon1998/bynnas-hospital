@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Support\PublicPhoto;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'department_id',
@@ -57,5 +59,31 @@ class Service extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function publicImage(): string
+    {
+        return PublicPhoto::usable($this->image) ?? PublicPhoto::campus(max(0, (int) $this->id - 1));
+    }
+
+    public function publicIcon(): string
+    {
+        $key = Str::lower(trim($this->slug.' '.$this->icon.' '.$this->title));
+
+        return match (true) {
+            str_contains($key, 'emergency'), str_contains($key, 'ambulance') => 'ambulance',
+            str_contains($key, 'icu'), str_contains($key, 'ccu'), str_contains($key, 'nicu') => 'pulse',
+            str_contains($key, 'lab'), str_contains($key, 'blood') => 'flask',
+            str_contains($key, 'pharmacy'), str_contains($key, 'pill') => 'pill',
+            str_contains($key, 'physio') => 'activity',
+            default => 'hospital',
+        };
+    }
+
+    public function isUrgent(): bool
+    {
+        $key = Str::lower(trim($this->slug.' '.$this->title));
+
+        return str_contains($key, 'emergency') || str_contains($key, 'ambulance');
     }
 }

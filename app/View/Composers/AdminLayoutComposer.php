@@ -17,7 +17,7 @@ class AdminLayoutComposer
         $user = Auth::user();
         $hospitalName = HospitalSetting::query()->where('key', 'hospital_name')->value('value') ?: config('app.name');
         $alertFeed = $view->name() === 'layouts.admin'
-            ? $this->criticalAlertFeed->for($user, 6)
+            ? $this->criticalAlertFeed->for($user)
             : ['alerts' => collect(), 'counts' => [], 'total' => 0];
 
         $primaryAction = $this->hydrateItem($user, [
@@ -180,6 +180,7 @@ class AdminLayoutComposer
                 'items' => [
                     ['label' => 'Emergency', 'route' => 'admin.emergency', 'permission' => 'operations.manage', 'icon' => 'ambulance'],
                     ['label' => 'Doctors', 'route' => 'admin.doctors.index', 'permission' => 'doctors.manage', 'icon' => 'stethoscope'],
+                    ['label' => 'Clinic hours', 'route' => 'admin.clinic-hours.edit', 'permission' => null, 'icon' => 'calendar', 'when' => 'linked-doctor'],
                     ['label' => 'Staff', 'route' => 'admin.users.index', 'permission' => 'users.manage', 'icon' => 'nurse'],
                 ],
             ],
@@ -195,7 +196,22 @@ class AdminLayoutComposer
             [
                 'label' => 'System',
                 'items' => [
-                    ['label' => 'Website', 'route' => 'admin.services.index', 'permission' => 'content.manage', 'icon' => 'first-aid'],
+                    [
+                        'label' => 'Website',
+                        'route' => 'admin.services.index',
+                        'permission' => 'content.manage',
+                        'icon' => 'first-aid',
+                        'children' => [
+                            ['label' => 'Services', 'route' => 'admin.services.index', 'permission' => 'content.manage', 'icon' => 'first-aid'],
+                            ['label' => 'Banners', 'route' => 'admin.banners.index', 'permission' => 'content.manage', 'icon' => 'spark'],
+                            ['label' => 'FAQs', 'route' => 'admin.faqs.index', 'permission' => 'content.manage', 'icon' => 'help'],
+                            ['label' => 'News', 'route' => 'admin.blog-posts.index', 'permission' => 'content.manage', 'icon' => 'clipboard'],
+                            ['label' => 'News categories', 'route' => 'admin.blog-categories.index', 'permission' => 'content.manage', 'icon' => 'grid'],
+                            ['label' => 'Reviews', 'route' => 'admin.testimonials.index', 'permission' => 'content.manage', 'icon' => 'users'],
+                            ['label' => 'Gallery', 'route' => 'admin.galleries.index', 'permission' => 'content.manage', 'icon' => 'eye'],
+                            ['label' => 'Packages', 'route' => 'admin.health-packages.index', 'permission' => 'content.manage', 'icon' => 'pill'],
+                        ],
+                    ],
                     ['label' => 'Settings', 'route' => 'admin.settings.edit', 'permission' => 'settings.manage', 'icon' => 'settings'],
                     ['label' => 'Help', 'route' => 'admin.help', 'permission' => null, 'icon' => 'help'],
                 ],
@@ -204,7 +220,7 @@ class AdminLayoutComposer
     }
 
     /**
-     * @param  array{label: string, route: string, permission: ?string, icon: string, children?: list<array<string, mixed>>}  $item
+     * @param  array{label: string, route: string, permission: ?string, icon: string, when?: string, children?: list<array<string, mixed>>}  $item
      * @return list<array{label: string, href: string, icon: string, active: bool, current: bool, children: list<array{label: string, href: string, icon: string, active: bool, current: bool, children: list<empty>}>}>
      */
     private function hydrateBranch(?User $user, array $item): array
@@ -232,11 +248,15 @@ class AdminLayoutComposer
     }
 
     /**
-     * @param  array{label: string, route: string, permission: ?string, icon: string}  $item
+     * @param  array{label: string, route: string, permission: ?string, icon: string, when?: string}  $item
      * @return array{label: string, href: string, icon: string, active: bool, current: bool, children: list<empty>}|null
      */
     private function hydrateItem(?User $user, array $item): ?array
     {
+        if (($item['when'] ?? null) === 'linked-doctor' && $user?->doctor === null) {
+            return null;
+        }
+
         if ($item['permission'] !== null && ! ($user?->can($item['permission']) ?? false)) {
             return null;
         }
@@ -276,16 +296,6 @@ class AdminLayoutComposer
         if ($route === 'admin.doctors.index') {
             return request()->routeIs('admin.doctors.*')
                 || request()->routeIs('admin.departments.*');
-        }
-
-        if ($route === 'admin.services.index') {
-            return request()->routeIs('admin.services.*')
-                || request()->routeIs('admin.health-packages.*')
-                || request()->routeIs('admin.blog-*')
-                || request()->routeIs('admin.testimonials.*')
-                || request()->routeIs('admin.galleries.*')
-                || request()->routeIs('admin.banners.*')
-                || request()->routeIs('admin.contact-messages.*');
         }
 
         return request()->routeIs($route)

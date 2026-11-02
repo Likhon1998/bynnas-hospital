@@ -2,28 +2,75 @@
 
 @php
     $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
-    $heroImage = $service->image
-        ?: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=1600&q=80';
     $phone = $hospital->get('phone') ?: $hospital->get('emergency_phone');
+    $emergency = $hospital->get('emergency_phone') ?: $phone;
+    $hours = $service->isUrgent()
+        ? ($workingHours['emergency'] ?? '24/7')
+        : ($workingHours['saturday'] ?? $workingHours['monday'] ?? 'Ask the desk');
+    $primaryHref = $service->isUrgent()
+        ? route('emergency')
+        : route('home', ['service' => $service->slug]).'#appointment';
+    $primaryLabel = $service->isUrgent() ? 'Go to emergency' : 'Request a visit';
 @endphp
 
 @section('title', $service->title.' | '.$hospitalName)
 @section('meta_description', $service->summary ?: ($service->title.' at '.$hospitalName))
 
 @section('content')
-    <x-web.page-intro
-        :kicker="$service->department?->name ?: 'Hospital service'"
-        :title="$service->title"
-        :note="$service->summary"
-    />
-
-    <section class="site-block">
-        <div class="web-wrap grid items-start gap-10 lg:grid-cols-[1.35fr_0.65fr] lg:gap-16">
-            <div class="min-w-0">
-                <div class="site-section-head">
-                    <h2>What to expect</h2>
+    <section class="ch-clinics-hero">
+        <div class="ch-wrap">
+            <p class="ch-find__kicker">{{ $service->department?->name ?: ($service->isUrgent() ? 'Emergency desk' : 'Hospital service') }}</p>
+            <div class="ch-clinics-hero__row">
+                <div>
+                    <h1>{{ $service->title }}</h1>
+                    <p>{{ $service->summary ?: 'Ask the desk how this service runs and whether you need to book.' }}</p>
                 </div>
-                <div class="prose-service text-[0.95rem] leading-7 text-[#475569]">
+                <div class="ch-clinics-hero__actions">
+                    <a class="ch-btn" href="{{ route('services') }}">All services</a>
+                    <a class="ch-btn ch-btn--solid" href="{{ $primaryHref }}">{{ $primaryLabel }}</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="ch-profile">
+        <div class="ch-wrap ch-profile__grid">
+            <aside class="ch-profile__card ch-profile__card--service">
+                <img
+                    class="ch-care-hero-photo"
+                    src="{{ $service->publicImage() }}"
+                    alt="{{ $service->title }} at {{ $hospitalName }}"
+                    referrerpolicy="no-referrer"
+                >
+                <dl class="ch-profile__facts">
+                    <div>
+                        <dt>Service</dt>
+                        <dd>{{ $service->title }}</dd>
+                    </div>
+                    <div>
+                        <dt>Department</dt>
+                        <dd>{{ $service->department?->name ?: 'General hospital care' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Hours</dt>
+                        <dd>{{ $hours }}</dd>
+                    </div>
+                    @if ($phone)
+                        <div>
+                            <dt>{{ $service->isUrgent() ? 'Emergency' : 'Desk' }}</dt>
+                            <dd>
+                                <a href="tel:{{ preg_replace('/\s+/', '', $service->isUrgent() ? $emergency : $phone) }}">
+                                    {{ $service->isUrgent() ? $emergency : $phone }}
+                                </a>
+                            </dd>
+                        </div>
+                    @endif
+                </dl>
+            </aside>
+
+            <div class="ch-profile__copy">
+                <h2>What to expect</h2>
+                <div class="ch-care-copy">
                     @if (filled($service->body))
                         {!! $service->body !!}
                     @else
@@ -31,61 +78,41 @@
                         <p>Ask the desk how long the visit usually takes, and whether you need to come fasting. Write the doctor’s name down if they give you one.</p>
                     @endif
                 </div>
-                <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-                    <a href="{{ route('home', ['service' => $service->slug]) }}#appointment" class="site-btn site-btn--green">
-                        Request a visit
-                    </a>
-                    <a href="{{ route('services') }}" class="text-sm font-semibold text-[#16a34a]">All services</a>
+                <div class="ch-profile__cta">
+                    <a class="ch-btn ch-btn--solid" href="{{ $primaryHref }}">{{ $primaryLabel }}</a>
+                    @if ($phone)
+                        <a class="ch-btn" href="tel:{{ preg_replace('/\s+/', '', $phone) }}">Call {{ $phone }}</a>
+                    @endif
                 </div>
             </div>
-
-            <aside class="space-y-5">
-                <div class="rounded-[1.35rem] border border-[#e2e8f0] bg-white p-5 shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)]">
-                    <p class="text-base font-bold text-[#122447]">Before you come</p>
-                    <dl class="mt-4 space-y-3 text-sm">
-                        <div>
-                            <dt class="text-[#64748b]">Service</dt>
-                            <dd class="mt-0.5 font-medium text-[#122447]">{{ $service->title }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-[#64748b]">Department</dt>
-                            <dd class="mt-0.5 font-medium text-[#122447]">{{ $service->department?->name ?: 'General hospital care' }}</dd>
-                        </div>
-                        @if ($phone)
-                            <div>
-                                <dt class="text-[#64748b]">Desk</dt>
-                                <dd class="mt-0.5">
-                                    <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="font-semibold text-[#16a34a]">{{ $phone }}</a>
-                                </dd>
-                            </div>
-                        @endif
-                    </dl>
-                </div>
-                <img src="{{ $heroImage }}" alt="{{ $service->title }}" referrerpolicy="no-referrer" class="aspect-[5/4] w-full rounded-[1.35rem] bg-[#dbe4f0] object-cover shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)]">
-            </aside>
         </div>
     </section>
 
     @if ($departmentDoctors->isNotEmpty())
-        <section class="site-block site-block--soft">
-            <div class="web-wrap">
-                <div class="site-section-head">
-                    <h2>Doctors in this department</h2>
+        <section class="ch-docs-sec ch-docs-sec--page">
+            <div class="ch-wrap">
+                <div class="ch-sec__head">
+                    <div>
+                        <p class="ch-find__kicker">{{ $service->department?->name }}</p>
+                        <h2 class="ch-sec__title">Doctors in this department</h2>
+                    </div>
+                    <a class="ch-more" href="{{ route('doctors', ['specialty' => $service->department?->name]) }}">View all doctors →</a>
                 </div>
-                <div class="site-doctors site-doctors--grid">
+                <div class="ch-docs ch-docs--all">
                     @foreach ($departmentDoctors as $doctor)
-                        <article class="site-doctor">
-                            <div class="site-doctor__photo">
-                                <img
-                                    src="{{ filled($doctor->photo) ? $doctor->photo : 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=800&q=80' }}"
-                                    alt="Portrait of {{ $doctor->name }}"
-                                    loading="lazy"
-                                    referrerpolicy="no-referrer"
-                                >
-                            </div>
-                            <div class="site-doctor__card">
-                                <h3>{{ $doctor->name }}</h3>
-                                <p>{{ $doctor->designation ?: ($doctor->department?->name ?: 'Consultant') }}</p>
+                        <article class="ch-doc">
+                            <a class="ch-doc__profile" href="{{ route('doctors.show', $doctor) }}">
+                                @if ($doctor->photo)
+                                    <img src="{{ $doctor->photo }}" alt="{{ $doctor->name }}">
+                                @else
+                                    <span class="ch-doc__initials" aria-hidden="true">{{ $doctor->initials() }}</span>
+                                @endif
+                                <strong>{{ $doctor->name }}</strong>
+                                <em>{{ $doctor->specialization ?: $doctor->department?->name ?: 'Consultant' }}</em>
+                            </a>
+                            <div class="ch-doc__actions">
+                                <a class="ch-doc__book" href="{{ route('doctors.show', $doctor) }}">Profile</a>
+                                <a class="ch-doc__book" href="{{ route('home', ['doctor' => $doctor->id]) }}#appointment">Book</a>
                             </div>
                         </article>
                     @endforeach
@@ -95,21 +122,32 @@
     @endif
 
     @if ($relatedServices->isNotEmpty())
-        <section class="site-block">
-            <div class="web-wrap">
-                <div class="site-section-head">
-                    <h2>Related care</h2>
+        <section class="ch-care ch-care--related">
+            <div class="ch-wrap">
+                <div class="ch-sec__head">
+                    <div>
+                        <h2 class="ch-sec__title">Related care</h2>
+                    </div>
+                    <a class="ch-more" href="{{ route('services') }}">All services →</a>
                 </div>
-                <ul class="overflow-hidden rounded-[1.35rem] border border-[#e2e8f0] bg-white">
+                <div class="ch-care__grid">
                     @foreach ($relatedServices as $related)
-                        <li class="border-b border-[#e2e8f0] last:border-b-0">
-                            <a href="{{ route('services.show', $related) }}" class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
-                                <span class="font-semibold text-[#122447]">{{ $related->title }}</span>
-                                <span class="text-sm text-[#64748b] sm:max-w-md sm:text-right">{{ $related->summary }}</span>
-                            </a>
-                        </li>
+                        <a
+                            href="{{ $related->isUrgent() ? route('emergency') : route('services.show', $related) }}"
+                            @class(['ch-care-card', 'ch-care-card--urgent' => $related->isUrgent()])
+                        >
+                            <span class="ch-care-card__media">
+                                <img src="{{ $related->publicImage() }}" alt="{{ $related->title }}" loading="lazy" referrerpolicy="no-referrer">
+                            </span>
+                            <span class="ch-care-card__body">
+                                <span class="ch-care-card__meta">{{ $related->department?->name ?: ($related->isUrgent() ? 'Open 24 hours' : 'Patient service') }}</span>
+                                <h2>{{ $related->title }}</h2>
+                                <p>{{ $related->summary }}</p>
+                                <span class="ch-care-card__go">{{ $related->isUrgent() ? 'Go to emergency →' : 'Learn more →' }}</span>
+                            </span>
+                        </a>
                     @endforeach
-                </ul>
+                </div>
             </div>
         </section>
     @endif

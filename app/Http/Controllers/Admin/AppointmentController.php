@@ -9,8 +9,10 @@ use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Support\AppointmentDesk;
+use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class AppointmentController extends Controller
@@ -28,10 +30,18 @@ class AppointmentController extends Controller
             $source = '';
         }
 
+        $doctorId = $request->integer('doctor');
+        $selectedDoctor = $doctorId > 0
+            ? Doctor::query()->select(['id', 'name'])->find($doctorId)
+            : null;
+        $selectedDate = $this->selectedVisitDate($request);
+
         $appointments = Appointment::query()
             ->with(['patient', 'doctor', 'department'])
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($source !== '', fn ($query) => $query->where('source', $source))
+            ->when($selectedDoctor !== null, fn ($query) => $query->where('doctor_id', $selectedDoctor->id))
+            ->when($selectedDate !== null, fn ($query) => $query->whereDate('appointment_date', $selectedDate->toDateString()))
             ->when($request->string('q')->toString(), function ($query, string $term): void {
                 $query->where(function ($builder) use ($term): void {
                     $builder->where('appointment_no', 'like', '%'.$term.'%')
@@ -45,7 +55,12 @@ class AppointmentController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.appointments.index', compact('appointments'));
+        return view('admin.appointments.index', [
+            'appointments' => $appointments,
+            'doctors' => Doctor::query()->orderBy('name')->orderBy('id')->get(['id', 'name']),
+            'selectedDoctor' => $selectedDoctor,
+            'selectedDate' => $selectedDate,
+        ]);
     }
 
     public function create(Request $request): View
@@ -83,5 +98,26 @@ class AppointmentController extends Controller
         $desk->updateVisit($appointment, $request->validated());
 
         return back()->with('status', 'Appointment updated.');
+    }
+
+    private function selectedVisitDate(Request $request): ?Carbon
+    {
+        $raw = $request->string('date')->toString();
+
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
+            return null;
+        }
+
+        try {
+            $date = Carbon::createFromFormat('Y-m-d', $raw);
+        } catch (InvalidFormatException) {
+            return null;
+        }
+
+        if ($date->format('Y-m-d') !== $raw) {
+            return null;
+        }
+
+        return $date->startOfDay();
     }
 }

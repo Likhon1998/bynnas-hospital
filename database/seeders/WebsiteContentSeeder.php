@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\Banner;
+use App\Models\Faq;
 use App\Models\Gallery;
 use App\Models\Testimonial;
+use App\Support\PublicPhoto;
 use Illuminate\Database\Seeder;
 
 class WebsiteContentSeeder extends Seeder
@@ -61,7 +63,7 @@ class WebsiteContentSeeder extends Seeder
                     'display_role' => $testimonial['display_role'],
                     'quote' => $testimonial['quote'],
                     'rating' => $testimonial['rating'],
-                    'photo' => DemoContent::image($testimonial['display_name'], 200, 200),
+                    'photo' => PublicPhoto::person($index),
                     'is_active' => true,
                     'sort_order' => $index + 1,
                 ],
@@ -81,9 +83,35 @@ class WebsiteContentSeeder extends Seeder
             Gallery::query()->updateOrCreate(
                 ['title' => $item['title']],
                 [
-                    'image' => DemoContent::image($item['title']),
+                    'image' => PublicPhoto::campus($index),
                     'caption' => $item['caption'],
                     'album' => $item['album'],
+                    'is_active' => true,
+                    'sort_order' => $index + 1,
+                ],
+            );
+        }
+
+        $faqs = [
+            [
+                'question' => 'Do I need an appointment?',
+                'answer' => 'Emergency care is open around the clock. For clinics and planned visits, booking ahead keeps your wait shorter.',
+            ],
+            [
+                'question' => 'Do you accept my insurance?',
+                'answer' => 'Most major plans are accepted. Bring your insurance card and a photo ID to the desk.',
+            ],
+            [
+                'question' => 'What should I prepare for my first visit?',
+                'answer' => 'Bring prior prescriptions, reports, and a list of medicines you take now.',
+            ],
+        ];
+
+        foreach ($faqs as $index => $faq) {
+            Faq::query()->updateOrCreate(
+                ['question' => $faq['question']],
+                [
+                    'answer' => $faq['answer'],
                     'is_active' => true,
                     'sort_order' => $index + 1,
                 ],
@@ -95,7 +123,7 @@ class WebsiteContentSeeder extends Seeder
                 'title' => 'Trusted Care for Every Family',
                 'subtitle' => 'Consultant care, diagnostics, and emergency support for every family.',
                 'cta_label' => 'Book Appointment',
-                'cta_url' => '/appointments',
+                'cta_url' => '/#appointment',
                 'placement' => 'hero',
             ],
             [
@@ -109,7 +137,7 @@ class WebsiteContentSeeder extends Seeder
                 'title' => 'Executive Health Checkup',
                 'subtitle' => 'Compare screening packages with clear inclusions and prices.',
                 'cta_label' => 'View Packages',
-                'cta_url' => '/health-packages',
+                'cta_url' => '/packages',
                 'placement' => 'promo',
             ],
             [
@@ -127,7 +155,7 @@ class WebsiteContentSeeder extends Seeder
                 [
                     'title' => $banner['title'],
                     'subtitle' => $banner['subtitle'],
-                    'image' => DemoContent::image($banner['title'], 1600, 700),
+                    'image' => PublicPhoto::campus($index),
                     'cta_label' => $banner['cta_label'],
                     'cta_url' => $banner['cta_url'],
                     'placement' => $banner['placement'],

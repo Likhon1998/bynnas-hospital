@@ -2,10 +2,11 @@
 
 @php
     $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
-    $steps = [
-        ['title' => 'Pick the service', 'text' => 'Emergency, a clinic, or a test. If you are unsure, call the desk and describe the problem.'],
-        ['title' => 'Ask for a time', 'text' => 'Give a date and a phone number. Someone from reception will call you back.'],
-        ['title' => 'Come with papers', 'text' => 'Bring old prescriptions if you have them. The first visit takes a little longer.'],
+    $isFiltered = $selectedDepartment !== '';
+    $visitSteps = [
+        ['icon' => 'hospital', 'title' => 'Pick the desk', 'text' => 'Emergency, a clinic, or a test. If you are unsure, call reception and describe the problem.'],
+        ['icon' => 'calendar', 'title' => 'Ask for a time', 'text' => 'Choose a named consultant when you can. Someone from the desk will confirm the slot.'],
+        ['icon' => 'clock', 'title' => 'Come with papers', 'text' => 'Bring old prescriptions and reports if you have them. The first visit takes a little longer.'],
     ];
 @endphp
 
@@ -13,100 +14,104 @@
 @section('meta_description', 'Clinics, diagnostics, and emergency care at '.$hospitalName.'.')
 
 @section('content')
-    <x-web.page-intro
-        kicker="Clinical care"
-        title="Our services"
-        note="Complete hospital support, from the night emergency desk to weekday clinics. Read a service before you book if you want the details."
-    />
-
-    @if ($featuredServices->isNotEmpty())
-        <section class="site-block">
-            <div class="web-wrap">
-                <div class="site-section-head">
-                    <h2>Services families ask for first</h2>
-                </div>
-                <div class="grid gap-5 lg:grid-cols-2">
-                    @foreach ($featuredServices->take(4) as $service)
-                        <a href="{{ route('services.show', $service) }}" class="grid overflow-hidden rounded-[1.35rem] border border-[#e2e8f0] bg-white shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)] sm:grid-cols-[9rem_1fr]">
-                            <img
-                                src="{{ $service->image }}"
-                                alt="{{ $service->title }}"
-                                referrerpolicy="no-referrer"
-                                class="h-40 w-full bg-[#dbe4f0] object-cover sm:h-full"
-                                loading="{{ $loop->first ? 'eager' : 'lazy' }}"
-                            >
-                            <div class="flex flex-col justify-center px-5 py-4">
-                                <h3 class="text-lg font-bold text-[#122447]">{{ $service->title }}</h3>
-                                <p class="mt-2 text-sm leading-6 text-[#64748b]">{{ $service->summary }}</p>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-    @endif
-
-    <section class="site-block site-block--soft">
-        <div class="web-wrap">
-            <div class="site-section-head">
-                <h2>If you have not been here before</h2>
-            </div>
-            <div class="grid gap-8 sm:grid-cols-3 sm:gap-10">
-                @foreach ($steps as $step)
-                    <div class="rounded-[1.35rem] border border-[#e2e8f0] bg-white p-5 shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)]">
-                        <h3 class="text-base font-bold text-[#122447]">{{ $step['title'] }}</h3>
-                        <p class="mt-3 text-sm leading-6 text-[#64748b]">{{ $step['text'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </section>
-
-    <section class="site-block">
-        <div class="web-wrap">
-            <div class="site-section-head">
-                <h2>Complete hospital support</h2>
-            </div>
-            <div class="site-depts">
-                @foreach ($services as $service)
-                    <a href="{{ route('services.show', $service) }}" class="site-dept block transition hover:-translate-y-0.5">
-                        @if ($service->department)
-                            <p class="text-xs font-semibold uppercase tracking-[0.08em] text-[#16a34a]">{{ $service->department->name }}</p>
+    <section class="ch-clinics-hero">
+        <div class="ch-wrap">
+            <p class="ch-find__kicker">Patient services</p>
+            <div class="ch-clinics-hero__row">
+                <div>
+                    <h1>Our Services</h1>
+                    <p>
+                        @if ($isFiltered)
+                            Desks in {{ $selectedDepartment }}. Open another clinic if this is not the right floor.
+                        @else
+                            Emergency, diagnostics, pharmacy, and weekday clinics — pick a desk, then book or walk in.
                         @endif
-                        <h3 @class(['text-[1.05rem] font-bold text-[#122447]', 'mt-2' => (bool) $service->department])>{{ $service->title }}</h3>
-                        <p class="mt-2 text-sm leading-6 text-[#64748b]">{{ $service->summary }}</p>
+                    </p>
+                </div>
+                <div class="ch-clinics-hero__actions">
+                    @if ($isFiltered)
+                        <a class="ch-btn" href="{{ route('services') }}">All services</a>
+                    @endif
+                    <a class="ch-btn" href="{{ route('home') }}#find-doctor">Find a doctor</a>
+                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Book appointment</a>
+                </div>
+            </div>
+            <p class="ch-clinics-hero__count">
+                {{ $services->count() }} {{ \Illuminate\Support\Str::plural('service', $services->count()) }}
+                @if ($isFiltered)
+                    · in {{ $selectedDepartment }}
+                @endif
+            </p>
+            @if ($departments->isNotEmpty())
+                <div class="ch-find__chips">
+                    <a href="{{ route('services') }}" @class(['is-active' => ! $isFiltered])>All desks</a>
+                    @foreach ($departments as $department)
+                        <a href="{{ route('services', ['department' => $department->name]) }}" @class(['is-active' => $selectedDepartment === $department->name])>{{ $department->name }}</a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </section>
+
+    <section class="ch-care">
+        <div class="ch-wrap">
+            <div class="ch-care__grid">
+                @forelse ($services as $service)
+                    <a
+                        href="{{ $service->isUrgent() ? route('emergency') : route('services.show', $service) }}"
+                        @class(['ch-care-card', 'ch-care-card--urgent' => $service->isUrgent()])
+                    >
+                        <span class="ch-care-card__media">
+                            <img
+                                src="{{ $service->publicImage() }}"
+                                alt="{{ $service->title }} at {{ $hospitalName }}"
+                                loading="{{ $loop->index < 3 ? 'eager' : 'lazy' }}"
+                                referrerpolicy="no-referrer"
+                            >
+                        </span>
+                        <span class="ch-care-card__body">
+                            <span class="ch-care-card__top">
+                                <span class="ch-care-card__icon"><x-icon :name="$service->publicIcon()" /></span>
+                                @if ($service->is_featured)
+                                    <span class="ch-clinic__tag">{{ $service->isUrgent() ? '24/7' : 'Featured' }}</span>
+                                @endif
+                            </span>
+                            <span class="ch-care-card__meta">{{ $service->department?->name ?: ($service->isUrgent() ? 'Open 24 hours' : 'Patient service') }}</span>
+                            <h2>{{ $service->title }}</h2>
+                            <p>{{ $service->summary ?: 'Ask the desk how this service runs and whether you need to book.' }}</p>
+                            <span class="ch-care-card__go">{{ $service->isUrgent() ? 'Go to emergency →' : 'Learn more →' }}</span>
+                        </span>
                     </a>
-                @endforeach
+                @empty
+                    <p class="ch-lead">
+                        @if ($isFiltered)
+                            No services in this clinic yet. Pick another department or browse every desk.
+                        @else
+                            Services will appear here when the desk publishes them.
+                        @endif
+                    </p>
+                @endforelse
             </div>
         </div>
     </section>
 
-    @if ($departments->isNotEmpty())
-        <section class="site-block site-block--soft">
-            <div class="web-wrap">
-                <div class="site-section-head">
-                    <h2>By department</h2>
-                </div>
-                <div class="space-y-8">
-                    @foreach ($departments as $department)
-                        <div class="rounded-[1.35rem] border border-[#e2e8f0] bg-white p-5 shadow-[0_16px_34px_-32px_rgb(15_23_42_/_0.4)]">
-                            <div class="flex items-baseline justify-between gap-4 border-b border-[#e2e8f0] pb-2">
-                                <h3 class="text-base font-bold text-[#122447]">{{ $department->name }}</h3>
-                                <p class="shrink-0 text-sm text-[#64748b]">{{ $department->services->count() }} services</p>
-                            </div>
-                            <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-                                @foreach ($department->services as $service)
-                                    <li>
-                                        <a href="{{ route('services.show', $service) }}" class="text-sm font-semibold text-[#16a34a] hover:underline">
-                                            {{ $service->title }}
-                                        </a>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endforeach
+    <section class="ch-about-values">
+        <div class="ch-wrap">
+            <div class="ch-sec__head">
+                <div>
+                    <p class="ch-find__kicker">Before you arrive</p>
+                    <h2 class="ch-sec__title">How a visit works</h2>
                 </div>
             </div>
-        </section>
-    @endif
+            <div class="ch-values">
+                @foreach ($visitSteps as $step)
+                    <article class="ch-value">
+                        <span class="ch-value__icon"><x-icon :name="$step['icon']" /></span>
+                        <h3>{{ $step['title'] }}</h3>
+                        <p>{{ $step['text'] }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
 @endsection

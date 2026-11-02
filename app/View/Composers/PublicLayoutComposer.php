@@ -2,6 +2,7 @@
 
 namespace App\View\Composers;
 
+use App\Models\Banner;
 use App\Models\Department;
 use App\Models\HospitalSetting;
 use App\Models\Service;
@@ -17,8 +18,10 @@ class PublicLayoutComposer
         $view->with([
             'hospital' => $hospital,
             'workingHours' => is_array($hours) ? $hours : [],
-            'footerDepartments' => Department::query()->active()->orderBy('sort_order')->limit(6)->get(),
-            'footerServices' => Service::query()->active()->orderBy('sort_order')->limit(6)->get(),
+            'emergencyBanner' => Banner::query()->active()->where('placement', 'emergency')->orderBy('sort_order')->first(),
+            'promoBanner' => Banner::query()->active()->where('placement', 'promo')->orderBy('sort_order')->first(),
+            'footerDepartments' => Department::query()->active()->orderBy('sort_order')->orderBy('name')->limit(6)->get(),
+            'footerServices' => Service::query()->active()->orderBy('sort_order')->orderBy('title')->limit(6)->get(),
         ]);
     }
 }

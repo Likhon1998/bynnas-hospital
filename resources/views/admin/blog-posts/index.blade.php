@@ -8,6 +8,7 @@
             <div class="admin-filters">
                 <input type="search" name="q" value="{{ request('q') }}" placeholder="Search articles">
                 <button type="submit">Search</button>
+                <a href="{{ route('admin.blog-categories.index') }}" class="admin-action">Categories</a>
                 <a href="{{ route('admin.blog-posts.create') }}" class="admin-action">Write article</a>
             </div>
         </form>

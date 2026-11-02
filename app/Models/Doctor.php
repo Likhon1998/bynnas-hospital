@@ -86,4 +86,17 @@ class Doctor extends Model
     {
         return $this->hasMany(Appointment::class);
     }
+
+    public function initials(): string
+    {
+        $clean = trim((string) preg_replace('/^Dr\.?\s*/i', '', (string) $this->name));
+        $parts = preg_split('/\s+/', $clean) ?: [];
+        $letters = collect($parts)
+            ->filter()
+            ->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
+            ->take(2)
+            ->implode('');
+
+        return $letters !== '' ? $letters : 'DR';
+    }
 }

@@ -301,4 +301,97 @@ class AdminAppointmentTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $response->getContent());
         $this->assertStringNotContainsString("<script>alert('xss')</script>", $response->getContent());
     }
+
+    public function test_staff_can_list_appointments_for_one_doctor(): void
+    {
+        $user = $this->createStaffUser(['appointments.view']);
+        $chosen = Doctor::factory()->create(['name' => 'Dr. Hamida Jannat']);
+        $other = Doctor::factory()->create(['name' => 'Dr. Other Consultant']);
+        Appointment::factory()->recycle($chosen)->create([
+            'appointment_no' => 'APT-HAMIDA-1',
+        ]);
+        Appointment::factory()->recycle($other)->create([
+            'appointment_no' => 'APT-OTHER-9',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('admin.appointments.index', ['doctor' => $chosen->id]));
+
+        $response->assertOk();
+        $response->assertSee('APT-HAMIDA-1', false);
+        $response->assertDontSee('APT-OTHER-9', false);
+        $response->assertSee('Dr. Hamida Jannat', false);
+        $response->assertSee('name="doctor"', false);
+        $response->assertSee('All doctors', false);
+    }
+
+    public function test_unknown_doctor_filter_is_ignored(): void
+    {
+        $user = $this->createStaffUser(['appointments.view']);
+        Appointment::factory()->create([
+            'appointment_no' => 'APT-KEEP-DOC',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('admin.appointments.index', ['doctor' => 99999]));
+
+        $response->assertOk();
+        $response->assertSee('APT-KEEP-DOC', false);
+    }
+
+    public function test_staff_can_list_one_doctors_appointments_on_a_date(): void
+    {
+        $user = $this->createStaffUser(['appointments.view']);
+        $chosen = Doctor::factory()->create(['name' => 'Dr. Hamida Jannat']);
+        $other = Doctor::factory()->create(['name' => 'Dr. Other Consultant']);
+        Appointment::factory()->recycle($chosen)->create([
+            'appointment_no' => 'APT-DAY-KEEP',
+            'appointment_date' => '2026-11-02',
+        ]);
+        Appointment::factory()->recycle($chosen)->create([
+            'appointment_no' => 'APT-DAY-SKIP',
+            'appointment_date' => '2026-11-03',
+        ]);
+        Appointment::factory()->recycle($other)->create([
+            'appointment_no' => 'APT-DAY-OTHER',
+            'appointment_date' => '2026-11-02',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('admin.appointments.index', [
+            'doctor' => $chosen->id,
+            'date' => '2026-11-02',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('APT-DAY-KEEP', false);
+        $response->assertDontSee('APT-DAY-SKIP', false);
+        $response->assertDontSee('APT-DAY-OTHER', false);
+        $response->assertSee('02 Nov 2026', false);
+        $response->assertSee('name="date"', false);
+        $response->assertSee('data-live-filter', false);
+    }
+
+    public function test_invalid_date_filter_is_ignored(): void
+    {
+        $user = $this->createStaffUser(['appointments.view']);
+        Appointment::factory()->create([
+            'appointment_no' => 'APT-KEEP-DATE',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('admin.appointments.index', ['date' => 'not-a-date']));
+
+        $response->assertOk();
+        $response->assertSee('APT-KEEP-DATE', false);
+    }
+
+    public function test_appointment_detail_links_to_that_doctors_visits(): void
+    {
+        $user = $this->createStaffUser(['appointments.view']);
+        $doctor = Doctor::factory()->create(['name' => 'Dr. Hamida Jannat']);
+        $appointment = Appointment::factory()->recycle($doctor)->create();
+
+        $this->actingAs($user)
+            ->get(route('admin.appointments.show', $appointment))
+            ->assertOk()
+            ->assertSee('All visits', false)
+            ->assertSee(route('admin.appointments.index', ['doctor' => $doctor->id]), false);
+    }
 }

@@ -87,7 +87,7 @@ class AdminTopbarTest extends TestCase
         $this->assertNotEmpty($response->json('alerts.0.id'));
     }
 
-    public function test_seen_notifications_are_removed_from_badge_feed(): void
+    public function test_marking_notifications_read_clears_the_badge_and_keeps_the_recent_alerts(): void
     {
         $user = $this->createStaffUser(['beds.view', 'beds.operate']);
         Bed::factory()->dirty()->create([
@@ -98,19 +98,72 @@ class AdminTopbarTest extends TestCase
         $this->actingAs($user)
             ->getJson(route('admin.notifications'))
             ->assertOk()
-            ->assertJsonPath('total', 1);
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('alerts.0.read', false);
 
         $this->actingAs($user)
             ->postJson(route('admin.notifications.seen'), ['all' => true])
             ->assertOk()
             ->assertJson(['ok' => true])
-            ->assertJsonPath('total', 0);
+            ->assertJsonPath('total', 0)
+            ->assertJsonPath('alerts.0.read', true)
+            ->assertJsonFragment(['title' => 'Bed GEN-SEEN-01 needs cleaning']);
 
         $this->actingAs($user)
             ->getJson(route('admin.notifications'))
             ->assertOk()
             ->assertJsonPath('total', 0)
-            ->assertJsonPath('alerts', []);
+            ->assertJsonPath('alerts.0.read', true)
+            ->assertJsonFragment(['title' => 'Bed GEN-SEEN-01 needs cleaning']);
+    }
+
+    public function test_notification_bell_keeps_the_five_most_recent_alerts(): void
+    {
+        $user = $this->createStaffUser(['beds.view', 'beds.operate']);
+
+        foreach (range(1, 6) as $number) {
+            Bed::factory()->dirty()->create([
+                'bed_code' => 'GEN-KEEP-'.str_pad((string) $number, 2, '0', STR_PAD_LEFT),
+                'status' => 'dirty',
+            ]);
+        }
+
+        $feed = $this->actingAs($user)->getJson(route('admin.notifications'));
+
+        $feed->assertOk();
+        $feed->assertJsonPath('total', 6);
+        $this->assertCount(5, $feed->json('alerts'));
+        $feed->assertJsonFragment(['title' => 'Bed GEN-KEEP-06 needs cleaning']);
+        $feed->assertJsonMissing(['title' => 'Bed GEN-KEEP-01 needs cleaning']);
+
+        $seen = $this->actingAs($user)->postJson(route('admin.notifications.seen'), ['all' => true]);
+
+        $seen->assertOk();
+        $seen->assertJsonPath('total', 0);
+        $this->assertCount(5, $seen->json('alerts'));
+        $seen->assertJsonPath('alerts.0.read', true);
+        $seen->assertJsonFragment(['title' => 'Bed GEN-KEEP-06 needs cleaning']);
+        $seen->assertJsonMissing(['title' => 'Bed GEN-KEEP-01 needs cleaning']);
+    }
+
+    public function test_fetching_the_notification_feed_does_not_mark_alerts_read(): void
+    {
+        $user = $this->createStaffUser(['beds.view', 'beds.operate']);
+        Bed::factory()->dirty()->create([
+            'bed_code' => 'GEN-KEEP-01',
+            'status' => 'dirty',
+        ]);
+
+        $this->actingAs($user)
+            ->getJson(route('admin.notifications'))
+            ->assertOk()
+            ->assertJsonPath('total', 1);
+
+        $this->actingAs($user)
+            ->getJson(route('admin.notifications'))
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonFragment(['title' => 'Bed GEN-KEEP-01 needs cleaning']);
     }
 
     public function test_guest_cannot_fetch_notification_feed(): void

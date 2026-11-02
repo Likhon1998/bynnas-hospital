@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Web;
 
 use App\Models\Doctor;
+use App\Models\Service;
 use App\Support\AppointmentDesk;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,8 +31,20 @@ class StoreAppointmentRequest extends FormRequest
                 Rule::exists('services', 'slug')->where('is_active', true),
             ],
             'date' => ['required', 'date', 'after_or_equal:today', 'before:'.now()->addMonths(3)->toDateString()],
-            'doctor' => ['nullable', 'integer', Rule::exists('doctors', 'id')->where('is_active', true)],
-            'time' => ['nullable', 'date_format:H:i'],
+            'doctor' => ['required', 'integer', Rule::exists('doctors', 'id')->where('is_active', true)],
+            'time' => ['required', 'date_format:H:i'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'doctor.required' => 'Choose a doctor first.',
+            'date.required' => 'Pick a visit day from the clinic schedule.',
+            'time.required' => 'Pick a free time from the clinic schedule.',
         ];
     }
 
@@ -51,7 +64,22 @@ class StoreAppointmentRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($validator->errors()->isNotEmpty() || ! $this->filled('doctor') || ! $this->filled('time')) {
+                if ($this->filled('doctor') && $this->filled('service')) {
+                    $doctor = Doctor::query()->find($this->integer('doctor'));
+                    $service = Service::query()->where('slug', $this->string('service')->toString())->first();
+
+                    if (
+                        $doctor !== null
+                        && $service !== null
+                        && $doctor->department_id
+                        && $service->department_id
+                        && (int) $doctor->department_id !== (int) $service->department_id
+                    ) {
+                        $validator->errors()->add('service', 'Choose a service this doctor provides.');
+                    }
+                }
+
+                if ($validator->errors()->isNotEmpty() || ! $this->filled('doctor') || ! $this->filled('date') || ! $this->filled('time')) {
                     return;
                 }
 

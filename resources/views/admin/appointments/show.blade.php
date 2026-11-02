@@ -29,8 +29,11 @@
                 </div>
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-ink-400">Doctor</p>
-                    <p class="mt-1 font-semibold text-navy-900">{{ $appointment->doctor?->name }}</p>
+                    <p class="mt-1 font-semibold text-navy-900">{{ $appointment->doctor?->name ?: '—' }}</p>
                     <p class="text-sm text-ink-600">{{ $appointment->department?->name ?: '—' }}</p>
+                    @if ($appointment->doctor)
+                        <a href="{{ route('admin.appointments.index', ['doctor' => $appointment->doctor_id]) }}" class="mt-2 inline-flex text-sm font-semibold text-teal-700">All visits</a>
+                    @endif
                 </div>
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-ink-400">Schedule</p>

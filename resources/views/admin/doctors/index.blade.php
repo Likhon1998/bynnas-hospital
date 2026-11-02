@@ -63,6 +63,9 @@
                             <td class="is-action">
                                 <div class="roster__actions">
                                     <a href="{{ route('admin.doctors.edit', $doctor) }}" class="roster__btn">Edit</a>
+                                    @can('appointments.view')
+                                        <a href="{{ route('admin.appointments.index', ['doctor' => $doctor->id]) }}" class="roster__btn">Appointments</a>
+                                    @endcan
                                     <x-admin.delete-button :action="route('admin.doctors.destroy', $doctor)" class="roster__btn roster__btn--danger" />
                                 </div>
                             </td>
