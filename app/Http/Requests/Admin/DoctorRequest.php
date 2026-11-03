@@ -24,6 +24,7 @@ class DoctorRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('doctors')->ignore($this->route('doctor'))],
             'photo' => ['nullable', 'string', 'max:2048'],
+            'photo_upload' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:4096'],
             'designation' => ['required', 'string', 'max:255'],
             'qualifications' => ['nullable', 'string', 'max:500'],
             'specialization' => ['nullable', 'string', 'max:255'],

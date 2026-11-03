@@ -24,10 +24,11 @@ class AppointmentStatusTest extends TestCase
                 'status' => 'confirmed',
             ]);
 
-        $response->assertRedirect(route('admin.appointments.index'));
         $appointment->refresh();
+        $response->assertRedirect(route('admin.appointments.show', $appointment));
         $this->assertSame('confirmed', $appointment->status);
         $this->assertSame('Keep this note.', $appointment->notes);
+        $this->assertNotNull($appointment->serial_no);
     }
 
     public function test_staff_without_manage_permission_cannot_change_status(): void

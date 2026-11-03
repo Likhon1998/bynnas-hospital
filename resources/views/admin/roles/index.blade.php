@@ -20,7 +20,7 @@
                         <th>Role</th>
                         <th>Permissions</th>
                         <th>Staff</th>
-                        <th class="col-open">Action</th>
+                        <th class="col-pair-actions">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -32,9 +32,22 @@
                                 <span class="cell-sub">{{ $role->name }}</span>
                             </td>
                             <td>{{ $role->permissions_count }}</td>
-                            <td>{{ $role->users_count }}</td>
-                            <td class="col-open">
-                                <a href="{{ route('admin.roles.edit', $role) }}">Edit permissions</a>
+                            <td>
+                                @if ($role->users_count > 0)
+                                    <a href="{{ route('admin.users.index', ['role' => $role->name]) }}">{{ $role->users_count }}</a>
+                                @else
+                                    0
+                                @endif
+                            </td>
+                            <td class="col-pair-actions">
+                                <div class="table-actions">
+                                    <a href="{{ route('admin.roles.edit', $role) }}" class="table-btn table-btn--edit">Edit</a>
+                                    @unless ($role->isProtected())
+                                        @if ($role->users_count === 0)
+                                            <x-admin.delete-button :action="route('admin.roles.destroy', $role)" label="Delete" variant="pill" />
+                                        @endif
+                                    @endunless
+                                </div>
                             </td>
                         </tr>
                     @empty

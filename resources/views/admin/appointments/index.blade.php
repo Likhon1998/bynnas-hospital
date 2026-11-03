@@ -91,7 +91,12 @@
                                 @endcan
                             </td>
                             <td class="col-open">
-                                <a href="{{ route('admin.appointments.show', $appointment) }}">Open</a>
+                                <div class="table-actions">
+                                    <a href="{{ route('admin.appointments.show', $appointment) }}" class="table-btn table-btn--edit">Open</a>
+                                    @if (! empty($whatsappUrls[$appointment->id] ?? null))
+                                        <a href="{{ $whatsappUrls[$appointment->id] }}" class="table-btn table-btn--whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

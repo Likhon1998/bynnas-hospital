@@ -28,7 +28,11 @@ class AdminPatientTest extends TestCase
             'full_name' => 'Nusrat Jahan',
             'phone' => '01710001122',
             'email' => 'nusrat@example.com',
+            'date_of_birth' => '1992-04-12',
             'gender' => 'female',
+            'blood_group' => 'B+',
+            'nid_number' => '1992123456',
+            'district' => 'Dhaka',
             'is_active' => '1',
         ]);
 
@@ -39,8 +43,25 @@ class AdminPatientTest extends TestCase
         $this->assertDatabaseHas('patients', [
             'full_name' => 'Nusrat Jahan',
             'phone' => '01710001122',
+            'blood_group' => 'B+',
+            'nid_number' => '1992123456',
             'is_active' => 1,
         ]);
+    }
+
+    public function test_registration_requires_date_of_birth_and_gender(): void
+    {
+        $user = $this->createStaffUser(['patients.view', 'patients.manage']);
+
+        $this->actingAs($user)
+            ->from(route('admin.patients.create'))
+            ->post(route('admin.patients.store'), [
+                'full_name' => 'Incomplete Patient',
+                'phone' => '01710009988',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.patients.create'))
+            ->assertSessionHasErrors(['date_of_birth', 'gender']);
     }
 
     public function test_authorized_staff_can_register_a_patient_with_multiple_care_flags(): void
@@ -50,21 +71,29 @@ class AdminPatientTest extends TestCase
         $response = $this->actingAs($user)->post(route('admin.patients.store'), [
             'full_name' => 'Karim Hossain',
             'phone' => '01930005566',
+            'date_of_birth' => '1985-08-20',
+            'gender' => 'male',
             'is_active' => '1',
-            'care_flags' => ['diabetic', 'fall_risk', 'allergy_alert'],
+            'allergies' => 'Penicillin',
+            'care_flags' => ['diabetic', 'fall_risk'],
+            'emergency_contact_name' => 'Rina Hossain',
+            'emergency_contact_relation' => 'spouse',
+            'emergency_contact_phone' => '01820001122',
         ]);
 
         $patient = Patient::query()->where('full_name', 'Karim Hossain')->first();
 
         $this->assertNotNull($patient);
         $response->assertRedirect(route('admin.patients.show', $patient));
-        $this->assertSame(['diabetic', 'fall_risk', 'allergy_alert'], $patient->care_flags);
+        $this->assertEqualsCanonicalizing(['diabetic', 'fall_risk', 'allergy_alert'], $patient->care_flags);
         $this->actingAs($user)
             ->get(route('admin.patients.show', $patient))
             ->assertOk()
             ->assertSee('Diabetic')
             ->assertSee('Fall risk')
-            ->assertSee('Allergy alert');
+            ->assertSee('Allergy alert')
+            ->assertSee('Penicillin')
+            ->assertSee('Rina Hossain');
     }
 
     public function test_registering_from_bed_board_returns_to_available_beds(): void
@@ -74,6 +103,8 @@ class AdminPatientTest extends TestCase
         $response = $this->actingAs($user)->post(route('admin.patients.store'), [
             'full_name' => 'Bed Admit Patient',
             'phone' => '01820003344',
+            'date_of_birth' => '1990-01-01',
+            'gender' => 'male',
             'is_active' => '1',
             'return_to' => 'beds',
         ]);

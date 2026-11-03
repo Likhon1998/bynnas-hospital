@@ -13,6 +13,8 @@ use App\Models\HospitalSetting;
 use App\Models\Service;
 use App\Models\Testimonial;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class WebsiteContentAdminTest extends TestCase
@@ -357,6 +359,92 @@ class WebsiteContentAdminTest extends TestCase
         $this->get(route('privacy'))
             ->assertOk()
             ->assertSee('Families may request a printed record at reception.', false);
+    }
+
+    public function test_authorized_staff_can_upload_hospital_logo_and_see_it_publicly(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->createStaffUser(['settings.manage']);
+        HospitalSetting::ensureDefaults();
+        HospitalSetting::query()->where('key', 'logo')->update([
+            'value' => 'https://images.example.com/old-logo.png',
+        ]);
+
+        $upload = UploadedFile::fake()->image('hospital-logo.png', 320, 80);
+
+        $this->actingAs($user)
+            ->post(route('admin.settings.update'), [
+                '_method' => 'PUT',
+                'settings' => [
+                    'hospital_name' => 'Lakeside Medical Center',
+                    'tagline' => 'Care closer to home',
+                    'logo' => 'https://images.example.com/old-logo.png',
+                ],
+                'logo_upload' => $upload,
+            ])
+            ->assertRedirect(route('admin.settings.edit'));
+
+        $logo = HospitalSetting::query()->where('key', 'logo')->value('value');
+
+        $this->assertStringStartsWith('/storage/branding/', (string) $logo);
+        Storage::disk('public')->assertExists(ltrim(str_replace('/storage/', '', (string) $logo), '/'));
+
+        $home = $this->get(route('home'));
+        $home->assertOk();
+        $home->assertSee('Lakeside Medical Center', false);
+        $home->assertSee('Care closer to home', false);
+        $home->assertSee($logo, false);
+        $home->assertDontSee('https://images.example.com/old-logo.png', false);
+
+        $this->actingAs($user)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee($logo, false);
+    }
+
+    public function test_authorized_staff_can_upload_a_banner_image(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->createStaffUser(['content.manage']);
+        $upload = UploadedFile::fake()->image('hero-banner.jpg', 1600, 700);
+
+        $this->actingAs($user)
+            ->post(route('admin.banners.store'), [
+                'title' => 'Dawn clinic open',
+                'subtitle' => 'Walk-ins from 7am.',
+                'image_upload' => $upload,
+                'cta_label' => 'Book now',
+                'cta_url' => '/doctors',
+                'placement' => 'hero',
+                'is_active' => '1',
+                'sort_order' => '1',
+            ])
+            ->assertRedirect(route('admin.banners.index'));
+
+        $banner = Banner::query()->firstOrFail();
+
+        $this->assertStringStartsWith('/storage/banners/', $banner->image);
+        Storage::disk('public')->assertExists(ltrim(str_replace('/storage/', '', $banner->image), '/'));
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Dawn clinic open', false)
+            ->assertSee($banner->image, false);
+    }
+
+    public function test_settings_desk_shows_branding_upload_controls(): void
+    {
+        $user = $this->createStaffUser(['settings.manage', 'content.manage']);
+
+        $this->actingAs($user)
+            ->get(route('admin.settings.edit'))
+            ->assertOk()
+            ->assertSee('Brand identity', false)
+            ->assertSee('Upload logo', false)
+            ->assertSee('Hospital name', false)
+            ->assertSee(route('admin.banners.index'), false);
     }
 
     public function test_creating_a_department_and_doctor_shows_them_on_the_website(): void

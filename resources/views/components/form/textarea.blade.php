@@ -4,6 +4,7 @@
     'value' => '',
     'rows' => 5,
     'required' => false,
+    'hint' => null,
 ])
 
 <div>
@@ -15,5 +16,8 @@
         @if ($required) required @endif
         {{ $attributes->merge(['class' => 'admin-field mt-2 w-full px-4 py-3 text-sm']) }}
     >{{ old($name, $value) }}</textarea>
+    @if ($hint)
+        <p class="mt-2 text-sm text-ink-600">{{ $hint }}</p>
+    @endif
     @error($name) <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 </div>

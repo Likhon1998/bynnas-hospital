@@ -10,6 +10,7 @@ use App\Models\Doctor;
 use App\Models\HospitalSetting;
 use App\Models\Patient;
 use App\Support\AppointmentDesk;
+use App\Support\AppointmentWhatsAppNotice;
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ use Illuminate\View\View;
 
 class AppointmentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, AppointmentWhatsAppNotice $whatsapp): View
     {
         $status = $request->string('status')->toString();
         $source = $request->string('source')->toString();
@@ -57,8 +58,13 @@ class AppointmentController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $whatsappUrls = $appointments->getCollection()->mapWithKeys(
+            fn (Appointment $appointment) => [$appointment->id => $whatsapp->url($appointment)],
+        );
+
         return view('admin.appointments.index', [
             'appointments' => $appointments,
+            'whatsappUrls' => $whatsappUrls,
             'doctors' => $linkedDoctor !== null
                 ? collect([$linkedDoctor])->map(fn (Doctor $doctor) => (object) ['id' => $doctor->id, 'name' => $doctor->name])
                 : Doctor::query()->orderBy('name')->orderBy('id')->get(['id', 'name']),
@@ -86,8 +92,11 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function store(StoreAppointmentRequest $request, AppointmentDesk $desk): RedirectResponse
-    {
+    public function store(
+        StoreAppointmentRequest $request,
+        AppointmentDesk $desk,
+        AppointmentWhatsAppNotice $whatsapp,
+    ): RedirectResponse {
         $actor = $request->user();
         abort_unless($actor !== null, 403);
 
@@ -98,22 +107,48 @@ class AppointmentController extends Controller
         }
 
         $appointment = $desk->book($payload, $actor);
+        $appointment->load(['patient', 'doctor', 'department']);
 
-        return redirect()
-            ->route('admin.appointments.show', $appointment)
-            ->with('status', 'Visit booked.');
+        return $this->redirectAfterSerialNotice(
+            $appointment,
+            $whatsapp,
+            serialJustIssued: $appointment->serial_no !== null,
+            fallbackStatus: 'Visit booked.',
+        );
     }
 
-    public function show(Appointment $appointment): View
+    public function show(Appointment $appointment, AppointmentWhatsAppNotice $whatsapp): View
     {
         $appointment->load(['patient', 'doctor.department', 'department', 'createdBy', 'visits']);
 
-        return view('admin.appointments.show', compact('appointment'));
+        return view('admin.appointments.show', [
+            'appointment' => $appointment,
+            'whatsappSerialUrl' => $whatsapp->url($appointment),
+            'whatsappSerialMessage' => $whatsapp->message($appointment),
+        ]);
     }
 
-    public function update(AppointmentStatusRequest $request, Appointment $appointment, AppointmentDesk $desk): RedirectResponse
-    {
+    public function update(
+        AppointmentStatusRequest $request,
+        Appointment $appointment,
+        AppointmentDesk $desk,
+        AppointmentWhatsAppNotice $whatsapp,
+    ): RedirectResponse {
+        $hadSerial = $appointment->serial_no !== null;
+
         $desk->updateVisit($appointment, $request->validated());
+        $appointment->refresh()->load(['patient', 'doctor', 'department']);
+
+        $serialJustIssued = ! $hadSerial && $appointment->serial_no !== null;
+
+        if ($serialJustIssued) {
+            return $this->redirectAfterSerialNotice(
+                $appointment,
+                $whatsapp,
+                serialJustIssued: true,
+                fallbackStatus: 'Appointment confirmed.',
+            );
+        }
 
         return back()->with('status', 'Appointment updated.');
     }
@@ -126,6 +161,36 @@ class AppointmentController extends Controller
             'appointment' => $appointment,
             'hospital' => HospitalSetting::map(),
         ]);
+    }
+
+    private function redirectAfterSerialNotice(
+        Appointment $appointment,
+        AppointmentWhatsAppNotice $whatsapp,
+        bool $serialJustIssued,
+        string $fallbackStatus,
+    ): RedirectResponse {
+        $url = $whatsapp->url($appointment);
+        $serial = $appointment->serialLabel();
+
+        if ($serialJustIssued && $url !== null) {
+            return redirect()
+                ->route('admin.appointments.show', $appointment)
+                ->with([
+                    'status' => 'Serial '.$serial.' is ready. WhatsApp opens with the patient message — tap Send.',
+                    'whatsapp_serial_url' => $url,
+                    'open_whatsapp' => true,
+                ]);
+        }
+
+        if ($serialJustIssued) {
+            return redirect()
+                ->route('admin.appointments.show', $appointment)
+                ->with('status', 'Serial '.$serial.' issued. Add the patient phone number to send it on WhatsApp.');
+        }
+
+        return redirect()
+            ->route('admin.appointments.show', $appointment)
+            ->with('status', $fallbackStatus);
     }
 
     private function selectedVisitDate(Request $request): ?Carbon

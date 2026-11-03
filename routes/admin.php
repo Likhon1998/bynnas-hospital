@@ -233,7 +233,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         });
 
         Route::middleware('permission:users.manage')->group(function (): void {
-            Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+            Route::post('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
+            Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::resource('roles', RoleController::class)->except(['show']);
         });
 

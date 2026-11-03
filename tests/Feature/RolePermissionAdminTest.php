@@ -27,7 +27,7 @@ class RolePermissionAdminTest extends TestCase
             ->get(route('admin.roles.index'))
             ->assertOk()
             ->assertSee('Create role', false)
-            ->assertSee('Edit permissions', false);
+            ->assertSee('Edit', false);
 
         $this->actingAs($admin)
             ->post(route('admin.roles.store'), [

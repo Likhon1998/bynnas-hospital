@@ -11,6 +11,51 @@
             @endif
         </p>
 
+        @if ($appointment->serial_no !== null)
+            <section class="form-card appointment-serial-card">
+                <header class="form-card__head">
+                    <h2>Patient serial</h2>
+                    <p>Share this number with the patient so they know their place in today’s queue.</p>
+                </header>
+                <div class="form-card__body">
+                    <div class="appointment-serial-card__row">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-ink-400">Serial</p>
+                            <p class="appointment-serial-card__value">{{ $appointment->serialLabel() }}</p>
+                            <p class="mt-1 text-sm text-ink-600">
+                                {{ $appointment->doctor?->name ?: 'Doctor' }}
+                                · {{ $appointment->appointment_date?->format('d M Y') }}
+                                · {{ $appointment->timeRangeLabel() }}
+                            </p>
+                        </div>
+                        <div class="appointment-serial-card__actions">
+                            <a href="{{ route('admin.appointments.print', $appointment) }}" class="form-btn form-btn--ghost" target="_blank" rel="noopener">Print OPD ticket</a>
+                            @if ($whatsappSerialUrl)
+                                <a
+                                    href="{{ $whatsappSerialUrl }}"
+                                    class="form-btn form-btn--whatsapp"
+                                    target="_blank"
+                                    rel="noopener"
+                                    data-whatsapp-serial
+                                >Send serial on WhatsApp</a>
+                            @elseif ($appointment->patient)
+                                @can('patients.manage')
+                                    <a href="{{ route('admin.patients.edit', $appointment->patient) }}" class="form-btn form-btn--navy">Add patient phone</a>
+                                @endcan
+                            @endif
+                        </div>
+                    </div>
+
+                    @if ($whatsappSerialMessage)
+                        <details class="appointment-serial-card__preview">
+                            <summary>Preview WhatsApp message</summary>
+                            <pre>{{ $whatsappSerialMessage }}</pre>
+                        </details>
+                    @endif
+                </div>
+            </section>
+        @endif
+
         <section class="form-card">
             <header class="form-card__head">
                 <h2>Visit</h2>
@@ -116,4 +161,14 @@
             </x-admin.form-page>
         </div>
     @endcan
+
+    @if (session('open_whatsapp') && session('whatsapp_serial_url'))
+        <script>
+            (() => {
+                const url = @json(session('whatsapp_serial_url'));
+                if (!url) return;
+                window.setTimeout(() => window.open(url, '_blank', 'noopener'), 350);
+            })();
+        </script>
+    @endif
 @endsection

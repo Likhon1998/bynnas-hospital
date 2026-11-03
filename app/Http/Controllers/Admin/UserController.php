@@ -15,16 +15,30 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $roleFilter = $request->string('role')->trim()->toString();
+
         $users = User::query()
+            ->when($roleFilter !== '', function ($query) use ($roleFilter): void {
+                $query->whereExists(function ($sub) use ($roleFilter): void {
+                    $sub->selectRaw('1')
+                        ->from('model_has_roles')
+                        ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                        ->whereColumn('model_has_roles.model_id', 'users.id')
+                        ->where('model_has_roles.model_type', (new User)->getMorphClass())
+                        ->where('roles.name', $roleFilter);
+                });
+            })
             ->orderByDesc('is_active')
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         $roleMap = DB::table('model_has_roles')
             ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
             ->where('model_has_roles.model_type', (new User)->getMorphClass())
+            ->whereIn('model_has_roles.model_id', $users->getCollection()->pluck('id'))
             ->get(['model_has_roles.model_id', 'roles.name'])
             ->groupBy('model_id')
             ->map(fn ($rows) => $rows->pluck('name')->all());
@@ -33,7 +47,9 @@ class UserController extends Controller
             $user->setAttribute('assigned_roles', $roleMap->get($user->id, []));
         });
 
-        return view('admin.users.index', compact('users'));
+        $roles = DB::table('roles')->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.users.index', compact('users', 'roles'));
     }
 
     public function create(): View
@@ -133,5 +149,48 @@ class UserController extends Controller
         ], $request->user());
 
         return redirect()->route('admin.users.index')->with('status', 'User updated.');
+    }
+
+    public function toggleActive(Request $request, User $user, SystemAuditor $auditor): RedirectResponse
+    {
+        abort_if($request->user()?->is($user), 422, 'You cannot change the status of your own account.');
+
+        $user->update([
+            'is_active' => ! $user->is_active,
+        ]);
+
+        $auditor->record(
+            $user->is_active ? 'users.activate' : 'users.deactivate',
+            ($user->is_active ? 'Activated' : 'Deactivated').' staff account '.$user->email,
+            $user,
+            ['is_active' => (bool) $user->is_active],
+            $request->user()
+        );
+
+        return redirect()
+            ->back()
+            ->with('status', $user->is_active ? 'Staff account activated.' : 'Staff account deactivated.');
+    }
+
+    public function destroy(Request $request, User $user, SystemAuditor $auditor): RedirectResponse
+    {
+        abort_if($request->user()?->is($user), 422, 'You cannot delete your own account.');
+
+        $email = $user->email;
+
+        DB::table('model_has_roles')
+            ->where('model_id', $user->id)
+            ->where('model_type', $user->getMorphClass())
+            ->delete();
+
+        $user->delete();
+
+        $auditor->record('users.delete', 'Deleted staff account '.$email, null, [
+            'email' => $email,
+        ], $request->user());
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('status', 'Staff account deleted.');
     }
 }

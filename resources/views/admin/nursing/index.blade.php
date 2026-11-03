@@ -35,7 +35,7 @@
                         <th>Open tasks</th>
                         <th>Overdue</th>
                         <th>Last handover</th>
-                        <th class="col-open">Open</th>
+                        <th class="col-pair-actions">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,7 +56,11 @@
                                     No handover yet
                                 @endif
                             </td>
-                            <td class="col-open"><a href="{{ route('admin.nursing.wards.show', $ward) }}">Open ward</a></td>
+                            <td class="col-pair-actions">
+                                <div class="table-actions">
+                                    <a href="{{ route('admin.nursing.wards.show', $ward) }}" class="table-btn table-btn--edit">Open ward</a>
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr class="is-empty"><td colspan="6">No active wards.</td></tr>

@@ -78,6 +78,8 @@ class ReceptionistDeskTest extends TestCase
 
     public function test_confirmed_appointment_gets_doctor_serial_and_opd_ticket(): void
     {
+        $this->travelTo('2026-11-03 08:00:00');
+
         $user = $this->createStaffUser([
             'appointments.view',
             'appointments.manage',
@@ -91,7 +93,9 @@ class ReceptionistDeskTest extends TestCase
             'patient_id' => $patient->id,
             'doctor_id' => $doctor->id,
             'department_id' => $doctor->department_id,
-            'appointment_date' => today()->toDateString(),
+            'appointment_date' => '2026-11-03',
+            'start_time' => '09:00:00',
+            'end_time' => '09:30:00',
             'status' => 'pending',
             'serial_no' => null,
             'source' => 'web',
@@ -99,9 +103,9 @@ class ReceptionistDeskTest extends TestCase
 
         $this->actingAs($user)->put(route('admin.appointments.update', $appointment), [
             'status' => 'confirmed',
-            'appointment_date' => today()->toDateString(),
-            'start_time' => substr((string) $appointment->start_time, 0, 5),
-        ])->assertRedirect();
+            'appointment_date' => '2026-11-03',
+            'start_time' => '09:00',
+        ])->assertRedirect(route('admin.appointments.show', $appointment));
 
         $appointment->refresh();
         $this->assertSame(1, (int) $appointment->serial_no);

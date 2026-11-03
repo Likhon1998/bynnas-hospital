@@ -3,6 +3,7 @@
     :method="$method"
     :cancel="route('admin.doctors.index')"
     lede="Keep the doctor profile complete so reception, billing, and the public website all show the same person."
+    enctype="multipart/form-data"
 >
     <x-admin.form-section title="Identity" note="Who this doctor is on the roster and the website.">
         <x-form.input name="name" label="Full name" :value="$doctor->name" required />
@@ -31,12 +32,79 @@
     </x-admin.form-section>
 
     <x-admin.form-section title="Public profile" note="Photo, URL, and biography shown on the hospital website.">
-        <x-form.input name="photo" label="Photo URL" :value="$doctor->photo" />
+        <div class="form-span-2 doctor-photo-field" data-doctor-photo>
+            <div class="doctor-photo-preview @if (! filled(old('photo', $doctor->photo))) is-empty @endif">
+                <img
+                    data-doctor-photo-preview
+                    src="{{ old('photo', $doctor->photo) ?: '' }}"
+                    alt=""
+                    @if (! filled(old('photo', $doctor->photo))) hidden @endif
+                >
+                <span data-doctor-photo-empty class="doctor-photo-preview__empty" @if (filled(old('photo', $doctor->photo))) hidden @endif>No photo yet</span>
+            </div>
+            <x-form.input
+                name="photo_upload"
+                type="file"
+                label="Upload from gallery"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                hint="Choose a photo from your device, then click Save changes. JPG, PNG, WEBP, or GIF up to 4 MB."
+                data-doctor-photo-input
+            />
+            <x-form.input
+                name="photo"
+                label="Photo URL"
+                :value="$doctor->photo"
+                hint="Optional if you upload a file. Paste an image link instead of uploading."
+                class="mt-1"
+                data-doctor-photo-url
+            />
+        </div>
         <x-form.input name="slug" label="Slug" :value="$doctor->slug" />
         <div class="form-span-2">
             <x-form.textarea name="biography" label="Biography" :value="$doctor->biography" :rows="6" />
         </div>
     </x-admin.form-section>
+    <script>
+        (() => {
+            const root = document.querySelector('[data-doctor-photo]');
+            if (!root) return;
+
+            const preview = root.querySelector('[data-doctor-photo-preview]');
+            const empty = root.querySelector('[data-doctor-photo-empty]');
+            const box = root.querySelector('.doctor-photo-preview');
+            const fileInput = root.querySelector('[data-doctor-photo-input]');
+            const urlInput = root.querySelector('[data-doctor-photo-url]');
+
+            const show = (src) => {
+                if (!src) {
+                    preview.hidden = true;
+                    preview.removeAttribute('src');
+                    empty.hidden = false;
+                    box.classList.add('is-empty');
+                    return;
+                }
+                preview.hidden = false;
+                preview.src = src;
+                empty.hidden = true;
+                box.classList.remove('is-empty');
+            };
+
+            preview?.addEventListener('error', () => show(''));
+
+            fileInput?.addEventListener('change', () => {
+                const file = fileInput.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => show(String(reader.result || ''));
+                reader.readAsDataURL(file);
+            });
+
+            urlInput?.addEventListener('input', () => {
+                if (fileInput?.files?.length) return;
+                show(urlInput.value.trim());
+            });
+        })();
+    </script>
 
     <x-admin.form-section title="Visibility" note="Control where this doctor appears." :columns="false">
         <div class="form-grid">

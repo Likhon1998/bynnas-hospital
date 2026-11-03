@@ -16,6 +16,7 @@ class AdminLayoutComposer
     {
         $user = Auth::user();
         $hospitalName = HospitalSetting::query()->where('key', 'hospital_name')->value('value') ?: config('app.name');
+        $hospitalLogo = HospitalSetting::query()->where('key', 'logo')->value('value');
         $alertFeed = $view->name() === 'layouts.admin'
             ? $this->criticalAlertFeed->for($user)
             : ['alerts' => collect(), 'counts' => [], 'total' => 0];
@@ -44,6 +45,7 @@ class AdminLayoutComposer
 
         $view->with([
             'hospitalName' => $hospitalName,
+            'hospitalLogo' => $hospitalLogo,
             'adminPrimaryAction' => $primaryAction,
             'adminDashboardItem' => $dashboardItem,
             'adminNavSections' => $navSections,

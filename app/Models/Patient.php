@@ -17,25 +17,43 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'patient_code',
     'full_name',
     'phone',
+    'secondary_phone',
     'email',
+    'nid_number',
     'date_of_birth',
     'gender',
+    'blood_group',
+    'marital_status',
+    'occupation',
+    'guardian_name',
     'address',
+    'district',
     'emergency_contact_name',
+    'emergency_contact_relation',
     'emergency_contact_phone',
     'is_active',
     'care_flags',
     'allergies',
+    'notes',
 ])]
 #[Hidden([
     'phone',
+    'secondary_phone',
     'email',
+    'nid_number',
     'date_of_birth',
     'gender',
+    'blood_group',
+    'marital_status',
+    'occupation',
+    'guardian_name',
     'address',
+    'district',
     'emergency_contact_name',
+    'emergency_contact_relation',
     'emergency_contact_phone',
     'allergies',
+    'notes',
     'user_id',
 ])]
 class Patient extends Model
@@ -53,6 +71,37 @@ class Patient extends Model
         'allergy_alert' => 'Allergy alert',
         'mobility_assist' => 'Mobility assist',
         'priority' => 'Priority / VIP',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    public const BLOOD_GROUPS = [
+        'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    public const MARITAL_STATUSES = [
+        'single' => 'Single',
+        'married' => 'Married',
+        'divorced' => 'Divorced',
+        'widowed' => 'Widowed',
+        'other' => 'Other',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    public const EMERGENCY_RELATIONS = [
+        'spouse' => 'Spouse',
+        'parent' => 'Parent',
+        'child' => 'Child',
+        'sibling' => 'Sibling',
+        'guardian' => 'Guardian',
+        'friend' => 'Friend',
+        'other' => 'Other',
     ];
 
     /**
@@ -121,6 +170,16 @@ class Patient extends Model
         }
 
         return 'None recorded';
+    }
+
+    public function maritalStatusLabel(): string
+    {
+        return self::MARITAL_STATUSES[$this->marital_status] ?? ($this->marital_status ?: '—');
+    }
+
+    public function emergencyRelationLabel(): string
+    {
+        return self::EMERGENCY_RELATIONS[$this->emergency_contact_relation] ?? ($this->emergency_contact_relation ?: '—');
     }
 
     public function currentDiagnosis(?string $admissionReason = null): ?string

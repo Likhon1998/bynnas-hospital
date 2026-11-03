@@ -1643,6 +1643,15 @@ body {
     height: 100%;
 }
 
+.admin-brand__logo {
+    display: block;
+    max-width: 7.5rem;
+    max-height: 2rem;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
 .admin-brand__name {
     display: block;
     overflow: hidden;
@@ -1671,6 +1680,10 @@ body {
 
     .admin-shell.is-collapsed .admin-brand__name {
         display: none;
+    }
+
+    .admin-shell.is-collapsed .admin-brand__logo {
+        max-width: 2rem;
     }
 
     .admin-shell.is-collapsed .admin-nav-section__toggle,
@@ -2573,6 +2586,17 @@ select.admin-field--multiple {
 
 .form-card--green .form-card__step { background: #059669; }
 
+.form-card--rose {
+    border-color: rgb(225 29 72 / 0.2);
+}
+
+.form-card--rose .form-card__head {
+    background: linear-gradient(180deg, #fff1f2 0%, #ffffff 100%);
+    border-bottom-color: #fecdd3;
+}
+
+.form-card--rose .form-card__step { background: #e11d48; }
+
 .form-card__body {
     padding: 1.2rem 1.25rem 1.35rem;
 }
@@ -2586,6 +2610,47 @@ select.admin-field--multiple {
     .form-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
+
+.doctor-photo-field {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.doctor-photo-preview {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 8.5rem;
+    height: 8.5rem;
+    overflow: hidden;
+    border: 1px solid #e0b6ea;
+    border-radius: 1rem;
+    background: #f8fafc;
+}
+
+.doctor-photo-preview.is-empty {
+    background:
+        linear-gradient(135deg, #f6eaf9 0%, #f8fafc 55%, #eef2ff 100%);
+}
+
+.doctor-photo-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.doctor-photo-preview__empty {
+    padding: 0.75rem;
+    color: #7d458c;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.doctor-photo-field input[type='file'] {
+    padding-block: 0.55rem;
 }
 
 .form-span-2 {
@@ -2738,6 +2803,7 @@ select.admin-field--multiple {
 
 .patient-register__steps .is-teal span { background: #0f766e; }
 .patient-register__steps .is-blue span { background: #2563eb; }
+.patient-register__steps .is-rose span { background: #e11d48; }
 .patient-register__steps .is-amber span { background: #d97706; }
 .patient-register__steps .is-green span { background: #059669; }
 
@@ -2775,6 +2841,79 @@ select.admin-field--multiple {
     border-color: #a7f3d0;
     background: #ecfdf5;
     color: #065f46;
+}
+
+.form-btn--whatsapp {
+    background: #128c7e;
+    color: #fff;
+}
+
+.form-btn--whatsapp:hover {
+    background: #0f766e;
+    color: #fff;
+}
+
+.appointment-serial-card {
+    margin-bottom: 1rem;
+    border-color: rgba(18, 140, 126, 0.28);
+    background: linear-gradient(180deg, rgba(18, 140, 126, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.appointment-serial-card__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.appointment-serial-card__value {
+    margin-top: 0.25rem;
+    color: #0f766e;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+}
+
+.appointment-serial-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.appointment-serial-card__preview {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(15, 118, 110, 0.16);
+    padding-top: 0.85rem;
+}
+
+.appointment-serial-card__preview summary {
+    cursor: pointer;
+    color: #0f766e;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.appointment-serial-card__preview pre {
+    margin-top: 0.75rem;
+    overflow: auto;
+    border-radius: 0.85rem;
+    background: #fff;
+    padding: 0.9rem 1rem;
+    color: #1f2937;
+    font-family: inherit;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.table-btn--whatsapp,
+.pro-table a.table-btn--whatsapp,
+.pro-table a.table-btn--whatsapp:hover,
+.pro-table a.table-btn--whatsapp:focus-visible {
+    background: #128c7e;
+    color: #fff;
 }
 
 .form-btn--navy {
@@ -2916,7 +3055,7 @@ select.admin-field--multiple {
 
 .pro-table {
     width: 100%;
-    min-width: 56rem;
+    min-width: 60rem;
     table-layout: fixed;
     border-collapse: collapse;
     border-spacing: 0;
@@ -2938,6 +3077,7 @@ select.admin-field--multiple {
     padding: 0.58rem 0.75rem;
     vertical-align: middle;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .pro-table thead th {
@@ -2996,7 +3136,8 @@ select.admin-field--multiple {
 }
 
 .pro-table .col-status {
-    width: 8.25rem;
+    width: 9rem;
+    min-width: 9rem;
     overflow: visible;
     text-align: center;
     white-space: nowrap;
@@ -3149,29 +3290,160 @@ select.admin-field--multiple {
     color: #b91c1c;
 }
 
-.pro-table .col-action {
-    width: 7.5rem;
-    text-align: center;
-    white-space: nowrap;
-}
-
-.pro-table .col-open {
-    width: 4.75rem;
-    text-align: center;
-    white-space: nowrap;
-}
-
-.pro-table .col-pair-actions {
-    width: 11.5rem;
-    min-width: 11.5rem;
+.pro-table .col-action,
+.pro-table .col-open,
+.pro-table .col-pair-actions,
+.pro-table .col-status {
     overflow: visible;
+}
+
+.pro-table .col-action {
+    width: 12rem;
+    min-width: 12rem;
     text-align: right;
     white-space: nowrap;
 }
 
+.pro-table .col-open {
+    width: 9.75rem;
+    min-width: 9.75rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pro-table .col-pair-actions {
+    width: 19rem;
+    min-width: 19rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pro-table .col-action .table-actions,
+.pro-table .col-open .table-actions,
 .pro-table .col-pair-actions .table-actions {
     justify-content: flex-end;
-    gap: 0.4rem;
+    flex-wrap: nowrap;
+    gap: 0.45rem;
+}
+
+/* Turn plain Open/Edit/Delete links into pill buttons across all admin tables */
+.pro-table td.col-open > a,
+.pro-table td.col-open .table-actions > a,
+.pro-table td.col-action .table-actions > a,
+.pro-table td.col-pair-actions .table-actions > a:not(.table-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.9rem;
+    padding: 0 0.78rem;
+    border: 1px solid #0f766e;
+    border-radius: 999px;
+    background: #0f766e;
+    color: #ffffff !important;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none !important;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+}
+
+.pro-table td.col-open > a:hover,
+.pro-table td.col-open .table-actions > a:hover,
+.pro-table td.col-action .table-actions > a:hover,
+.pro-table td.col-pair-actions .table-actions > a:not(.table-btn):hover {
+    border-color: #0d9488;
+    background: #0d9488;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    filter: brightness(1.05);
+}
+
+.pro-table td.col-action .table-actions form button:not(.table-btn),
+.pro-table td.col-pair-actions .table-actions form button:not(.table-btn):not(.table-btn--mute),
+.pro-table td.col-action .table-actions form button.text-red-700,
+.pro-table td.col-pair-actions .table-actions form button.text-red-700 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.9rem;
+    padding: 0 0.78rem;
+    border: 1px solid #dc2626;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #ffffff !important;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none !important;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+    cursor: pointer;
+}
+
+.pro-table td.col-action .table-actions form button:not(.table-btn):hover,
+.pro-table td.col-pair-actions .table-actions form button.text-red-700:hover,
+.pro-table td.col-action .table-actions form button.text-red-700:hover {
+    border-color: #b91c1c;
+    background: #b91c1c;
+    color: #ffffff !important;
+}
+
+.table-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.9rem;
+    padding: 0 0.78rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none !important;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.table-btn:hover,
+.table-btn:focus-visible {
+    text-decoration: none !important;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 0.12);
+    filter: brightness(1.05);
+}
+
+.table-btn--edit,
+.pro-table a.table-btn--edit,
+.pro-table a.table-btn--edit:hover,
+.pro-table a.table-btn--edit:focus-visible {
+    border-color: #0f766e;
+    background: #0f766e;
+    color: #ffffff !important;
+}
+
+.table-btn--mute,
+.pro-table a.table-btn--mute,
+.pro-table a.table-btn--mute:hover,
+.pro-table button.table-btn--mute,
+.pro-table button.table-btn--mute:hover {
+    border-color: #475569;
+    background: #475569;
+    color: #ffffff !important;
+}
+
+.table-btn--danger,
+.pro-table a.table-btn--danger,
+.pro-table a.table-btn--danger:hover,
+.pro-table button.table-btn--danger,
+.pro-table button.table-btn--danger:hover {
+    border-color: #dc2626;
+    background: #dc2626;
+    color: #ffffff !important;
 }
 
 .pro-table .col-thumb {
@@ -3224,12 +3496,12 @@ select.admin-field--multiple {
     font-weight: 500;
 }
 
-.pro-table a {
+.pro-table a:not(.table-btn) {
     font-weight: 600;
     color: #0e6b6b;
 }
 
-.pro-table a:hover {
+.pro-table a:not(.table-btn):hover {
     color: #0a5555;
     text-decoration: underline;
 }
@@ -3238,12 +3510,13 @@ select.admin-field--multiple {
     display: inline-flex;
     width: 100%;
     align-items: center;
-    justify-content: center;
-    gap: 0.7rem;
+    justify-content: flex-end;
+    gap: 0.45rem;
 }
 
 .table-actions form {
     display: inline-flex;
+    margin: 0;
 }
 
 .roster {

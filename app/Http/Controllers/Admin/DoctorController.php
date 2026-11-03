@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class DoctorController extends Controller
@@ -44,7 +45,7 @@ class DoctorController extends Controller
 
     public function store(DoctorRequest $request): RedirectResponse
     {
-        Doctor::query()->create($request->safe()->except(['_token']));
+        Doctor::query()->create($this->doctorPayload($request));
 
         return redirect()->route('admin.doctors.index')->with('status', 'Doctor created.');
     }
@@ -66,7 +67,7 @@ class DoctorController extends Controller
 
     public function update(DoctorRequest $request, Doctor $doctor): RedirectResponse
     {
-        $doctor->update($request->safe()->except(['_token']));
+        $doctor->update($this->doctorPayload($request, $doctor->photo));
 
         return redirect()->route('admin.doctors.index')->with('status', 'Doctor updated.');
     }
@@ -74,11 +75,44 @@ class DoctorController extends Controller
     public function destroy(Doctor $doctor): RedirectResponse
     {
         try {
+            $this->deleteStoredPhoto($doctor->photo);
             $doctor->delete();
         } catch (QueryException) {
             return back()->with('error', 'This doctor cannot be deleted while appointments are linked to the profile.');
         }
 
         return redirect()->route('admin.doctors.index')->with('status', 'Doctor deleted.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function doctorPayload(DoctorRequest $request, ?string $currentPhoto = null): array
+    {
+        $data = $request->safe()->except(['photo_upload']);
+
+        if ($request->hasFile('photo_upload')) {
+            $path = $request->file('photo_upload')->store('doctors', 'public');
+            // Store a root-relative URL so the photo works on any host/domain.
+            $data['photo'] = '/storage/'.$path;
+            $this->deleteStoredPhoto($currentPhoto);
+        }
+
+        return $data;
+    }
+
+    private function deleteStoredPhoto(?string $photo): void
+    {
+        if (! filled($photo)) {
+            return;
+        }
+
+        $path = parse_url($photo, PHP_URL_PATH) ?: $photo;
+
+        if (! is_string($path) || ! str_contains($path, '/storage/doctors/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(ltrim(str_replace('/storage/', '', $path), '/'));
     }
 }

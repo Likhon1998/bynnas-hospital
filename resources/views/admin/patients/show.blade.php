@@ -6,16 +6,30 @@
         <aside class="rounded-3xl bg-white p-6 ring-1 ring-sand-100">
             <p class="text-sm text-ink-600">Patient ID</p>
             <p class="font-medium text-navy-900">{{ $patient->patient_code ?: '—' }}</p>
-            <p class="mt-4 text-sm text-ink-600">Age</p>
-            <p class="font-medium text-navy-900">{{ $patient->ageLabel() }}</p>
+            <p class="mt-4 text-sm text-ink-600">Age / Gender</p>
+            <p class="font-medium text-navy-900">{{ $patient->ageLabel() }} · {{ $patient->gender ? ucfirst($patient->gender) : '—' }}</p>
+            <p class="mt-4 text-sm text-ink-600">Blood group</p>
+            <p class="font-medium text-navy-900">{{ $patient->blood_group ?: '—' }}</p>
             <p class="mt-4 text-sm text-ink-600">Phone</p>
-            <p class="font-medium text-navy-900">{{ $patient->phone }}</p>
+            <p class="font-medium text-navy-900">{{ $patient->phone }}@if ($patient->secondary_phone)<span class="block text-sm font-normal text-ink-600">{{ $patient->secondary_phone }}</span>@endif</p>
             <p class="mt-4 text-sm text-ink-600">Email</p>
             <p class="font-medium text-navy-900">{{ $patient->email ?: '—' }}</p>
-            <p class="mt-4 text-sm text-ink-600">Gender</p>
-            <p class="font-medium text-navy-900">{{ $patient->gender ?: '—' }}</p>
+            <p class="mt-4 text-sm text-ink-600">NID / ID</p>
+            <p class="font-medium text-navy-900">{{ $patient->nid_number ?: '—' }}</p>
+            <p class="mt-4 text-sm text-ink-600">Guardian</p>
+            <p class="font-medium text-navy-900">{{ $patient->guardian_name ?: '—' }}</p>
             <p class="mt-4 text-sm text-ink-600">Address</p>
-            <p class="font-medium text-navy-900">{{ $patient->address ?: '—' }}</p>
+            <p class="font-medium text-navy-900">{{ $patient->address ?: '—' }}@if ($patient->district)<span class="block text-sm font-normal text-ink-600">{{ $patient->district }}</span>@endif</p>
+            <p class="mt-4 text-sm text-ink-600">Emergency contact</p>
+            <p class="font-medium text-navy-900">
+                {{ $patient->emergency_contact_name ?: '—' }}
+                @if ($patient->emergency_contact_relation)
+                    <span class="block text-sm font-normal text-ink-600">{{ $patient->emergencyRelationLabel() }}</span>
+                @endif
+                @if ($patient->emergency_contact_phone)
+                    <span class="block text-sm font-normal text-ink-600">{{ $patient->emergency_contact_phone }}</span>
+                @endif
+            </p>
             <p class="mt-4 text-sm text-ink-600">Care alerts</p>
             @if ($patient->careFlagLabels() !== [])
                 <ul class="mt-1 flex flex-wrap gap-1.5">
@@ -28,6 +42,10 @@
             @endif
             <p class="mt-4 text-sm text-ink-600">Allergies</p>
             <p class="font-medium text-navy-900">{{ $patient->allergyLabel() }}</p>
+            @if (filled($patient->notes))
+                <p class="mt-4 text-sm text-ink-600">Notes</p>
+                <p class="font-medium text-navy-900">{{ $patient->notes }}</p>
+            @endif
             @can('admissions.view')
                 @if ($patient->currentAdmission)
                     <a href="{{ route('admin.admissions.show', $patient->currentAdmission) }}" class="mt-6 inline-flex rounded-full bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white">Open admission</a>
