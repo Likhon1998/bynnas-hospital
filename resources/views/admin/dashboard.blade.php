@@ -685,7 +685,10 @@
                             </h2>
                             <p>Bills dated today</p>
                         </div>
-                        <a href="{{ route('admin.bills.index') }}">All bills</a>
+                        <div class="inline-flex flex-wrap gap-3">
+                            <a href="{{ route('admin.bills.create') }}">Create bill</a>
+                            <a href="{{ route('admin.bills.index') }}">All bills</a>
+                        </div>
                     </div>
                     <ul class="mc-activity">
                         @forelse ($cashierDesk['todayBills'] as $bill)
@@ -828,6 +831,7 @@
                             </h2>
                             <p>OPD, lab, bed, and service charges</p>
                         </div>
+                        <a href="{{ route('admin.bills.create') }}">New bill</a>
                     </div>
                     <ul class="mc-activity">
                         <li>

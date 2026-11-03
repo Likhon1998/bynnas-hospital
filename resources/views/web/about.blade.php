@@ -108,6 +108,53 @@
         :cta-href="route('home').'#appointment'"
     />
 
+    @if (($boardMembers ?? collect())->isNotEmpty())
+        <section class="ch-board-sec" id="board">
+            <div class="ch-wrap">
+                <div class="ch-sec__head">
+                    <div>
+                        <p class="ch-find__kicker">Leadership</p>
+                        <h2 class="ch-sec__title">Board of directors</h2>
+                        <p class="ch-depts-intro">The people who guide {{ $hospitalName }} — governance, clinical standards, and campus operations.</p>
+                    </div>
+                </div>
+                <div class="ch-board">
+                    @foreach ($boardMembers as $member)
+                        <article class="ch-board__card">
+                            <div class="ch-board__photo">
+                                @if (filled($member->photo))
+                                    <img src="{{ $member->photo }}" alt="{{ $member->name }}" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                                @else
+                                    <span aria-hidden="true">{{ $member->initials() }}</span>
+                                @endif
+                            </div>
+                            <div class="ch-board__body">
+                                @if (filled($member->role_label))
+                                    <p class="ch-board__label">{{ $member->role_label }}</p>
+                                @endif
+                                <h3>{{ $member->name }}</h3>
+                                <p class="ch-board__title">{{ $member->title }}</p>
+                                @if (filled($member->bio))
+                                    <p class="ch-board__bio">{{ $member->bio }}</p>
+                                @endif
+                                @if (filled($member->email) || filled($member->phone))
+                                    <p class="ch-board__contact">
+                                        @if (filled($member->email))
+                                            <a href="mailto:{{ $member->email }}">{{ $member->email }}</a>
+                                        @endif
+                                        @if (filled($member->phone))
+                                            <a href="tel:{{ preg_replace('/\s+/', '', $member->phone) }}">{{ $member->phone }}</a>
+                                        @endif
+                                    </p>
+                                @endif
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     @if ($doctors->isNotEmpty())
         <section class="ch-docs-sec">
             <div class="ch-wrap">

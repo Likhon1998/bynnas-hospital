@@ -64,6 +64,52 @@ class CashierDeskTest extends TestCase
         $response->assertDontSee(route('admin.owner.finance.index'), false);
     }
 
+    public function test_cashier_can_create_and_issue_a_patient_bill(): void
+    {
+        $cashier = $this->createStaffUser([
+            'patients.view',
+            'appointments.view',
+            'visits.view',
+            'admissions.view',
+            'billing.manage',
+        ], 'cashier');
+        $patient = Patient::factory()->create(['full_name' => 'Cash Desk Patient']);
+
+        $this->actingAs($cashier)
+            ->get(route('admin.bills.create'))
+            ->assertOk()
+            ->assertSee('Cash Desk Patient', false);
+
+        $this->actingAs($cashier)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(route('admin.bills.create'), false)
+            ->assertSee('Create bill', false);
+
+        $response = $this->actingAs($cashier)->post(route('admin.bills.store'), [
+            'patient_id' => $patient->id,
+            'bill_date' => now()->toDateString(),
+            'discount' => '0',
+            'action' => 'issue',
+            'items' => [
+                [
+                    'item_type' => 'custom',
+                    'description' => 'OPD consultation',
+                    'quantity' => '1',
+                    'unit_price' => '900',
+                ],
+            ],
+        ]);
+
+        $bill = Bill::query()->first();
+
+        $this->assertNotNull($bill);
+        $response->assertRedirect(route('admin.bills.show', $bill));
+        $this->assertSame('issued', $bill->status);
+        $this->assertSame(900.0, (float) $bill->total);
+        $this->assertSame($cashier->id, $bill->issued_by);
+    }
+
     public function test_cashier_collects_cash_card_mobile_payments_and_prints_receipt(): void
     {
         $cashier = $this->createStaffUser(['billing.manage'], 'cashier');

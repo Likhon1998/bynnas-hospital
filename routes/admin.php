@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\BedWardController;
 use App\Http\Controllers\Admin\BillController;
 use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\BlogPostController;
+use App\Http\Controllers\Admin\BoardMemberController;
 use App\Http\Controllers\Admin\CapacityForecastController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\CriticalAlertController;
@@ -223,6 +224,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::resource('blog-posts', BlogPostController::class)->except(['show']);
             Route::resource('testimonials', TestimonialController::class)->except(['show']);
             Route::resource('faqs', FaqController::class)->except(['show']);
+            Route::resource('board-members', BoardMemberController::class)->except(['show']);
             Route::resource('galleries', GalleryController::class)->except(['show']);
             Route::resource('banners', BannerController::class)->except(['show']);
             Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'update', 'destroy']);

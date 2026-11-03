@@ -2934,6 +2934,118 @@ body.ch-cal-lock {
     line-height: 1.6;
 }
 
+.ch-board-sec {
+    padding: 2.2rem 0 2.6rem;
+    background: #fff;
+}
+
+.ch-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.ch-board__card {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+    padding: 1.1rem 1.15rem;
+    border: 1px solid #e6ebf3;
+    border-radius: 1.15rem;
+    background: #f8fafc;
+}
+
+.ch-board__photo {
+    display: grid;
+    place-items: center;
+    width: 5.5rem;
+    height: 5.5rem;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: #e8eef8;
+    color: var(--ch-brand);
+    font-size: 1.2rem;
+    font-weight: 750;
+}
+
+.ch-board__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ch-board__label {
+    margin: 0 0 0.2rem;
+    color: var(--ch-brand);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.ch-board__body h3 {
+    margin: 0;
+    color: var(--ch-ink);
+    font-size: 1.08rem;
+    line-height: 1.25;
+}
+
+.ch-board__title {
+    margin: 0.25rem 0 0;
+    color: #334155;
+    font-size: 0.92rem;
+    font-weight: 650;
+}
+
+.ch-board__bio {
+    margin: 0.55rem 0 0;
+    color: var(--ch-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.ch-board__contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.86rem;
+}
+
+.ch-board__contact a {
+    color: var(--ch-brand);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.ch-board__contact a:hover {
+    text-decoration: underline;
+}
+
+@media (min-width: 760px) {
+    .ch-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1100px) {
+    .ch-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.15rem;
+    }
+
+    .ch-board__card {
+        grid-template-columns: 6.25rem minmax(0, 1fr);
+        padding: 1.25rem 1.3rem;
+    }
+
+    .ch-board__photo {
+        width: 6.25rem;
+        height: 6.25rem;
+    }
+}
+
 .ch-about-visit {
     padding: 2.1rem 0 2.5rem;
     background: #fff;

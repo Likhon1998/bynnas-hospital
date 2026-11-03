@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\BoardMember;
 use App\Models\Department;
 use App\Models\Doctor;
 use App\Support\PublicCampusStats;
@@ -30,6 +31,11 @@ class AboutController extends Controller
         }
 
         return view('web.about', [
+            'boardMembers' => BoardMember::query()
+                ->active()
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(),
             'doctors' => $featuredDoctors,
             'departments' => Department::query()
                 ->active()

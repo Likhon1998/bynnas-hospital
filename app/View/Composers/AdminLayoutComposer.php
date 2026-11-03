@@ -26,6 +26,11 @@ class AdminLayoutComposer
             'route' => 'admin.appointments.create',
             'permission' => 'appointments.manage',
             'icon' => 'clipboard-plus',
+        ]) ?? $this->hydrateItem($user, [
+            'label' => 'Create bill',
+            'route' => 'admin.bills.create',
+            'permission' => 'billing.manage',
+            'icon' => 'receipt',
         ]);
         $dashboardItem = $this->hydrateItem($user, [
             'label' => 'Dashboard',
@@ -158,9 +163,15 @@ class AdminLayoutComposer
                         'route' => 'admin.patients.index',
                         'permission' => 'patients.view',
                         'icon' => 'users',
+                    ],
+                    [
+                        'label' => 'Billing',
+                        'route' => 'admin.bills.index',
+                        'permission' => 'billing.manage',
+                        'icon' => 'receipt',
                         'children' => [
-                            ['label' => 'Billing', 'route' => 'admin.bills.index', 'permission' => 'billing.manage', 'icon' => 'pill'],
-                            ['label' => 'Daily collections', 'route' => 'admin.bills.collections', 'permission' => 'billing.manage', 'icon' => 'receipt'],
+                            ['label' => 'Create bill', 'route' => 'admin.bills.create', 'permission' => 'billing.manage', 'icon' => 'clipboard-plus'],
+                            ['label' => 'Daily collections', 'route' => 'admin.bills.collections', 'permission' => 'billing.manage', 'icon' => 'pill'],
                         ],
                     ],
                 ],
@@ -217,6 +228,7 @@ class AdminLayoutComposer
                             ['label' => 'News', 'route' => 'admin.blog-posts.index', 'permission' => 'content.manage', 'icon' => 'clipboard'],
                             ['label' => 'News categories', 'route' => 'admin.blog-categories.index', 'permission' => 'content.manage', 'icon' => 'grid'],
                             ['label' => 'Reviews', 'route' => 'admin.testimonials.index', 'permission' => 'content.manage', 'icon' => 'users'],
+                            ['label' => 'Board members', 'route' => 'admin.board-members.index', 'permission' => 'content.manage', 'icon' => 'users'],
                             ['label' => 'Gallery', 'route' => 'admin.galleries.index', 'permission' => 'content.manage', 'icon' => 'eye'],
                             ['label' => 'Packages', 'route' => 'admin.health-packages.index', 'permission' => 'content.manage', 'icon' => 'pill'],
                         ],
@@ -323,6 +335,16 @@ class AdminLayoutComposer
         if ($route === 'admin.doctors.index') {
             return request()->routeIs('admin.doctors.*')
                 || request()->routeIs('admin.departments.*');
+        }
+
+        if ($route === 'admin.bills.index') {
+            return request()->routeIs('admin.bills.index')
+                || request()->routeIs('admin.bills.show')
+                || request()->routeIs('admin.bills.edit');
+        }
+
+        if ($route === 'admin.bills.create') {
+            return request()->routeIs('admin.bills.create');
         }
 
         return request()->routeIs($route)

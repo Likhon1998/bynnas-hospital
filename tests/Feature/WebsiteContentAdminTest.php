@@ -46,6 +46,8 @@ class WebsiteContentAdminTest extends TestCase
         $this->get(route('admin.blog-categories.index'))->assertOk()->assertSee('News categories', false);
         $this->get(route('admin.testimonials.index'))->assertOk();
         $this->get(route('admin.testimonials.create'))->assertOk();
+        $this->get(route('admin.board-members.index'))->assertOk()->assertSee('Add board member', false);
+        $this->get(route('admin.board-members.create'))->assertOk()->assertSee('Board of Directors', false);
         $this->get(route('admin.galleries.index'))->assertOk();
         $this->get(route('admin.galleries.create'))->assertOk();
         $this->get(route('admin.health-packages.index'))->assertOk();

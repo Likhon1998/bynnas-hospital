@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\BoardMember;
 use App\Models\Department;
 use App\Models\Doctor;
 use App\Models\Patient;
@@ -23,6 +24,25 @@ class AboutPageTest extends TestCase
         $response->assertSee('Named consultants', false);
         $response->assertSee('Visit the campus', false);
         $response->assertSee(route('doctors'), false);
+    }
+
+    public function test_about_page_shows_active_board_members_from_the_desk(): void
+    {
+        BoardMember::factory()->create([
+            'name' => 'Engr. Farhana Rahman',
+            'title' => 'Managing Director',
+            'role_label' => 'Executive leadership',
+            'bio' => 'Oversees operations and patient experience.',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $this->get(route('about'))
+            ->assertOk()
+            ->assertSee('Board of directors', false)
+            ->assertSee('Engr. Farhana Rahman', false)
+            ->assertSee('Managing Director', false)
+            ->assertSee('Oversees operations and patient experience.', false);
     }
 
     public function test_about_page_band_shows_live_desk_counts(): void
