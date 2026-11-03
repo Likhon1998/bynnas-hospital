@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Banner;
 use App\Models\BlogPost;
 use App\Models\Faq;
+use App\Models\HealthPackage;
+use App\Models\HealthPackageItem;
 use App\Models\HospitalSetting;
 use App\Models\Service;
 use App\Models\Testimonial;
@@ -107,6 +109,11 @@ class HomePageContentTest extends TestCase
             'group' => 'contact',
             'value' => '88 Riverside Road, Banani, Dhaka',
         ]);
+        HospitalSetting::query()->create([
+            'key' => 'campus_name',
+            'group' => 'contact',
+            'value' => 'Banani Riverside Campus',
+        ]);
         $post = BlogPost::factory()->create([
             'title' => 'Ward 4 visiting hours change next week',
             'excerpt' => 'Families can visit from 4pm on weekdays.',
@@ -130,5 +137,43 @@ class HomePageContentTest extends TestCase
         $response->assertDontSee('Draft campus memo', false);
         $response->assertDontSee('Cityhealth Medical Center Earns Top Safety Rating', false);
         $response->assertSee('88 Riverside Road, Banani, Dhaka', false);
+        $response->assertSee('Banani Riverside Campus', false);
+    }
+
+    public function test_home_shows_active_health_packages_from_the_desk(): void
+    {
+        $package = HealthPackage::query()->create([
+            'title' => 'Executive Heart Screen',
+            'slug' => 'executive-heart-screen',
+            'price' => 8500,
+            'duration_label' => 'Half day',
+            'description' => 'ECG, lipid panel, and consultant review.',
+            'is_featured' => true,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        HealthPackageItem::query()->create([
+            'health_package_id' => $package->id,
+            'title' => 'ECG',
+            'sort_order' => 1,
+        ]);
+        HealthPackage::query()->create([
+            'title' => 'Hidden Draft Package',
+            'slug' => 'hidden-draft-package',
+            'price' => 1200,
+            'description' => 'Should not appear.',
+            'is_featured' => true,
+            'is_active' => false,
+            'sort_order' => 2,
+        ]);
+
+        $response = $this->get(route('home'));
+
+        $response->assertOk();
+        $response->assertSee('Health Packages', false);
+        $response->assertSee('Executive Heart Screen', false);
+        $response->assertSee('ECG', false);
+        $response->assertSee(route('packages'), false);
+        $response->assertDontSee('Hidden Draft Package', false);
     }
 }

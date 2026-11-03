@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\DoctorLeaveController;
 use App\Http\Controllers\Admin\DoctorScheduleController;
 use App\Http\Controllers\Admin\EmergencyFlowController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\FinanceApprovalController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\HealthPackageController;
 use App\Http\Controllers\Admin\HelpSupportController;
@@ -33,9 +34,13 @@ use App\Http\Controllers\Admin\NursingHandoverController;
 use App\Http\Controllers\Admin\NursingObservationController;
 use App\Http\Controllers\Admin\NursingTaskController;
 use App\Http\Controllers\Admin\OperationalReportController;
+use App\Http\Controllers\Admin\OwnerFinanceController;
 use App\Http\Controllers\Admin\PatientController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\SystemAuditLogController;
+use App\Http\Controllers\Admin\SystemBackupController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VisitController;
@@ -89,6 +94,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         });
 
         Route::middleware('permission:appointments.view')->group(function (): void {
+            Route::get('appointments/{appointment}/print', [AppointmentController::class, 'printTicket'])->name('appointments.print');
             Route::resource('appointments', AppointmentController::class)->only(['index', 'show', 'create', 'store', 'update']);
         });
 
@@ -164,9 +170,16 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::post('labs/{labOrder}/results', [LabResultController::class, 'store'])->name('labs.results.store');
         });
 
+        Route::middleware('permission:lab.verify')->group(function (): void {
+            Route::post('labs/{labOrder}/verify', [LabResultController::class, 'verify'])->name('labs.verify');
+            Route::post('labs/{labOrder}/return', [LabResultController::class, 'returnForCorrection'])->name('labs.return');
+        });
+
         Route::middleware('permission:lab.view')->group(function (): void {
             Route::get('labs', [LabOrderController::class, 'index'])->name('labs.index');
             Route::get('labs/tests', [LabTestController::class, 'index'])->name('labs.tests.index');
+            Route::get('labs/{labOrder}/worksheet', [LabOrderController::class, 'worksheet'])->name('labs.worksheet');
+            Route::get('labs/{labOrder}/report', [LabOrderController::class, 'report'])->name('labs.report');
             Route::get('labs/{labOrder}', [LabOrderController::class, 'show'])->name('labs.show');
             Route::post('labs/{labOrder}/cancel', [LabOrderController::class, 'cancel'])->name('labs.cancel');
         });
@@ -176,12 +189,15 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         });
 
         Route::middleware('permission:patients.view')->group(function (): void {
+            Route::get('patients/{patient}/print', [PatientController::class, 'printSlip'])->name('patients.print');
             Route::resource('patients', PatientController::class)->only(['index', 'show', 'create', 'store', 'edit', 'update']);
         });
 
         Route::middleware('permission:billing.manage')->group(function (): void {
+            Route::get('bills/collections', [BillController::class, 'collections'])->name('bills.collections');
             Route::post('bills/{bill}/issue', [BillController::class, 'issue'])->name('bills.issue');
             Route::post('bills/{bill}/pay', [BillController::class, 'pay'])->name('bills.pay');
+            Route::post('bills/{bill}/refund-request', [BillController::class, 'requestRefund'])->name('bills.refund-request');
             Route::post('bills/{bill}/cancel', [BillController::class, 'cancel'])->name('bills.cancel');
             Route::get('bills/{bill}/print', [BillController::class, 'print'])->name('bills.print');
             Route::resource('bills', BillController::class);
@@ -217,7 +233,28 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         });
 
         Route::middleware('permission:users.manage')->group(function (): void {
-            Route::resource('users', UserController::class)->only(['index', 'edit', 'update']);
+            Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+            Route::resource('roles', RoleController::class)->except(['show']);
+        });
+
+        Route::middleware('permission:finance.view')->prefix('owner')->name('owner.')->group(function (): void {
+            Route::get('finance', [OwnerFinanceController::class, 'index'])->name('finance.index');
+            Route::post('finance/expenses', [OwnerFinanceController::class, 'storeExpense'])->name('finance.expenses.store');
+        });
+
+        Route::middleware('auth')->prefix('owner')->name('owner.')->group(function (): void {
+            Route::get('approvals', [FinanceApprovalController::class, 'index'])->name('approvals.index');
+            Route::post('approvals', [FinanceApprovalController::class, 'store'])->name('approvals.store');
+            Route::post('approvals/{approval}/decide', [FinanceApprovalController::class, 'decide'])->name('approvals.decide');
+        });
+
+        Route::get('system/audit-logs', [SystemAuditLogController::class, 'index'])
+            ->middleware('permission:audit.view')
+            ->name('system.audit-logs.index');
+
+        Route::middleware('role:super_admin')->prefix('system')->name('system.')->group(function (): void {
+            Route::get('backup', [SystemBackupController::class, 'index'])->name('backup.index');
+            Route::post('backup/download', [SystemBackupController::class, 'download'])->name('backup.download');
         });
     });
 });

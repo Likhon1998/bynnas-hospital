@@ -19,12 +19,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'lab_test_id',
     'ordered_by',
     'clinical_notes',
+    'sample_id',
+    'barcode',
     'status',
     'is_critical',
     'collected_at',
     'collected_by',
     'processing_at',
     'processing_by',
+    'submitted_for_verification_at',
+    'submitted_for_verification_by',
     'completed_at',
     'cancelled_at',
     'cancelled_by',
@@ -42,6 +46,7 @@ class LabOrder extends Model
         'ordered' => 'Ordered',
         'collected' => 'Collected',
         'processing' => 'Processing',
+        'pending_verification' => 'Pending verification',
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
     ];
@@ -55,6 +60,7 @@ class LabOrder extends Model
             'is_critical' => 'boolean',
             'collected_at' => 'datetime',
             'processing_at' => 'datetime',
+            'submitted_for_verification_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
@@ -69,6 +75,21 @@ class LabOrder extends Model
             ->lockForUpdate()
             ->orderByDesc('order_no')
             ->value('order_no');
+
+        $sequence = $last ? ((int) substr((string) $last, -3)) + 1 : 1;
+
+        return $stamp.str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+    }
+
+    public static function nextSampleId(): string
+    {
+        $stamp = 'SMP-'.now()->format('Ymd').'-';
+
+        $last = static::query()
+            ->where('sample_id', 'like', $stamp.'%')
+            ->lockForUpdate()
+            ->orderByDesc('sample_id')
+            ->value('sample_id');
 
         $sequence = $last ? ((int) substr((string) $last, -3)) + 1 : 1;
 
@@ -100,9 +121,26 @@ class LabOrder extends Model
         return in_array($this->status, ['collected', 'processing'], true);
     }
 
+    public function canVerify(): bool
+    {
+        return $this->status === 'pending_verification' && $this->result !== null && ! $this->result->isVerified();
+    }
+
+    public function canReturnForCorrection(): bool
+    {
+        return $this->status === 'pending_verification' && $this->result !== null && ! $this->result->isVerified();
+    }
+
+    public function isImagingStudy(): bool
+    {
+        $category = $this->test?->category;
+
+        return in_array($category, ['radiology', 'imaging'], true);
+    }
+
     public function canCancel(): bool
     {
-        return in_array($this->status, ['ordered', 'collected', 'processing'], true);
+        return in_array($this->status, ['ordered', 'collected', 'processing', 'pending_verification'], true);
     }
 
     /**
@@ -154,6 +192,11 @@ class LabOrder extends Model
     public function processingBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'processing_by');
+    }
+
+    public function submittedForVerificationBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_for_verification_by');
     }
 
     public function cancelledBy(): BelongsTo

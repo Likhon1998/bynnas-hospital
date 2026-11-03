@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PatientRequest;
+use App\Models\HospitalSetting;
 use App\Models\Patient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class PatientController extends Controller
             ->when($request->string('q')->toString(), function ($query, string $term): void {
                 $query->where(function ($builder) use ($term): void {
                     $builder->where('full_name', 'like', '%'.$term.'%')
+                        ->orWhere('patient_code', 'like', '%'.$term.'%')
                         ->orWhere('phone', 'like', '%'.$term.'%')
                         ->orWhere('email', 'like', '%'.$term.'%');
                 });
@@ -81,5 +83,18 @@ class PatientController extends Controller
         $patient->update($request->safe()->except(['_token']));
 
         return redirect()->route('admin.patients.show', $patient)->with('status', 'Patient updated.');
+    }
+
+    public function printSlip(Patient $patient): View
+    {
+        $patient->load([
+            'appointments' => fn ($query) => $query->with('doctor')->latest('appointment_date')->limit(5),
+            'bills' => fn ($query) => $query->latest('bill_date')->limit(5),
+        ]);
+
+        return view('admin.patients.print-slip', [
+            'patient' => $patient,
+            'hospital' => HospitalSetting::map(),
+        ]);
     }
 }

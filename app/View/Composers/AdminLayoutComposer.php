@@ -78,9 +78,13 @@ class AdminLayoutComposer
     {
         return match (true) {
             $user?->hasRole('super_admin') => 'Super Admin',
+            $user?->hasRole('hospital_owner') => 'Hospital Owner / Director',
             $user?->hasRole('hospital_admin') => 'Hospital Admin',
             $user?->hasRole('nurse_station') => 'Nurse Station',
             $user?->hasRole('lab_technician') => 'Lab Technician',
+            $user?->hasRole('pathologist') => 'Pathologist',
+            $user?->hasRole('radiologist') => 'Radiologist',
+            $user?->hasRole('cashier') => 'Cashier',
             $user?->hasRole('receptionist') => 'Receptionist',
             $user?->hasRole('doctor') => 'Doctor',
             $user?->hasRole('content_manager') => 'Content Manager',
@@ -154,6 +158,7 @@ class AdminLayoutComposer
                         'icon' => 'users',
                         'children' => [
                             ['label' => 'Billing', 'route' => 'admin.bills.index', 'permission' => 'billing.manage', 'icon' => 'pill'],
+                            ['label' => 'Daily collections', 'route' => 'admin.bills.collections', 'permission' => 'billing.manage', 'icon' => 'receipt'],
                         ],
                     ],
                 ],
@@ -179,9 +184,11 @@ class AdminLayoutComposer
                 'label' => 'Hospital',
                 'items' => [
                     ['label' => 'Emergency', 'route' => 'admin.emergency', 'permission' => 'operations.manage', 'icon' => 'ambulance'],
+                    ['label' => 'Departments', 'route' => 'admin.departments.index', 'permission' => 'doctors.manage', 'icon' => 'hospital'],
                     ['label' => 'Doctors', 'route' => 'admin.doctors.index', 'permission' => 'doctors.manage', 'icon' => 'stethoscope'],
                     ['label' => 'Clinic hours', 'route' => 'admin.clinic-hours.edit', 'permission' => null, 'icon' => 'calendar', 'when' => 'linked-doctor'],
                     ['label' => 'Staff', 'route' => 'admin.users.index', 'permission' => 'users.manage', 'icon' => 'nurse'],
+                    ['label' => 'Roles & permissions', 'route' => 'admin.roles.index', 'permission' => 'users.manage', 'icon' => 'clipboard-check'],
                 ],
             ],
             [
@@ -212,7 +219,11 @@ class AdminLayoutComposer
                             ['label' => 'Packages', 'route' => 'admin.health-packages.index', 'permission' => 'content.manage', 'icon' => 'pill'],
                         ],
                     ],
+                    ['label' => 'Finance overview', 'route' => 'admin.owner.finance.index', 'permission' => 'finance.view', 'icon' => 'receipt'],
+                    ['label' => 'Finance approvals', 'route' => 'admin.owner.approvals.index', 'permission' => null, 'icon' => 'clipboard-check', 'when' => 'finance-approvals'],
                     ['label' => 'Settings', 'route' => 'admin.settings.edit', 'permission' => 'settings.manage', 'icon' => 'settings'],
+                    ['label' => 'Audit logs', 'route' => 'admin.system.audit-logs.index', 'permission' => 'audit.view', 'icon' => 'clipboard-clock'],
+                    ['label' => 'Database backup', 'route' => 'admin.system.backup.index', 'permission' => null, 'icon' => 'settings', 'when' => 'super-admin'],
                     ['label' => 'Help', 'route' => 'admin.help', 'permission' => null, 'icon' => 'help'],
                 ],
             ],
@@ -255,6 +266,20 @@ class AdminLayoutComposer
     {
         if (($item['when'] ?? null) === 'linked-doctor' && $user?->doctor === null) {
             return null;
+        }
+
+        if (($item['when'] ?? null) === 'super-admin' && ! ($user?->hasRole('super_admin') ?? false)) {
+            return null;
+        }
+
+        if (($item['when'] ?? null) === 'finance-approvals') {
+            $canFinanceApprovals = ($user?->can('finance.view') ?? false)
+                || ($user?->can('finance.approve') ?? false)
+                || ($user?->can('billing.manage') ?? false);
+
+            if (! $canFinanceApprovals) {
+                return null;
+            }
         }
 
         if ($item['permission'] !== null && ! ($user?->can($item['permission']) ?? false)) {

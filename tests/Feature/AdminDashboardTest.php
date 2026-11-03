@@ -61,7 +61,7 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Administration Desk');
+        $response->assertSee('Hospital Admin Desk');
         $response->assertSee('Unpaid bills');
         $response->assertSee('Operational exceptions');
         $response->assertSee('Escalated alerts');
@@ -186,14 +186,11 @@ class AdminDashboardTest extends TestCase
         $response->assertSee(route('admin.appointments.create'), false);
         $response->assertSee('Register patient');
         $response->assertSee('Create bill');
-        $response->assertSee('Website requests');
-        $response->assertSee("Today's arrivals");
-        $response->assertSee('Waiting patients');
-        $response->assertSee('No-shows');
+        $response->assertSee('Doctor Schedule');
+        $response->assertSee('Waiting Patients');
+        $response->assertSee('Pending Serial Numbers');
+        $response->assertSee('Patient Search');
         $response->assertDontSee('Housekeeping queue');
-        $response->assertDontSee('Unpaid bills');
-        $response->assertDontSee('Bed occupancy');
-        $response->assertDontSee('Daily collections');
     }
 
     public function test_content_manager_dashboard_hides_clinical_widgets(): void
@@ -242,7 +239,7 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Administration Desk');
+        $response->assertSee('Hospital Admin Desk');
         $response->assertSee('Essential reports');
         $response->assertSee('Operational reports');
         $response->assertSee('Queue history');

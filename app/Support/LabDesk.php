@@ -74,7 +74,10 @@ class LabDesk
         });
     }
 
-    public function collect(LabOrder $order, User $actor): LabOrder
+    /**
+     * @param  array{sample_id?: string|null, barcode?: string|null, collected_at?: string|null}  $attributes
+     */
+    public function collect(LabOrder $order, array $attributes, User $actor): LabOrder
     {
         if (! $order->canCollect()) {
             throw ValidationException::withMessages([
@@ -82,13 +85,24 @@ class LabDesk
             ]);
         }
 
-        return DB::transaction(function () use ($order, $actor): LabOrder {
+        return DB::transaction(function () use ($order, $attributes, $actor): LabOrder {
             $from = $order->status;
+            $sampleId = filled($attributes['sample_id'] ?? null)
+                ? (string) $attributes['sample_id']
+                : LabOrder::nextSampleId();
+            $barcode = filled($attributes['barcode'] ?? null)
+                ? (string) $attributes['barcode']
+                : $sampleId;
+            $collectedAt = filled($attributes['collected_at'] ?? null)
+                ? $attributes['collected_at']
+                : now();
 
             $order->update([
                 'status' => 'collected',
+                'sample_id' => $sampleId,
+                'barcode' => $barcode,
                 'collected_by' => $actor->id,
-                'collected_at' => now(),
+                'collected_at' => $collectedAt,
             ]);
 
             $this->recordEvent(
@@ -97,7 +111,8 @@ class LabDesk
                 LabOrderEvent::TYPE_COLLECTED,
                 $from,
                 'collected',
-                'Sample collected.',
+                'Sample collected · '.$sampleId.'.',
+                ['sample_id' => $sampleId, 'barcode' => $barcode],
             );
 
             return $order->refresh();
@@ -135,9 +150,9 @@ class LabDesk
     }
 
     /**
-     * @param  array{value: string, unit?: string|null, reference_range?: string|null, notes?: string|null, is_critical?: bool}  $attributes
+     * @param  array{value: string, unit?: string|null, reference_range?: string|null, notes?: string|null, findings?: string|null, is_critical?: bool, is_abnormal?: bool}  $attributes
      */
-    public function recordAndVerify(LabOrder $order, array $attributes, User $actor): LabResult
+    public function recordPreliminary(LabOrder $order, array $attributes, User $actor): LabResult
     {
         if (! $order->canRecordResult()) {
             throw ValidationException::withMessages([
@@ -146,8 +161,14 @@ class LabDesk
         }
 
         if ($order->result) {
+            if ($order->result->isVerified()) {
+                throw ValidationException::withMessages([
+                    'value' => 'You cannot modify a verified final report.',
+                ]);
+            }
+
             throw ValidationException::withMessages([
-                'value' => 'This order already has a verified result.',
+                'value' => 'A preliminary result is already awaiting pathologist verification.',
             ]);
         }
 
@@ -156,8 +177,9 @@ class LabDesk
         $numeric = $this->numericValue($attributes['value']);
         $isCritical = (bool) ($attributes['is_critical'] ?? false)
             || ($test?->isCriticalValue($numeric) ?? false);
+        $isAbnormal = (bool) ($attributes['is_abnormal'] ?? false) || $isCritical;
 
-        return DB::transaction(function () use ($order, $attributes, $actor, $test, $numeric, $isCritical): LabResult {
+        return DB::transaction(function () use ($order, $attributes, $actor, $test, $numeric, $isCritical, $isAbnormal): LabResult {
             if ($order->status === 'collected') {
                 $order->update([
                     'status' => 'processing',
@@ -175,18 +197,21 @@ class LabDesk
                 'unit' => $attributes['unit'] ?? $test?->unit,
                 'reference_range' => $attributes['reference_range'] ?? $test?->reference_range,
                 'is_critical' => $isCritical,
+                'is_abnormal' => $isAbnormal,
                 'notes' => $attributes['notes'] ?? null,
+                'findings' => $attributes['findings'] ?? null,
                 'entered_by' => $actor->id,
-                'verified_by' => $actor->id,
-                'verified_at' => now(),
+                'verified_by' => null,
+                'verified_at' => null,
             ]);
 
             $from = $order->status;
 
             $order->update([
-                'status' => 'completed',
+                'status' => 'pending_verification',
                 'is_critical' => $isCritical,
-                'completed_at' => now(),
+                'submitted_for_verification_at' => now(),
+                'submitted_for_verification_by' => $actor->id,
             ]);
 
             $summary = ($test?->name ?: 'Test').' '.$result->displayValue()
@@ -195,13 +220,94 @@ class LabDesk
             $this->recordEvent(
                 $order,
                 $actor,
-                LabOrderEvent::TYPE_COMPLETED,
+                LabOrderEvent::TYPE_RESULT_SUBMITTED,
                 $from,
-                'completed',
-                'Result verified: '.$summary.'.',
+                'pending_verification',
+                'Preliminary result submitted: '.$summary.'.',
                 [
                     'lab_result_id' => $result->id,
                     'is_critical' => $isCritical,
+                ],
+            );
+
+            return $result->refresh();
+        });
+    }
+
+    /**
+     * @param  array{value?: string|null, unit?: string|null, reference_range?: string|null, notes?: string|null, findings?: string|null, is_critical?: bool, is_abnormal?: bool, signature_name?: string|null, signature_title?: string|null}  $attributes
+     */
+    public function verifyResult(LabOrder $order, array $attributes, User $actor): LabResult
+    {
+        $order->loadMissing(['result', 'test', 'visit']);
+
+        if (! $order->canVerify()) {
+            throw ValidationException::withMessages([
+                'status' => 'Only a preliminary result awaiting verification can be approved.',
+            ]);
+        }
+
+        $result = $order->result;
+
+        if ($result === null || $result->isVerified()) {
+            throw ValidationException::withMessages([
+                'value' => 'This order already has a verified result.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($order, $attributes, $actor, $result): LabResult {
+            $value = $attributes['value'] ?? $result->value;
+            $numeric = $this->numericValue((string) $value);
+            $test = $order->test;
+            $isCritical = (bool) ($attributes['is_critical'] ?? $result->is_critical)
+                || ($test?->isCriticalValue($numeric) ?? false);
+            $isAbnormal = (bool) ($attributes['is_abnormal'] ?? $result->is_abnormal) || $isCritical;
+            $signatureName = filled($attributes['signature_name'] ?? null)
+                ? (string) $attributes['signature_name']
+                : $actor->name;
+            $signatureTitle = filled($attributes['signature_title'] ?? null)
+                ? (string) $attributes['signature_title']
+                : ($actor->hasRole('pathologist') ? 'Pathologist' : 'Authorized verifier');
+
+            $result->update([
+                'value' => $value,
+                'numeric_value' => $numeric,
+                'unit' => $attributes['unit'] ?? $result->unit,
+                'reference_range' => $attributes['reference_range'] ?? $result->reference_range,
+                'notes' => array_key_exists('notes', $attributes) ? $attributes['notes'] : $result->notes,
+                'findings' => array_key_exists('findings', $attributes) ? $attributes['findings'] : $result->findings,
+                'is_critical' => $isCritical,
+                'is_abnormal' => $isAbnormal,
+                'verified_by' => $actor->id,
+                'verified_at' => now(),
+                'signature_name' => $signatureName,
+                'signature_title' => $signatureTitle,
+                'published_at' => now(),
+            ]);
+
+            $from = $order->status;
+            $summary = ($test?->name ?: 'Test').' '.$result->fresh()->displayValue()
+                .($isCritical ? ' (critical)' : '')
+                .($isAbnormal ? ' (abnormal)' : '');
+
+            $order->update([
+                'status' => 'completed',
+                'is_critical' => $isCritical,
+                'completed_at' => now(),
+            ]);
+
+            $this->recordEvent(
+                $order,
+                $actor,
+                LabOrderEvent::TYPE_COMPLETED,
+                $from,
+                'completed',
+                'Final report approved and published: '.$summary.'.',
+                [
+                    'lab_result_id' => $result->id,
+                    'is_critical' => $isCritical,
+                    'is_abnormal' => $isAbnormal,
+                    'signature_name' => $signatureName,
                 ],
             );
 
@@ -212,7 +318,7 @@ class LabDesk
                     VisitEvent::TYPE_LAB_RESULTED,
                     $order->visit->status,
                     $order->visit->status,
-                    'Lab result: '.$summary.' · '.$order->order_no.'.',
+                    'Lab result published: '.$summary.' · '.$order->order_no.'.',
                     [
                         'lab_order_id' => $order->id,
                         'lab_result_id' => $result->id,
@@ -223,6 +329,62 @@ class LabDesk
 
             return $result->refresh();
         });
+    }
+
+    public function returnForCorrection(LabOrder $order, string $reason, User $actor): LabOrder
+    {
+        $order->loadMissing(['result', 'test']);
+
+        if (! $order->canReturnForCorrection()) {
+            throw ValidationException::withMessages([
+                'status' => 'Only a preliminary result awaiting verification can be returned.',
+            ]);
+        }
+
+        if ($order->result?->isVerified()) {
+            throw ValidationException::withMessages([
+                'status' => 'A verified final report cannot be returned for correction.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($order, $reason, $actor): LabOrder {
+            $from = $order->status;
+            $result = $order->result;
+
+            if ($result !== null) {
+                $result->delete();
+            }
+
+            $order->update([
+                'status' => 'processing',
+                'submitted_for_verification_at' => null,
+                'submitted_for_verification_by' => null,
+                'processing_by' => $order->processing_by ?? $actor->id,
+                'processing_at' => $order->processing_at ?? now(),
+            ]);
+
+            $this->recordEvent(
+                $order,
+                $actor,
+                LabOrderEvent::TYPE_RETURNED,
+                $from,
+                'processing',
+                $reason,
+            );
+
+            return $order->refresh();
+        });
+    }
+
+    public function assertCanModifyResult(LabOrder $order, User $actor): void
+    {
+        $order->loadMissing('result');
+
+        if ($order->result?->isVerified() && (int) $order->result->verified_by !== (int) $actor->id) {
+            throw ValidationException::withMessages([
+                'value' => 'You cannot modify another verifier\'s final report.',
+            ]);
+        }
     }
 
     public function cancel(LabOrder $order, string $reason, User $actor): LabOrder

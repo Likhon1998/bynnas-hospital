@@ -4,7 +4,11 @@
 @section('content')
     <div class="grid gap-6 xl:grid-cols-[20rem_1fr]">
         <aside class="rounded-3xl bg-white p-6 ring-1 ring-sand-100">
-            <p class="text-sm text-ink-600">Phone</p>
+            <p class="text-sm text-ink-600">Patient ID</p>
+            <p class="font-medium text-navy-900">{{ $patient->patient_code ?: '—' }}</p>
+            <p class="mt-4 text-sm text-ink-600">Age</p>
+            <p class="font-medium text-navy-900">{{ $patient->ageLabel() }}</p>
+            <p class="mt-4 text-sm text-ink-600">Phone</p>
             <p class="font-medium text-navy-900">{{ $patient->phone }}</p>
             <p class="mt-4 text-sm text-ink-600">Email</p>
             <p class="font-medium text-navy-900">{{ $patient->email ?: '—' }}</p>
@@ -38,8 +42,9 @@
                     <a href="{{ route('admin.nursing.patients.show', $patient) }}" class="mt-6 inline-flex rounded-full bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white">Open nursing chart</a>
                 @endif
             @endcan
+            <a href="{{ route('admin.patients.print', $patient) }}" class="mt-6 inline-flex rounded-full bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white" target="_blank">Print patient slip</a>
             @can('patients.manage')
-                <a href="{{ route('admin.patients.edit', $patient) }}" class="mt-6 inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">Edit patient</a>
+                <a href="{{ route('admin.patients.edit', $patient) }}" class="mt-3 inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">Edit patient</a>
             @endcan
         </aside>
         <div>

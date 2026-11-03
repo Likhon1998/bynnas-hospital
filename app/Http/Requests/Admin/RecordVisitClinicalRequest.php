@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Visit;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -9,7 +10,27 @@ class RecordVisitClinicalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('visits.clinical') ?? false;
+        if (! ($this->user()?->can('visits.clinical') ?? false)) {
+            return false;
+        }
+
+        $visit = $this->route('visit');
+
+        if (! $visit instanceof Visit) {
+            return false;
+        }
+
+        $user = $this->user();
+
+        if ($user?->hasRole('doctor')) {
+            $doctorId = $user->doctor?->id;
+
+            if ($doctorId !== null && $visit->doctor_id !== null && (int) $visit->doctor_id !== (int) $doctorId) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

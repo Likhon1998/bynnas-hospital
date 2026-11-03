@@ -47,6 +47,9 @@ class AppServiceProvider extends ServiceProvider
             'operations.manage',
             'settings.manage',
             'users.manage',
+            'finance.view',
+            'finance.approve',
+            'audit.view',
         ] as $permission) {
             Gate::define($permission, fn (?User $user) => (bool) $user?->hasPermission($permission));
         }
@@ -117,12 +120,14 @@ class AppServiceProvider extends ServiceProvider
                 || $user?->hasPermission('lab.order')
                 || $user?->hasPermission('lab.collect')
                 || $user?->hasPermission('lab.report')
+                || $user?->hasPermission('lab.verify')
             );
         });
 
         Gate::define('lab.order', fn (?User $user) => (bool) $user?->hasPermission('lab.order'));
         Gate::define('lab.collect', fn (?User $user) => (bool) $user?->hasPermission('lab.collect'));
         Gate::define('lab.report', fn (?User $user) => (bool) $user?->hasPermission('lab.report'));
+        Gate::define('lab.verify', fn (?User $user) => (bool) $user?->hasPermission('lab.verify'));
 
         Gate::define('clinic-hours.manage', function (?User $user, Doctor $doctor): bool {
             if ($user === null) {
@@ -148,6 +153,18 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('appointment-slots', function (Request $request) {
             return Limit::perMinute(30)->by($request->ip());
+        });
+
+        RateLimiter::for('lab-report-lookup', function (Request $request) {
+            return Limit::perMinute(8)->by($request->ip());
+        });
+
+        RateLimiter::for('lab-report-recover', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('lab-report-download', function (Request $request) {
+            return Limit::perMinute(20)->by($request->ip());
         });
     }
 }

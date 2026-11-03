@@ -96,12 +96,16 @@ class AdminBillTest extends TestCase
         ]);
         $bill->update(['status' => 'issued']);
 
-        $response = $this->actingAs($user)->post(route('admin.bills.pay', $bill));
+        $response = $this->actingAs($user)->post(route('admin.bills.pay', $bill), [
+            'amount' => 1200,
+            'method' => 'cash',
+        ]);
 
         $response->assertRedirect(route('admin.bills.show', $bill));
         $bill->refresh();
         $this->assertSame('paid', $bill->status);
         $this->assertSame(1200.0, (float) $bill->paid_amount);
+        $this->assertSame(1, $bill->payments()->count());
     }
 
     public function test_draft_bill_cannot_be_marked_paid(): void
@@ -111,7 +115,10 @@ class AdminBillTest extends TestCase
             'status' => 'draft',
         ]);
 
-        $response = $this->actingAs($user)->post(route('admin.bills.pay', $bill));
+        $response = $this->actingAs($user)->post(route('admin.bills.pay', $bill), [
+            'amount' => 100,
+            'method' => 'cash',
+        ]);
 
         $response->assertForbidden();
         $this->assertSame('draft', $bill->fresh()->status);

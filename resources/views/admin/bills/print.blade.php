@@ -67,7 +67,30 @@
             <div class="flex justify-between"><dt>Discount</dt><dd>{{ number_format((float) $bill->discount, 2) }}</dd></div>
             <div class="flex justify-between font-semibold text-navy-900"><dt>Total</dt><dd>{{ number_format((float) $bill->total, 2) }}</dd></div>
             <div class="flex justify-between"><dt>Paid</dt><dd>{{ number_format((float) $bill->paid_amount, 2) }}</dd></div>
+            <div class="flex justify-between"><dt>Due</dt><dd>{{ number_format($bill->balanceDue(), 2) }}</dd></div>
         </dl>
+
+        @if ($bill->payments->isNotEmpty())
+            <section class="mt-8">
+                <p class="text-xs uppercase tracking-wide text-ink-400">Money receipt</p>
+                <ul class="mt-2 space-y-1 text-sm">
+                    @foreach ($bill->payments as $payment)
+                        <li class="flex justify-between gap-4">
+                            <span>{{ $payment->methodLabel() }}{{ $payment->reference ? ' · '.$payment->reference : '' }} · {{ $payment->collected_at?->format('d M Y H:i') }}</span>
+                            <span class="font-semibold">{{ number_format((float) $payment->amount, 2) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+
+        @if (filled($bill->report_access_code))
+            <section class="mt-8 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-4">
+                <p class="text-xs uppercase tracking-wide text-teal-800">Lab report access code</p>
+                <p class="mt-1 font-display text-3xl tracking-[0.12em] text-navy-900">{{ $bill->report_access_code }}</p>
+                <p class="mt-2 text-sm text-ink-600">Use this code with the patient phone number at {{ url('/lab-reports') }} to view and download published reports.</p>
+            </section>
+        @endif
 
         @if ($bill->notes)
             <p class="mt-8 text-sm text-ink-600">{{ $bill->notes }}</p>

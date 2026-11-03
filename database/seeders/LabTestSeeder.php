@@ -98,6 +98,28 @@ class LabTestSeeder extends Seeder
                 'critical_high' => null,
                 'price' => 180,
             ],
+            [
+                'code' => 'CXR',
+                'name' => 'Chest X-Ray PA',
+                'category' => 'radiology',
+                'specimen' => 'imaging',
+                'unit' => null,
+                'reference_range' => 'See report',
+                'critical_low' => null,
+                'critical_high' => null,
+                'price' => 800,
+            ],
+            [
+                'code' => 'USG-ABD',
+                'name' => 'Ultrasound Whole Abdomen',
+                'category' => 'imaging',
+                'specimen' => 'imaging',
+                'unit' => null,
+                'reference_range' => 'See report',
+                'critical_low' => null,
+                'critical_high' => null,
+                'price' => 1500,
+            ],
         ];
 
         foreach ($tests as $test) {

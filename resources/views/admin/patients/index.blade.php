@@ -6,7 +6,7 @@
         <form method="GET" class="table-toolbar">
             <p class="table-count">{{ $patients->total() }} {{ \Illuminate\Support\Str::plural('patient', $patients->total()) }}</p>
             <div class="admin-filters">
-                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search patients">
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search name, phone, or Patient ID">
                 <button type="submit">Search</button>
                 @can('patients.manage')
                     <a href="{{ route('admin.patients.create') }}" class="admin-action">Add patient</a>
@@ -30,7 +30,7 @@
                             <td class="col-idx">{{ ($patients->firstItem() ?? 1) + $loop->index }}</td>
                             <td>
                                 <span class="col-primary">{{ $patient->full_name }}</span>
-                                <span class="cell-sub">{{ $patient->gender ? ucfirst($patient->gender) : 'Patient' }}@if ($patient->date_of_birth) · {{ $patient->date_of_birth->format('d M Y') }}@endif</span>
+                                <span class="cell-sub">{{ $patient->patient_code ?: '—' }} · {{ $patient->gender ? ucfirst($patient->gender) : 'Patient' }}@if ($patient->date_of_birth) · {{ $patient->ageLabel() }}@endif</span>
                             </td>
                             <td>
                                 <span>{{ $patient->phone }}</span>

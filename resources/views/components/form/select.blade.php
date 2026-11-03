@@ -5,6 +5,7 @@
     'multiple' => false,
     'size' => null,
     'hint' => null,
+    'disabled' => false,
 ])
 
 @php
@@ -20,6 +21,7 @@
         @if ($required) required @endif
         @if ($multiple) multiple @endif
         @if ($size) size="{{ $size }}" @endif
+        @disabled($disabled)
         {{ $attributes->merge(['class' => 'admin-field mt-2 w-full px-4 py-3 text-sm'.($multiple ? ' admin-field--multiple' : '')]) }}
     >
         {{ $slot }}

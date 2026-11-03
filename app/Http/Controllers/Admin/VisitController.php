@@ -26,8 +26,11 @@ class VisitController extends Controller
             $status = '';
         }
 
+        $doctorId = $request->user()?->hasRole('doctor') ? $request->user()->doctor?->id : null;
+
         $visits = Visit::query()
             ->with(['patient', 'doctor', 'department', 'appointment'])
+            ->when($doctorId !== null, fn ($query) => $query->where('doctor_id', $doctorId))
             ->when(
                 $status !== '',
                 fn ($query) => $query->where('status', $status),
@@ -49,12 +52,14 @@ class VisitController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $countQuery = Visit::query()->when($doctorId !== null, fn ($query) => $query->where('doctor_id', $doctorId));
+
         return view('admin.visits.index', [
             'visits' => $visits,
             'counts' => [
-                'waiting' => Visit::query()->where('status', 'waiting')->count(),
-                'triage' => Visit::query()->where('status', 'triage')->count(),
-                'consultation' => Visit::query()->where('status', 'consultation')->count(),
+                'waiting' => (clone $countQuery)->where('status', 'waiting')->count(),
+                'triage' => (clone $countQuery)->where('status', 'triage')->count(),
+                'consultation' => (clone $countQuery)->where('status', 'consultation')->count(),
             ],
         ]);
     }

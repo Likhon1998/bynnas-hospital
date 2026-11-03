@@ -17,10 +17,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'unit',
     'reference_range',
     'is_critical',
+    'is_abnormal',
     'notes',
+    'findings',
     'entered_by',
     'verified_by',
     'verified_at',
+    'signature_name',
+    'signature_title',
+    'published_at',
 ])]
 class LabResult extends Model
 {
@@ -35,7 +40,9 @@ class LabResult extends Model
         return [
             'numeric_value' => 'decimal:3',
             'is_critical' => 'boolean',
+            'is_abnormal' => 'boolean',
             'verified_at' => 'datetime',
+            'published_at' => 'datetime',
         ];
     }
 
@@ -44,6 +51,21 @@ class LabResult extends Model
         $unit = filled($this->unit) ? ' '.$this->unit : '';
 
         return $this->value.$unit;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->verified_by !== null && $this->verified_at !== null;
+    }
+
+    public function isPreliminary(): bool
+    {
+        return ! $this->isVerified();
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->isVerified() && $this->published_at !== null;
     }
 
     public function order(): BelongsTo

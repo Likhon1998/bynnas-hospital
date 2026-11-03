@@ -26,9 +26,13 @@ class LabResultFactory extends Factory
             'unit' => 'mmol/L',
             'reference_range' => '3.5–5.1',
             'is_critical' => false,
+            'is_abnormal' => false,
             'entered_by' => User::factory(),
             'verified_by' => fn (array $attributes) => $attributes['entered_by'],
             'verified_at' => now(),
+            'published_at' => now(),
+            'signature_name' => 'Demo Pathologist',
+            'signature_title' => 'Pathologist',
         ];
     }
 }

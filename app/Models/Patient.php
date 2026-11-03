@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'user_id',
+    'patient_code',
     'full_name',
     'phone',
     'email',
@@ -57,6 +58,15 @@ class Patient extends Model
     /**
      * @return array<string, string>
      */
+    protected static function booted(): void
+    {
+        static::creating(function (Patient $patient): void {
+            if (blank($patient->patient_code)) {
+                $patient->patient_code = static::nextPatientCode();
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -64,6 +74,29 @@ class Patient extends Model
             'is_active' => 'boolean',
             'care_flags' => 'array',
         ];
+    }
+
+    public static function nextPatientCode(): string
+    {
+        $stamp = 'PAT-'.now()->format('Ymd').'-';
+
+        $last = static::query()
+            ->where('patient_code', 'like', $stamp.'%')
+            ->orderByDesc('patient_code')
+            ->value('patient_code');
+
+        $sequence = $last ? ((int) substr((string) $last, -4)) + 1 : 1;
+
+        return $stamp.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function ageLabel(): string
+    {
+        if ($this->date_of_birth === null) {
+            return '—';
+        }
+
+        return (string) $this->date_of_birth->age.' yrs';
     }
 
     /**

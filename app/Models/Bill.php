@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\BillFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 #[Fillable([
     'bill_no',
+    'report_access_code',
     'patient_id',
     'appointment_id',
     'issued_by',
@@ -78,6 +80,11 @@ class Bill extends Model
         return $this->hasMany(BillItem::class)->orderBy('sort_order')->orderBy('id');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(BillPayment::class)->orderByDesc('collected_at')->orderByDesc('id');
+    }
+
     public function isDraft(): bool
     {
         return $this->status === 'draft';
@@ -95,12 +102,29 @@ class Bill extends Model
 
     public function canMarkPaid(): bool
     {
-        return $this->status === 'issued';
+        return $this->canCollectPayment();
+    }
+
+    public function canCollectPayment(): bool
+    {
+        return $this->status === 'issued' && $this->balanceDue() > 0;
+    }
+
+    public function canRequestRefund(): bool
+    {
+        return in_array($this->status, ['paid', 'issued'], true)
+            && (float) $this->paid_amount > 0;
+    }
+
+    public function balanceDue(): float
+    {
+        return max(0, round((float) $this->total - (float) $this->paid_amount, 2));
     }
 
     public function canCancel(): bool
     {
-        return in_array($this->status, ['draft', 'issued'], true);
+        return in_array($this->status, ['draft', 'issued'], true)
+            && (float) $this->paid_amount <= 0;
     }
 
     public static function nextBillNumber(): string
@@ -116,6 +140,57 @@ class Bill extends Model
         $sequence = $last ? ((int) substr((string) $last, -4)) + 1 : 1;
 
         return $prefix.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    public static function nextReportAccessCode(): string
+    {
+        do {
+            $code = (string) random_int(10000000, 99999999);
+        } while (static::query()->where('report_access_code', $code)->exists());
+
+        return $code;
+    }
+
+    public function ensureReportAccessCode(): string
+    {
+        if (filled($this->report_access_code)) {
+            return (string) $this->report_access_code;
+        }
+
+        $code = static::nextReportAccessCode();
+
+        $this->forceFill(['report_access_code' => $code])->save();
+
+        return $code;
+    }
+
+    public function hasLabCharges(): bool
+    {
+        return $this->billItems()->where('item_type', 'lab')->exists();
+    }
+
+    /**
+     * @return Collection<int, LabOrder>
+     */
+    public function publishedLabOrders()
+    {
+        $orderIds = $this->billItems()
+            ->where('item_type', 'lab')
+            ->whereNotNull('item_id')
+            ->pluck('item_id')
+            ->all();
+
+        if ($orderIds === []) {
+            return LabOrder::query()->whereRaw('0 = 1')->get();
+        }
+
+        return LabOrder::query()
+            ->with(['test', 'result', 'patient'])
+            ->whereIn('id', $orderIds)
+            ->where('status', 'completed')
+            ->whereHas('result', fn ($result) => $result->whereNotNull('published_at')->whereNotNull('verified_at'))
+            ->orderByDesc('completed_at')
+            ->get();
     }
 
     /**

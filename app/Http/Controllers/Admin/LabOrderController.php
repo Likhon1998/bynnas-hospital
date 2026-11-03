@@ -25,6 +25,8 @@ class LabOrderController extends Controller
             $status = '';
         }
 
+        $flag = $request->string('flag')->toString();
+
         $orders = LabOrder::query()
             ->with(['patient', 'test', 'visit', 'result'])
             ->when(
@@ -32,6 +34,21 @@ class LabOrderController extends Controller
                 fn ($query) => $query->where('status', $status),
                 fn ($query) => $query->open(),
             )
+            ->when($flag === 'abnormal', function ($query): void {
+                $query->where(function ($builder): void {
+                    $builder->where('is_critical', true)
+                        ->orWhereHas('result', fn ($result) => $result->where('is_abnormal', true)->orWhere('is_critical', true));
+                });
+            })
+            ->when($flag === 'urgent', function ($query): void {
+                $query->where(function ($builder): void {
+                    $builder->where('is_critical', true)
+                        ->orWhereHas('result', fn ($result) => $result->where('is_critical', true));
+                });
+            })
+            ->when($flag === 'imaging', function ($query): void {
+                $query->whereHas('test', fn ($test) => $test->whereIn('category', ['radiology', 'imaging']));
+            })
             ->when($request->string('q')->toString(), function ($query, string $term): void {
                 $query->where(function ($builder) use ($term): void {
                     $builder->where('order_no', 'like', '%'.$term.'%')
@@ -39,7 +56,7 @@ class LabOrderController extends Controller
                         ->orWhereHas('test', fn ($test) => $test->where('name', 'like', '%'.$term.'%'));
                 });
             })
-            ->orderByRaw("case status when 'processing' then 1 when 'collected' then 2 when 'ordered' then 3 else 4 end")
+            ->orderByRaw("case status when 'pending_verification' then 0 when 'processing' then 1 when 'collected' then 2 when 'ordered' then 3 else 4 end")
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->paginate(20)
@@ -51,6 +68,7 @@ class LabOrderController extends Controller
                 'ordered' => LabOrder::query()->where('status', 'ordered')->count(),
                 'collected' => LabOrder::query()->where('status', 'collected')->count(),
                 'processing' => LabOrder::query()->where('status', 'processing')->count(),
+                'pending_verification' => LabOrder::query()->where('status', 'pending_verification')->count(),
                 'critical' => LabOrder::query()->critical()->count(),
             ],
         ]);
@@ -103,6 +121,7 @@ class LabOrderController extends Controller
             'orderedBy',
             'collectedBy',
             'processingBy',
+            'submittedForVerificationBy',
             'cancelledBy',
             'result.enteredBy',
             'result.verifiedBy',
@@ -119,9 +138,33 @@ class LabOrderController extends Controller
         $actor = $request->user();
         abort_unless($actor !== null, 403);
 
-        $desk->collect($labOrder, $actor);
+        $order = $desk->collect($labOrder, $request->safe()->only([
+            'sample_id',
+            'barcode',
+            'collected_at',
+        ]), $actor);
 
-        return back()->with('status', 'Sample collected.');
+        return back()->with('status', 'Sample collected · '.$order->sample_id.'.');
+    }
+
+    public function worksheet(LabOrder $labOrder): View
+    {
+        $labOrder->load(['patient', 'test', 'visit.doctor', 'orderedBy', 'collectedBy', 'result']);
+
+        return view('admin.labs.print-worksheet', [
+            'order' => $labOrder,
+        ]);
+    }
+
+    public function report(LabOrder $labOrder): View
+    {
+        $labOrder->load(['patient', 'test', 'visit.doctor', 'orderedBy', 'result.verifiedBy', 'result.enteredBy']);
+
+        abort_unless($labOrder->result?->isPublished() ?? false, 403);
+
+        return view('admin.labs.print-report', [
+            'order' => $labOrder,
+        ]);
     }
 
     public function process(ProcessLabOrderRequest $request, LabOrder $labOrder, LabDesk $desk): RedirectResponse

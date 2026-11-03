@@ -43,7 +43,7 @@ class WorkInbox
             $desks[] = 'doctor';
         }
 
-        if ($user->hasRole('lab_technician')) {
+        if ($user->hasRole('lab_technician') || $user->hasRole('pathologist') || $user->hasRole('radiologist')) {
             $desks[] = 'lab';
         }
 
@@ -51,7 +51,7 @@ class WorkInbox
             $desks[] = 'content';
         }
 
-        if ($user->hasRole('hospital_admin') || $user->hasRole('super_admin')) {
+        if ($user->hasRole('hospital_admin') || $user->hasRole('super_admin') || $user->hasRole('hospital_owner')) {
             $desks[] = 'admin';
         }
 
@@ -81,6 +81,14 @@ class WorkInbox
 
     public function deskHeading(?User $user): string
     {
+        if ($user?->hasRole('hospital_owner')) {
+            return 'Owner / Director Desk';
+        }
+
+        if ($user?->hasRole('hospital_admin')) {
+            return 'Hospital Admin Desk';
+        }
+
         return match ($this->primaryDesk($user)) {
             'reception' => 'Reception Desk',
             'nursing' => 'Nursing Desk',

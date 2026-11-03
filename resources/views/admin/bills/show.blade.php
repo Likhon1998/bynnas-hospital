@@ -47,15 +47,86 @@
                 <div class="flex justify-between gap-8"><dt class="text-ink-600">Discount</dt><dd>{{ number_format((float) $bill->discount, 2) }}</dd></div>
                 <div class="flex justify-between gap-8 font-semibold text-navy-900"><dt>Total</dt><dd>{{ number_format((float) $bill->total, 2) }}</dd></div>
                 <div class="flex justify-between gap-8"><dt class="text-ink-600">Paid</dt><dd>{{ number_format((float) $bill->paid_amount, 2) }}</dd></div>
+                <div class="flex justify-between gap-8 font-semibold text-navy-900"><dt>Due</dt><dd>{{ number_format($bill->balanceDue(), 2) }}</dd></div>
             </dl>
+
+            @if ($bill->payments->isNotEmpty())
+                <div class="mt-6">
+                    <p class="text-sm font-semibold text-navy-900">Payments</p>
+                    <ul class="mt-2 divide-y divide-sand-100 text-sm">
+                        @foreach ($bill->payments as $payment)
+                            <li class="flex justify-between gap-3 py-2">
+                                <span>{{ $payment->methodLabel() }} · {{ $payment->collected_at?->format('d M Y H:i') }} · {{ $payment->collectedBy?->name }}</span>
+                                <span class="font-semibold">{{ number_format((float) $payment->amount, 2) }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @if (filled($bill->report_access_code))
+                <div class="mt-6 rounded-2xl border border-teal-100 bg-teal-50 px-4 py-3">
+                    <p class="text-sm text-teal-800">Lab report access code</p>
+                    <p class="mt-1 font-display text-2xl tracking-wide text-navy-900">{{ $bill->report_access_code }}</p>
+                    <p class="mt-1 text-sm text-ink-600">Printed on the money receipt. Patients use phone + this code on the website.</p>
+                </div>
+            @endif
+
             @if ($bill->notes)
                 <p class="mt-4 text-sm text-ink-600">Notes</p>
                 <p class="whitespace-pre-wrap text-navy-900">{{ $bill->notes }}</p>
             @endif
+
+            @if ($bill->canCollectPayment())
+                <div class="mt-6">
+                    <x-admin.form-page
+                        :action="route('admin.bills.pay', $bill)"
+                        method="POST"
+                        :cancel="route('admin.bills.index')"
+                        submit="Collect payment"
+                    >
+                        <x-admin.form-section title="Collect payment" note="Cash, Card, bKash, or Nagad. Partial payments keep the bill open until the due is cleared.">
+                            <x-form.input name="amount" label="Amount" type="number" step="0.01" :value="old('amount', number_format($bill->balanceDue(), 2, '.', ''))" required />
+                            <x-form.select name="method" label="Method" required>
+                                <option value="">Select method</option>
+                                @foreach ($paymentMethods as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('method') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </x-form.select>
+                            <x-form.input name="reference" label="Txn / card reference" :value="old('reference')" hint="Required for Card, bKash, and Nagad" />
+                            <div class="form-span-2">
+                                <x-form.input name="notes" label="Collection notes" :value="old('notes')" />
+                            </div>
+                        </x-admin.form-section>
+                    </x-admin.form-page>
+                </div>
+            @endif
+
+            @if ($bill->canRequestRefund())
+                <div class="mt-6">
+                    <x-admin.form-page
+                        :action="route('admin.bills.refund-request', $bill)"
+                        method="POST"
+                        :cancel="route('admin.bills.show', $bill)"
+                        submit="Submit refund request"
+                    >
+                        <x-admin.form-section title="Refund request" note="Cashiers create refund requests. Director approval is required before money is returned.">
+                            <x-form.input name="amount" label="Refund amount" type="number" step="0.01" :value="old('amount', number_format((float) $bill->paid_amount, 2, '.', ''))" required />
+                            <div class="form-span-2">
+                                <x-form.input name="reason" label="Reason" :value="old('reason')" required />
+                            </div>
+                            <div class="form-span-2">
+                                <x-form.textarea name="notes" label="Notes" :value="old('notes')" />
+                            </div>
+                        </x-admin.form-section>
+                    </x-admin.form-page>
+                </div>
+            @endif
         </article>
 
         <aside class="space-y-3 rounded-3xl bg-white p-6 ring-1 ring-sand-100">
-            <a href="{{ route('admin.bills.print', $bill) }}" class="block rounded-full bg-navy-900 px-5 py-2.5 text-center text-sm font-semibold text-white">Print bill</a>
+            <a href="{{ route('admin.bills.print', $bill) }}" class="block rounded-full bg-navy-900 px-5 py-2.5 text-center text-sm font-semibold text-white">Print money receipt</a>
+            <a href="{{ route('admin.bills.collections') }}" class="block rounded-full border border-sand-100 px-5 py-2.5 text-center text-sm font-semibold text-navy-900">Daily collections</a>
             @if ($bill->isEditable())
                 <a href="{{ route('admin.bills.edit', $bill) }}" class="block rounded-full bg-teal-700 px-5 py-2.5 text-center text-sm font-semibold text-white">Edit draft</a>
                 <form method="POST" action="{{ route('admin.bills.issue', $bill) }}">
@@ -63,12 +134,6 @@
                     <button type="submit" class="w-full rounded-full border border-sand-100 px-5 py-2.5 text-sm font-semibold text-navy-900">Issue bill</button>
                 </form>
                 <x-admin.delete-button :action="route('admin.bills.destroy', $bill)" label="Delete draft" />
-            @endif
-            @if ($bill->canMarkPaid())
-                <form method="POST" action="{{ route('admin.bills.pay', $bill) }}">
-                    @csrf
-                    <button type="submit" class="w-full rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">Mark as paid</button>
-                </form>
             @endif
             @if ($bill->canCancel())
                 <form method="POST" action="{{ route('admin.bills.cancel', $bill) }}" class="space-y-2">

@@ -18,14 +18,17 @@
                     </option>
                 @endforeach
             </x-form.select>
-            <x-form.select name="doctor_id" label="Doctor" required>
+            <x-form.select name="doctor_id" label="Doctor" required :disabled="$doctorLocked ?? false">
                 <option value="">Select doctor</option>
                 @foreach ($doctors as $doctor)
-                    <option value="{{ $doctor->id }}" @selected((string) old('doctor_id') === (string) $doctor->id)>
+                    <option value="{{ $doctor->id }}" @selected((string) old('doctor_id', $selectedDoctorId ?? null) === (string) $doctor->id)>
                         {{ $doctor->name }} · {{ $doctor->department?->name ?: 'No department' }}
                     </option>
                 @endforeach
             </x-form.select>
+            @if ($doctorLocked ?? false)
+                <input type="hidden" name="doctor_id" value="{{ $selectedDoctorId }}">
+            @endif
         </x-admin.form-section>
 
         <x-admin.form-section title="When" note="Each visit is 30 minutes. The same doctor cannot be double-booked, booked on an off day, or booked while on leave.">

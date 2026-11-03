@@ -38,9 +38,9 @@
 <footer id="contact" class="ch-foot">
     <div class="ch-wrap ch-foot__grid">
         <div class="ch-foot__brand">
-            <a href="{{ route('home') }}" @class(['ch-brand', 'has-logo' => filled($logo)])>
+            <a href="{{ route('home') }}" class="ch-brand">
                 @if (filled($logo))
-                    <img src="{{ $logo }}" alt="{{ $hospitalName }}" class="ch-brand__logo">
+                    <img src="{{ $logo }}" alt="" class="ch-brand__logo">
                 @else
                     <span class="ch-brand__mark" aria-hidden="true">
                         <svg viewBox="0 0 36 36" class="h-5 w-5" fill="none">
@@ -48,7 +48,7 @@
                         </svg>
                     </span>
                 @endif
-                <span>
+                <span class="ch-brand__copy">
                     <span class="ch-brand__name">{{ $brandMark }}</span>
                     <span class="ch-brand__sub">{{ $brandRest }}</span>
                 </span>
@@ -78,6 +78,7 @@
             <h3>Patients & Visitors</h3>
             <ul>
                 <li><a href="{{ route('home') }}#patients">Patient Services</a></li>
+                <li><a href="{{ route('lab-reports.index') }}">Lab reports</a></li>
                 <li><a href="{{ route('about') }}">Visiting Hours</a></li>
                 <li><a href="{{ route('services') }}">Billing & Insurance</a></li>
                 <li><a href="{{ route('packages') }}">Health Packages</a></li>

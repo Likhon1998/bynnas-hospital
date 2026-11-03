@@ -16,10 +16,14 @@ class RoleAndUserSeeder extends Seeder
     {
         $roles = [
             'super_admin' => 'Super Admin',
+            'hospital_owner' => 'Hospital Owner / Director',
             'hospital_admin' => 'Hospital Admin',
             'nurse_station' => 'Nurse Station',
             'lab_technician' => 'Lab Technician',
+            'pathologist' => 'Pathologist',
+            'radiologist' => 'Radiologist',
             'receptionist' => 'Receptionist',
+            'cashier' => 'Cashier',
             'doctor' => 'Doctor',
             'content_manager' => 'Content Manager',
         ];
@@ -72,6 +76,10 @@ class RoleAndUserSeeder extends Seeder
             'lab.order',
             'lab.collect',
             'lab.report',
+            'lab.verify',
+            'finance.view',
+            'finance.approve',
+            'audit.view',
         ];
 
         $permissionIds = [];
@@ -95,6 +103,21 @@ class RoleAndUserSeeder extends Seeder
 
         $rolePermissions = [
             'super_admin' => $permissions,
+            'hospital_owner' => [
+                'appointments.view',
+                'patients.view',
+                'doctors.manage',
+                'billing.manage',
+                'operations.manage',
+                'beds.view',
+                'settings.manage',
+                'visits.view',
+                'admissions.view',
+                'lab.view',
+                'finance.view',
+                'finance.approve',
+                'audit.view',
+            ],
             'hospital_admin' => [
                 'appointments.view',
                 'appointments.manage',
@@ -123,6 +146,7 @@ class RoleAndUserSeeder extends Seeder
                 'lab.order',
                 'lab.collect',
                 'lab.report',
+                'lab.verify',
             ],
             'nurse_station' => [
                 'appointments.view',
@@ -149,22 +173,44 @@ class RoleAndUserSeeder extends Seeder
                 'lab.collect',
                 'lab.report',
             ],
+            'pathologist' => [
+                'patients.view',
+                'visits.view',
+                'lab.view',
+                'lab.report',
+                'lab.verify',
+            ],
+            'radiologist' => [
+                'patients.view',
+                'visits.view',
+                'lab.view',
+                'lab.report',
+                'lab.verify',
+            ],
             'receptionist' => [
                 'appointments.view',
                 'appointments.manage',
                 'patients.view',
                 'patients.manage',
                 'billing.manage',
-                'operations.manage',
                 'beds.view',
                 'beds.operate',
                 'visits.view',
                 'visits.checkin',
                 'admissions.view',
                 'admissions.admit',
+                'lab.view',
+            ],
+            'cashier' => [
+                'patients.view',
+                'appointments.view',
+                'visits.view',
+                'admissions.view',
+                'billing.manage',
             ],
             'doctor' => [
                 'appointments.view',
+                'appointments.manage',
                 'patients.view',
                 'beds.view',
                 'beds.operate',
@@ -173,6 +219,7 @@ class RoleAndUserSeeder extends Seeder
                 'nursing.view',
                 'nursing.chart',
                 'admissions.view',
+                'admissions.admit',
                 'admissions.discharge',
                 'lab.view',
                 'lab.order',
@@ -183,8 +230,10 @@ class RoleAndUserSeeder extends Seeder
         ];
 
         foreach ($rolePermissions as $roleName => $names) {
+            DB::table('role_has_permissions')->where('role_id', $roleIds[$roleName])->delete();
+
             foreach ($names as $permissionName) {
-                DB::table('role_has_permissions')->updateOrInsert([
+                DB::table('role_has_permissions')->insert([
                     'permission_id' => $permissionIds[$permissionName],
                     'role_id' => $roleIds[$roleName],
                 ]);
@@ -196,6 +245,11 @@ class RoleAndUserSeeder extends Seeder
                 'name' => 'Super Admin (Demo)',
                 'email' => 'superadmin@hospital.com',
                 'role' => 'super_admin',
+            ],
+            [
+                'name' => 'Hospital Owner (Demo)',
+                'email' => 'owner@hospital.com',
+                'role' => 'hospital_owner',
             ],
             [
                 'name' => 'Hospital Admin (Demo)',
@@ -213,9 +267,24 @@ class RoleAndUserSeeder extends Seeder
                 'role' => 'lab_technician',
             ],
             [
+                'name' => 'Pathologist (Demo)',
+                'email' => 'pathologist@hospital.com',
+                'role' => 'pathologist',
+            ],
+            [
+                'name' => 'Radiologist (Demo)',
+                'email' => 'radiologist@hospital.com',
+                'role' => 'radiologist',
+            ],
+            [
                 'name' => 'Receptionist (Demo)',
                 'email' => 'receptionist@hospital.com',
                 'role' => 'receptionist',
+            ],
+            [
+                'name' => 'Cashier (Demo)',
+                'email' => 'cashier@hospital.com',
+                'role' => 'cashier',
             ],
             [
                 'name' => 'Dr. Arif Rahman (Demo)',

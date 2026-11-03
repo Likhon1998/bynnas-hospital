@@ -103,7 +103,9 @@ class HomeController extends Controller
             'packages' => HealthPackage::query()
                 ->active()
                 ->with(['healthPackageItems' => fn ($query) => $query->orderBy('sort_order')])
+                ->orderByDesc('is_featured')
                 ->orderBy('sort_order')
+                ->orderBy('title')
                 ->limit(3)
                 ->get(),
             'testimonials' => Testimonial::query()->active()->orderBy('sort_order')->limit(6)->get(),

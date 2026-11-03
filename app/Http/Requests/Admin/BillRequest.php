@@ -27,7 +27,7 @@ class BillRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'action' => ['nullable', Rule::in(['draft', 'issue'])],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.item_type' => ['required', Rule::in(['custom', 'service', 'package', 'consultation', 'lab'])],
+            'items.*.item_type' => ['required', Rule::in(['custom', 'service', 'package', 'consultation', 'lab', 'pharmacy', 'bed', 'admission'])],
             'items.*.item_id' => ['nullable', 'integer'],
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],

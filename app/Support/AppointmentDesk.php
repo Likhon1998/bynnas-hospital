@@ -109,12 +109,27 @@ class AppointmentDesk
                 );
             }
 
+            $serialNo = $appointment->serial_no;
+
+            if (
+                $serialNo === null
+                && in_array($status, ['confirmed', 'completed'], true)
+                && $date !== null
+            ) {
+                $serialNo = Appointment::nextSerialForDoctor((int) $appointment->doctor_id, $date);
+            }
+
+            if ($status === 'cancelled') {
+                $serialNo = $appointment->serial_no;
+            }
+
             $appointment->update([
                 'appointment_date' => $date,
                 'start_time' => $start,
                 'end_time' => $this->endTime($start),
                 'reason' => array_key_exists('reason', $attributes) ? $attributes['reason'] : $appointment->reason,
                 'status' => $status,
+                'serial_no' => $serialNo,
                 'notes' => array_key_exists('notes', $attributes) ? $attributes['notes'] : $appointment->notes,
                 'cancelled_at' => $status === 'cancelled' ? ($appointment->cancelled_at ?? now()) : null,
                 'cancellation_reason' => $status === 'cancelled' ? ($attributes['cancellation_reason'] ?? null) : null,
@@ -340,8 +355,13 @@ class AppointmentDesk
         ?User $actor,
     ): Appointment {
         try {
+            $serialNo = in_array($status, ['confirmed', 'completed'], true)
+                ? Appointment::nextSerialForDoctor((int) $doctor->id, $date)
+                : null;
+
             return Appointment::query()->create([
                 'appointment_no' => Appointment::nextNumber($this->numberPrefix($source)),
+                'serial_no' => $serialNo,
                 'patient_id' => $attributes['patient_id'],
                 'doctor_id' => $doctor->id,
                 'department_id' => $doctor->department_id,

@@ -95,7 +95,14 @@
             @endif
 
             @can('visits.clinical')
-                @if ($visit->isOpen())
+                @php
+                    $actorDoctorId = auth()->user()?->doctor?->id;
+                    $canEditClinical = ! auth()->user()?->hasRole('doctor')
+                        || $actorDoctorId === null
+                        || $visit->doctor_id === null
+                        || (int) $visit->doctor_id === (int) $actorDoctorId;
+                @endphp
+                @if ($visit->isOpen() && $canEditClinical)
                     <div class="mt-4">
                         <form method="POST" action="{{ route('admin.visits.clinical', $visit) }}" class="form-workspace">
                             @csrf
@@ -125,6 +132,16 @@
                                 <button type="submit" name="complete" value="1" class="form-btn form-btn--primary">Complete encounter</button>
                             </div>
                         </form>
+                    </div>
+                @elseif ($visit->isOpen() && ! $canEditClinical)
+                    <p class="mt-4 rounded-2xl bg-sand-50 px-4 py-3 text-sm text-ink-600">This encounter is assigned to another doctor. You can view notes but cannot edit their prescription.</p>
+                @endif
+            @endcan
+
+            @can('appointments.manage')
+                @if ($visit->patient_id && filled($visit->follow_up_instructions))
+                    <div class="mt-4">
+                        <a href="{{ route('admin.appointments.create', ['patient_id' => $visit->patient_id]) }}" class="form-btn form-btn--navy">Schedule follow-up appointment</a>
                     </div>
                 @endif
             @endcan
@@ -177,9 +194,11 @@
                                             @endcan
                                         </div>
                                     </div>
-                                    @if ($order->result)
+                                    @if ($order->result?->isPublished())
                                         <p class="mt-1 text-navy-900">{{ $order->result->displayValue() }} · range {{ $order->result->reference_range ?: '—' }}</p>
-                                        <p class="text-ink-600">Verified {{ $order->result->verified_at?->format('d M Y H:i') }}</p>
+                                        <p class="text-ink-600">Published {{ $order->result->published_at?->format('d M Y H:i') }} · {{ $order->result->signature_name ?: 'Pathologist' }}</p>
+                                    @elseif ($order->result)
+                                        <p class="mt-1 text-ink-600">Preliminary result awaiting pathologist approval — not yet published.</p>
                                     @else
                                         <p class="mt-1 text-ink-600">{{ $order->clinical_notes ?: 'Awaiting result' }}</p>
                                     @endif

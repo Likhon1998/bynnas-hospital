@@ -48,6 +48,7 @@ class SearchController extends Controller
             Patient::query()
                 ->where(function ($query) use ($like): void {
                     $query->where('full_name', 'like', $like)
+                        ->orWhere('patient_code', 'like', $like)
                         ->orWhere('phone', 'like', $like)
                         ->orWhere('email', 'like', $like);
                 })
@@ -58,7 +59,7 @@ class SearchController extends Controller
                     $results[] = [
                         'type' => 'Patient',
                         'title' => $patient->full_name,
-                        'detail' => $patient->phone ?: ($patient->email ?: 'Patient record'),
+                        'detail' => trim(($patient->patient_code ?: '').' · '.($patient->phone ?: ($patient->email ?: 'Patient record')), ' ·'),
                         'href' => route('admin.patients.show', $patient),
                     ];
                 });

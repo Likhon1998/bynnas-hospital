@@ -36,6 +36,8 @@ class LabTest extends Model
         'endocrine' => 'Endocrine',
         'serology' => 'Serology',
         'urine' => 'Urine',
+        'radiology' => 'Radiology',
+        'imaging' => 'Imaging',
     ];
 
     /**

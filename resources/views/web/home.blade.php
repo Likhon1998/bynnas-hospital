@@ -23,6 +23,7 @@
     $galleryItems = $galleryItems ?? collect();
     $testimonials = $testimonials ?? collect();
     $posts = $posts ?? collect();
+    $packages = $packages ?? collect();
     $isFinderSearch = $isFinderSearch ?? false;
     $leadDoctor = $isFinderSearch
         ? ($finderDoctors->first(fn ($doctor) => filled($doctor->photo)) ?? $finderDoctors->first())
@@ -37,7 +38,13 @@
     $heroLines = preg_split('/(?<=\.)\s+/', $heroTitle, 2) ?: [$heroTitle];
     $patientServices = $services->take(4);
     $campusAddress = $hospital->get('address') ?: 'Main Campus';
+    $campusLabel = filled($hospital->get('campus_name'))
+        ? $hospital->get('campus_name')
+        : 'Main Campus';
     $mapEmbed = trim((string) $hospital->get('map_embed'));
+    $heroTrustLabel = filled($hospital->get('tagline'))
+        ? \Illuminate\Support\Str::limit($hospital->get('tagline'), 42, '')
+        : 'Patient-first';
     $review = $testimonials->first();
     $reviewAverage = $testimonials->isNotEmpty() ? round((float) $testimonials->avg('rating'), 1) : null;
     $prepPhoto = $galleryItems->first();
@@ -61,7 +68,7 @@
                 <ul class="ch-checks">
                     <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['doctors'] ?? 0)) }} expert doctors</li>
                     <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['departments'] ?? 0)) }} specialties</li>
-                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> Patient-first</li>
+                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ $heroTrustLabel }}</li>
                 </ul>
                 <a class="ch-more" href="{{ $heroCtaUrl }}">{{ $heroCtaLabel }} →</a>
             </div>
@@ -339,6 +346,44 @@
         </div>
     </section>
 
+    @if ($packages->isNotEmpty())
+        <section id="packages" class="ch-care">
+            <div class="ch-wrap">
+                <div class="ch-sec__head">
+                    <div>
+                        <p class="ch-find__kicker">Screening</p>
+                        <h2 class="ch-sec__title">Health Packages</h2>
+                        <p class="ch-depts-intro">Packages published by the desk — compare inclusions, then book.</p>
+                    </div>
+                    <a class="ch-more" href="{{ route('packages') }}">View all packages →</a>
+                </div>
+                <div class="ch-pkgs">
+                    @foreach ($packages as $package)
+                        <article class="ch-pkg">
+                            <p class="ch-pkg__meta">Health package</p>
+                            <h3>{{ $package->title }}</h3>
+                            <p>{{ \Illuminate\Support\Str::limit(strip_tags((string) $package->description), 120) }}</p>
+                            @if ($package->healthPackageItems->isNotEmpty())
+                                <ul class="ch-pkg__list">
+                                    @foreach ($package->healthPackageItems->take(4) as $item)
+                                        <li>{{ $item->title }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            <div class="ch-pkg__foot">
+                                <p class="ch-pkg__price">৳{{ number_format((float) $package->price) }}</p>
+                                @if ($package->duration_label)
+                                    <p class="ch-pkg__duration">{{ $package->duration_label }}</p>
+                                @endif
+                                <a class="ch-btn ch-btn--solid ch-btn--wide" href="{{ route('home') }}#appointment">Book package</a>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     <x-web.campus-band :stats="$stats" headline="Book Your Appointment Today" cta-href="#appointment" />
 
     <section id="locations" class="ch-sec">
@@ -354,7 +399,7 @@
                 <div class="ch-loc-list">
                     <a class="ch-loc" href="https://www.google.com/maps/search/?api=1&query={{ urlencode($campusAddress) }}" target="_blank" rel="noopener">
                         <span>
-                            <strong>Main Campus</strong>
+                            <strong>{{ $campusLabel }}</strong>
                             <span>{{ $campusAddress }}</span>
                         </span>
                     </a>

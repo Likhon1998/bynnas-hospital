@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'appointment_no',
+    'serial_no',
     'patient_id',
     'doctor_id',
     'department_id',
@@ -87,6 +88,23 @@ class Appointment extends Model
         $sequence = $last ? ((int) substr((string) $last, -3)) + 1 : 1;
 
         return $stamp.str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+    }
+
+    public static function nextSerialForDoctor(int $doctorId, string $date): int
+    {
+        $last = static::query()
+            ->where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', $date)
+            ->whereNotNull('serial_no')
+            ->lockForUpdate()
+            ->max('serial_no');
+
+        return ((int) $last) + 1;
+    }
+
+    public function serialLabel(): string
+    {
+        return $this->serial_no !== null ? 'S-'.str_pad((string) $this->serial_no, 3, '0', STR_PAD_LEFT) : '—';
     }
 
     public function sourceLabel(): string

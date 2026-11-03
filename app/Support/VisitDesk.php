@@ -164,8 +164,22 @@ class VisitDesk
         return DB::transaction(function () use ($visit, $notes, $actor, $complete): Visit {
             $from = $visit->status;
             $startedConsultation = $visit->consultation_started_at === null;
+            $actorDoctorId = $actor->doctor?->id;
+
+            if (
+                filled($visit->prescriptions)
+                && $visit->clinically_recorded_by !== null
+                && (int) $visit->clinically_recorded_by !== (int) $actor->id
+                && array_key_exists('prescriptions', $notes)
+                && (string) ($notes['prescriptions'] ?? '') !== (string) $visit->prescriptions
+            ) {
+                throw ValidationException::withMessages([
+                    'prescriptions' => 'You cannot modify another doctor\'s prescription.',
+                ]);
+            }
 
             $visit->update([
+                'doctor_id' => $visit->doctor_id ?? $actorDoctorId,
                 'symptoms' => $notes['symptoms'] ?? $visit->symptoms,
                 'examination_notes' => $notes['examination_notes'] ?? $visit->examination_notes,
                 'diagnosis' => $notes['diagnosis'] ?? $visit->diagnosis,

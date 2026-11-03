@@ -4,15 +4,21 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BillRequest;
+use App\Http\Requests\Admin\CollectBillPaymentRequest;
+use App\Http\Requests\Admin\RequestBillRefundRequest;
 use App\Models\Appointment;
 use App\Models\Bill;
+use App\Models\BillPayment;
 use App\Models\Doctor;
 use App\Models\HealthPackage;
 use App\Models\HospitalSetting;
 use App\Models\Patient;
 use App\Models\Service;
+use App\Support\FinanceGuard;
+use App\Support\SystemAuditor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class BillController extends Controller
@@ -50,15 +56,38 @@ class BillController extends Controller
         ]));
     }
 
-    public function store(BillRequest $request): RedirectResponse
+    public function store(BillRequest $request, FinanceGuard $financeGuard, SystemAuditor $auditor): RedirectResponse
     {
+        $discount = (float) $request->input('discount', 0);
+        $subtotal = $this->estimateSubtotal($request->validated('items'));
+
+        if (! $financeGuard->canApplyDiscount($request->user(), $discount, $subtotal)) {
+            $financeGuard->requestDiscountApproval(
+                $request->user(),
+                $discount,
+                'High-value discount requires Director approval.',
+                null,
+                'Bill create blocked until approved.'
+            );
+            $auditor->record('finance.request', 'Requested high-value discount approval.', null, [
+                'amount' => $discount,
+                'subtotal' => $subtotal,
+            ], $request->user());
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'discount' => 'High-value discounts need Director approval. A request was submitted under Finance approvals.',
+                ]);
+        }
+
         $bill = Bill::createFromReception([
             'patient_id' => $request->integer('patient_id'),
             'appointment_id' => $request->integer('appointment_id') ?: null,
             'issued_by' => $request->user()->id,
             'bill_date' => $request->date('bill_date')?->toDateString() ?? now()->toDateString(),
             'status' => 'draft',
-            'discount' => $request->input('discount', 0),
+            'discount' => $discount,
             'notes' => $request->validated('notes'),
         ], $request->validated('items'));
 
@@ -71,9 +100,46 @@ class BillController extends Controller
 
     public function show(Bill $bill): View
     {
-        $bill->load(['patient', 'appointment.doctor', 'appointment.department', 'issuedBy', 'billItems']);
+        $bill->load([
+            'patient',
+            'appointment.doctor',
+            'appointment.department',
+            'issuedBy',
+            'billItems',
+            'payments.collectedBy',
+        ]);
 
-        return view('admin.bills.show', compact('bill'));
+        return view('admin.bills.show', [
+            'bill' => $bill,
+            'paymentMethods' => BillPayment::METHODS,
+        ]);
+    }
+
+    public function collections(Request $request): View
+    {
+        $date = $request->date('date')?->toDateString() ?? today()->toDateString();
+
+        $payments = BillPayment::query()
+            ->with(['bill.patient', 'collectedBy'])
+            ->whereDate('collected_at', $date)
+            ->orderByDesc('collected_at')
+            ->orderByDesc('id')
+            ->paginate(30)
+            ->withQueryString();
+
+        $totalsByMethod = BillPayment::query()
+            ->whereDate('collected_at', $date)
+            ->selectRaw('method, sum(amount) as total')
+            ->groupBy('method')
+            ->pluck('total', 'method');
+
+        return view('admin.bills.collections', [
+            'payments' => $payments,
+            'date' => $date,
+            'totalsByMethod' => $totalsByMethod,
+            'grandTotal' => (float) $totalsByMethod->sum(),
+            'paymentMethods' => BillPayment::METHODS,
+        ]);
     }
 
     public function edit(Bill $bill): View
@@ -85,15 +151,38 @@ class BillController extends Controller
         return view('admin.bills.edit', $this->formData(compact('bill')));
     }
 
-    public function update(BillRequest $request, Bill $bill): RedirectResponse
+    public function update(BillRequest $request, Bill $bill, FinanceGuard $financeGuard, SystemAuditor $auditor): RedirectResponse
     {
         abort_unless($bill->isEditable(), 403);
+
+        $discount = (float) $request->input('discount', 0);
+        $subtotal = $this->estimateSubtotal($request->validated('items'));
+
+        if (! $financeGuard->canApplyDiscount($request->user(), $discount, $subtotal)) {
+            $financeGuard->requestDiscountApproval(
+                $request->user(),
+                $discount,
+                'High-value discount requires Director approval.',
+                $bill,
+                'Bill '.$bill->bill_no.' update blocked until approved.'
+            );
+            $auditor->record('finance.request', 'Requested high-value discount approval.', $bill, [
+                'amount' => $discount,
+                'subtotal' => $subtotal,
+            ], $request->user());
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'discount' => 'High-value discounts need Director approval. A request was submitted under Finance approvals.',
+                ]);
+        }
 
         $bill->update([
             'patient_id' => $request->integer('patient_id'),
             'appointment_id' => $request->integer('appointment_id') ?: null,
             'bill_date' => $request->date('bill_date')?->toDateString() ?? $bill->bill_date?->toDateString(),
-            'discount' => $request->input('discount', 0),
+            'discount' => $discount,
             'notes' => $request->validated('notes'),
         ]);
 
@@ -124,17 +213,83 @@ class BillController extends Controller
         return redirect()->route('admin.bills.show', $bill)->with('status', 'Bill issued.');
     }
 
-    public function pay(Bill $bill): RedirectResponse
+    public function pay(CollectBillPaymentRequest $request, Bill $bill): RedirectResponse
     {
-        abort_unless($bill->canMarkPaid(), 403);
+        abort_unless($bill->canCollectPayment(), 403);
 
-        $bill->update([
-            'status' => 'paid',
-            'paid_amount' => $bill->total,
-            'paid_at' => now(),
-        ]);
+        $actor = $request->user();
+        abort_unless($actor !== null, 403);
 
-        return redirect()->route('admin.bills.show', $bill)->with('status', 'Bill marked as paid.');
+        $amount = round((float) $request->validated('amount'), 2);
+
+        DB::transaction(function () use ($bill, $request, $actor, $amount): void {
+            BillPayment::query()->create([
+                'bill_id' => $bill->id,
+                'amount' => $amount,
+                'method' => $request->validated('method'),
+                'reference' => $request->validated('reference'),
+                'notes' => $request->validated('notes'),
+                'collected_by' => $actor->id,
+                'collected_at' => now(),
+            ]);
+
+            $paidAmount = round((float) $bill->paid_amount + $amount, 2);
+            $fullyPaid = $paidAmount >= (float) $bill->total;
+
+            $bill->update([
+                'paid_amount' => min($paidAmount, (float) $bill->total),
+                'paid_at' => $fullyPaid ? now() : $bill->paid_at,
+                'status' => $fullyPaid ? 'paid' : 'issued',
+            ]);
+
+            if ($bill->hasLabCharges()) {
+                $bill->ensureReportAccessCode();
+            }
+        });
+
+        $bill->refresh();
+
+        $status = $bill->status === 'paid'
+            ? 'Payment collected. Bill is fully paid.'
+            : 'Partial payment collected. Outstanding due: '.number_format($bill->balanceDue(), 2).'.';
+
+        if (filled($bill->report_access_code)) {
+            $status .= ' Lab report access code: '.$bill->report_access_code.'.';
+        }
+
+        return redirect()
+            ->route('admin.bills.show', $bill)
+            ->with('status', $status);
+    }
+
+    public function requestRefund(
+        RequestBillRefundRequest $request,
+        Bill $bill,
+        FinanceGuard $financeGuard,
+        SystemAuditor $auditor,
+    ): RedirectResponse {
+        abort_unless($bill->canRequestRefund(), 403);
+
+        $actor = $request->user();
+        abort_unless($actor !== null, 403);
+
+        // Cashiers may request refunds but cannot approve them.
+        abort_if($actor->can('finance.approve') === false && $request->boolean('approve'), 403);
+
+        $approval = $financeGuard->requestRefundApproval(
+            $actor,
+            (float) $request->validated('amount'),
+            $request->validated('reason'),
+            $bill,
+            $request->validated('notes'),
+        );
+
+        $auditor->record('finance.request', 'Requested refund approval for '.$bill->bill_no.'.', $approval, [
+            'amount' => $approval->amount,
+            'bill_id' => $bill->id,
+        ], $actor);
+
+        return back()->with('status', 'Refund request submitted for Director approval.');
     }
 
     public function cancel(Request $request, Bill $bill): RedirectResponse
@@ -157,7 +312,19 @@ class BillController extends Controller
 
     public function print(Bill $bill): View
     {
-        $bill->load(['patient', 'appointment.doctor', 'appointment.department', 'issuedBy', 'billItems']);
+        $bill->load([
+            'patient',
+            'appointment.doctor',
+            'appointment.department',
+            'issuedBy',
+            'billItems',
+            'payments.collectedBy',
+        ]);
+
+        if ($bill->paid_amount > 0 && $bill->hasLabCharges()) {
+            $bill->ensureReportAccessCode();
+            $bill->refresh();
+        }
 
         return view('admin.bills.print', [
             'bill' => $bill,
@@ -194,5 +361,21 @@ class BillController extends Controller
             'packages' => HealthPackage::query()->active()->orderBy('title')->get(['id', 'title', 'price']),
             'doctors' => Doctor::query()->active()->orderBy('name')->get(['id', 'name', 'consultation_fee', 'designation']),
         ];
+    }
+
+    /**
+     * @param  list<array{quantity?: int, unit_price?: float|int|string}>  $items
+     */
+    private function estimateSubtotal(array $items): float
+    {
+        $subtotal = 0.0;
+
+        foreach ($items as $item) {
+            $quantity = max(1, (int) ($item['quantity'] ?? 1));
+            $unitPrice = (float) ($item['unit_price'] ?? 0);
+            $subtotal += $quantity * $unitPrice;
+        }
+
+        return round($subtotal, 2);
     }
 }

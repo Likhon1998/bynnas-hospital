@@ -33,6 +33,10 @@ class LabOrderEvent extends Model
 
     public const TYPE_PROCESSING = 'processing';
 
+    public const TYPE_RESULT_SUBMITTED = 'result_submitted';
+
+    public const TYPE_RETURNED = 'returned';
+
     public const TYPE_COMPLETED = 'completed';
 
     public const TYPE_CANCELLED = 'cancelled';
@@ -44,6 +48,8 @@ class LabOrderEvent extends Model
         self::TYPE_ORDERED => 'Ordered',
         self::TYPE_COLLECTED => 'Sample collected',
         self::TYPE_PROCESSING => 'Processing',
+        self::TYPE_RESULT_SUBMITTED => 'Submitted for verification',
+        self::TYPE_RETURNED => 'Returned for correction',
         self::TYPE_COMPLETED => 'Result verified',
         self::TYPE_CANCELLED => 'Cancelled',
     ];

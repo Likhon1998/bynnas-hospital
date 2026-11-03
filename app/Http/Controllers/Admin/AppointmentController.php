@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\AppointmentStatusRequest;
 use App\Http\Requests\Admin\StoreAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Models\HospitalSetting;
 use App\Models\Patient;
 use App\Support\AppointmentDesk;
 use Carbon\Exceptions\InvalidFormatException;
@@ -30,7 +31,8 @@ class AppointmentController extends Controller
             $source = '';
         }
 
-        $doctorId = $request->integer('doctor');
+        $linkedDoctor = $request->user()?->hasRole('doctor') ? $request->user()->doctor : null;
+        $doctorId = $linkedDoctor?->id ?? $request->integer('doctor');
         $selectedDoctor = $doctorId > 0
             ? Doctor::query()->select(['id', 'name'])->find($doctorId)
             : null;
@@ -57,9 +59,12 @@ class AppointmentController extends Controller
 
         return view('admin.appointments.index', [
             'appointments' => $appointments,
-            'doctors' => Doctor::query()->orderBy('name')->orderBy('id')->get(['id', 'name']),
+            'doctors' => $linkedDoctor !== null
+                ? collect([$linkedDoctor])->map(fn (Doctor $doctor) => (object) ['id' => $doctor->id, 'name' => $doctor->name])
+                : Doctor::query()->orderBy('name')->orderBy('id')->get(['id', 'name']),
             'selectedDoctor' => $selectedDoctor,
             'selectedDate' => $selectedDate,
+            'doctorLocked' => $linkedDoctor !== null,
         ]);
     }
 
@@ -67,10 +72,17 @@ class AppointmentController extends Controller
     {
         abort_unless($request->user()?->can('appointments.manage') ?? false, 403);
 
+        $linkedDoctor = $request->user()?->hasRole('doctor') ? $request->user()->doctor : null;
+        $doctors = $linkedDoctor !== null
+            ? Doctor::query()->whereKey($linkedDoctor->id)->with('department')->get()
+            : Doctor::query()->active()->whereNotNull('department_id')->with('department')->orderBy('name')->orderBy('id')->get();
+
         return view('admin.appointments.create', [
             'patients' => Patient::query()->active()->orderBy('full_name')->orderBy('id')->get(),
-            'doctors' => Doctor::query()->active()->whereNotNull('department_id')->with('department')->orderBy('name')->orderBy('id')->get(),
+            'doctors' => $doctors,
             'selectedPatientId' => $request->integer('patient_id') ?: null,
+            'selectedDoctorId' => $linkedDoctor?->id,
+            'doctorLocked' => $linkedDoctor !== null,
         ]);
     }
 
@@ -79,7 +91,13 @@ class AppointmentController extends Controller
         $actor = $request->user();
         abort_unless($actor !== null, 403);
 
-        $appointment = $desk->book($request->validated(), $actor);
+        $payload = $request->validated();
+
+        if ($actor->hasRole('doctor') && $actor->doctor?->id) {
+            $payload['doctor_id'] = $actor->doctor->id;
+        }
+
+        $appointment = $desk->book($payload, $actor);
 
         return redirect()
             ->route('admin.appointments.show', $appointment)
@@ -98,6 +116,16 @@ class AppointmentController extends Controller
         $desk->updateVisit($appointment, $request->validated());
 
         return back()->with('status', 'Appointment updated.');
+    }
+
+    public function printTicket(Appointment $appointment): View
+    {
+        $appointment->load(['patient', 'doctor.department', 'department']);
+
+        return view('admin.appointments.print-ticket', [
+            'appointment' => $appointment,
+            'hospital' => HospitalSetting::map(),
+        ]);
     }
 
     private function selectedVisitDate(Request $request): ?Carbon

@@ -45,6 +45,11 @@
                     <div class="mt-2"><x-admin.status-pill :value="$appointment->status" /></div>
                 </div>
                 <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-ink-400">Serial</p>
+                    <p class="mt-1 font-semibold text-navy-900">{{ $appointment->serialLabel() }}</p>
+                    <a href="{{ route('admin.appointments.print', $appointment) }}" class="mt-2 inline-flex text-sm font-semibold text-teal-700" target="_blank">Print OPD ticket</a>
+                </div>
+                <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-ink-400">From</p>
                     <p class="mt-1 font-semibold text-navy-900">{{ $appointment->sourceLabel() }}</p>
                 </div>

@@ -20,6 +20,11 @@
             <p class="mc-kpi__value">{{ $counts['processing'] }}</p>
             <p class="mc-kpi__meta">In the laboratory</p>
         </article>
+        <article class="mc-kpi mc-kpi--blue">
+            <p class="mc-kpi__label">Pending verify</p>
+            <p class="mc-kpi__value">{{ $counts['pending_verification'] }}</p>
+            <p class="mc-kpi__meta">Awaiting pathologist</p>
+        </article>
         <article class="mc-kpi mc-kpi--orange">
             <p class="mc-kpi__label">Critical</p>
             <p class="mc-kpi__value">{{ $counts['critical'] }}</p>

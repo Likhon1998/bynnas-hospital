@@ -52,6 +52,17 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (! $user->is_active) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'This staff account has been deactivated. Contact a Super Admin.',
+            ]);
+        }
+
+        $user->forceFill(['last_login_at' => now()])->save();
+
         RateLimiter::clear($this->throttleKey());
     }
 

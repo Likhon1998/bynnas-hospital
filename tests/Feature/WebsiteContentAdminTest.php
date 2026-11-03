@@ -285,6 +285,12 @@ class WebsiteContentAdminTest extends TestCase
             ->assertSee('Executive Heart Screen', false)
             ->assertSee('ECG', false)
             ->assertSee('Consultant review', false);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Executive Heart Screen', false)
+            ->assertSee('Health Packages', false)
+            ->assertSee(route('packages'), false);
     }
 
     public function test_featured_service_from_the_desk_appears_on_the_homepage(): void

@@ -20,6 +20,7 @@ class LaboratoryFlowTest extends TestCase
     {
         $doctor = $this->createStaffUser(['visits.view', 'visits.clinical', 'lab.view', 'lab.order'], 'doctor');
         $technician = $this->createStaffUser(['lab.view', 'lab.collect', 'lab.report'], 'lab_technician');
+        $pathologist = $this->createStaffUser(['lab.view', 'lab.verify'], 'pathologist');
         $visit = Visit::factory()->withVitals()->create([
             'status' => 'consultation',
             'chief_complaint' => 'Chest pain since dawn',
@@ -56,9 +57,14 @@ class LaboratoryFlowTest extends TestCase
 
         $this->actingAs($technician)
             ->from(route('admin.labs.show', $order))
-            ->post(route('admin.labs.collect', $order))
+            ->post(route('admin.labs.collect', $order), [
+                'collected_at' => now()->format('Y-m-d H:i:s'),
+            ])
             ->assertRedirect();
-        $this->assertSame('collected', $order->fresh()->status);
+        $order->refresh();
+        $this->assertSame('collected', $order->status);
+        $this->assertNotNull($order->sample_id);
+        $this->assertSame($order->sample_id, $order->barcode);
 
         $this->actingAs($technician)
             ->from(route('admin.labs.show', $order))
@@ -77,15 +83,41 @@ class LaboratoryFlowTest extends TestCase
             ->assertRedirect();
 
         $order->refresh();
-        $this->assertSame('completed', $order->status);
-        $this->assertTrue($order->is_critical);
+        $this->assertSame('pending_verification', $order->status);
         $this->assertSame('2.40', $order->result?->value);
         $this->assertTrue($order->result?->is_critical);
-        $this->assertSame($technician->id, $order->result?->verified_by);
+        $this->assertNull($order->result?->verified_by);
+        $this->assertTrue($order->result?->isPreliminary());
+
+        $this->actingAs($technician)
+            ->from(route('admin.labs.show', $order))
+            ->post(route('admin.labs.verify', $order))
+            ->assertForbidden();
+
+        $this->actingAs($pathologist)
+            ->from(route('admin.labs.show', $order))
+            ->post(route('admin.labs.verify', $order), [
+                'value' => '2.40',
+                'unit' => 'ng/mL',
+                'reference_range' => '<0.04',
+                'is_critical' => '1',
+                'is_abnormal' => '1',
+                'signature_name' => 'Dr. Path Demo',
+                'signature_title' => 'Pathologist',
+            ])
+            ->assertRedirect();
+
+        $order->refresh();
+        $this->assertSame('completed', $order->status);
+        $this->assertTrue($order->is_critical);
+        $this->assertSame($pathologist->id, $order->result?->verified_by);
+        $this->assertTrue($order->result?->isPublished());
+        $this->assertSame('Dr. Path Demo', $order->result?->signature_name);
         $this->assertSame([
             LabOrderEvent::TYPE_ORDERED,
             LabOrderEvent::TYPE_COLLECTED,
             LabOrderEvent::TYPE_PROCESSING,
+            LabOrderEvent::TYPE_RESULT_SUBMITTED,
             LabOrderEvent::TYPE_COMPLETED,
         ], $order->events()->orderBy('id')->pluck('event_type')->all());
 
@@ -109,7 +141,7 @@ class LaboratoryFlowTest extends TestCase
                 'value' => '0.02',
             ])
             ->assertRedirect()
-            ->assertSessionHasErrors('status');
+            ->assertSessionHasErrors('value');
         $this->assertSame(1, BillItem::query()->where('item_type', 'lab')->where('item_id', $order->id)->count());
     }
 
@@ -192,12 +224,19 @@ class LaboratoryFlowTest extends TestCase
     public function test_escapes_lab_result_notes_on_the_encounter(): void
     {
         $technician = $this->createStaffUser(['lab.view', 'lab.collect', 'lab.report'], 'lab_technician');
+        $pathologist = $this->createStaffUser(['lab.view', 'lab.verify'], 'pathologist');
         $doctor = $this->createStaffUser(['visits.view', 'lab.view'], 'doctor');
         $order = LabOrder::factory()->collected()->create();
 
         $this->actingAs($technician)->post(route('admin.labs.results.store', $order), [
             'value' => 'Positive',
             'notes' => "Alert <script>alert('xss')</script>",
+        ])->assertRedirect();
+
+        $this->actingAs($pathologist)->post(route('admin.labs.verify', $order), [
+            'value' => 'Positive',
+            'signature_name' => 'Pathologist',
+            'signature_title' => 'Pathologist',
         ])->assertRedirect();
 
         $response = $this->actingAs($doctor)->get(route('admin.labs.show', $order));

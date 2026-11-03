@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\DoctorController;
 use App\Http\Controllers\Web\EmergencyController;
 use App\Http\Controllers\Web\HomeController;
+use App\Http\Controllers\Web\LabReportController;
 use App\Http\Controllers\Web\LegalPageController;
 use App\Http\Controllers\Web\PackageController;
 use App\Http\Controllers\Web\ServiceController;
@@ -36,5 +37,17 @@ Route::get('/appointment-schedule', AppointmentScheduleController::class)
 Route::post('/appointment-requests', [AppointmentRequestController::class, 'store'])
     ->middleware('throttle:appointment-requests')
     ->name('appointment-requests.store');
+
+Route::get('/lab-reports', [LabReportController::class, 'index'])->name('lab-reports.index');
+Route::post('/lab-reports/lookup', [LabReportController::class, 'lookup'])
+    ->middleware('throttle:lab-report-lookup')
+    ->name('lab-reports.lookup');
+Route::get('/lab-reports/recover', [LabReportController::class, 'recoverForm'])->name('lab-reports.recover');
+Route::post('/lab-reports/recover', [LabReportController::class, 'recover'])
+    ->middleware('throttle:lab-report-recover')
+    ->name('lab-reports.recover.submit');
+Route::get('/lab-reports/{labOrder}/download', [LabReportController::class, 'download'])
+    ->middleware('throttle:lab-report-download')
+    ->name('lab-reports.download');
 
 require __DIR__.'/admin.php';
