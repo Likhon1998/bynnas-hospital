@@ -3861,6 +3861,54 @@ select.admin-field--multiple {
     font-weight: 700;
 }
 
+.owner-approvals {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.owner-approvals__form {
+    padding: 1rem 1.15rem 1.25rem;
+}
+
+.owner-approvals__submit {
+    display: flex;
+    align-items: end;
+}
+
+.owner-approvals__queue {
+    min-width: 0;
+}
+
+.owner-approvals__empty {
+    margin: 0 1.15rem 1.15rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.85rem;
+    background: #f8fafc;
+    padding: 1.15rem 1.25rem;
+}
+
+.owner-approvals__empty-title {
+    margin: 0 0 0.25rem;
+    color: #0f172a;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.owner-approvals__empty p:last-child {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.owner-approvals__table {
+    margin: 0 1.15rem 1.15rem;
+}
+
+.owner-approvals__table .pro-table {
+    min-width: 40rem;
+}
+
 .mc-layout {
     display: grid;
     gap: 0.9rem;
