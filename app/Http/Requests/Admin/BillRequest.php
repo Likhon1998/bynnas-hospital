@@ -37,9 +37,15 @@ class BillRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $items = collect($this->input('items', []))
+            ->filter(fn ($item): bool => filled(data_get($item, 'description')))
+            ->values()
+            ->all();
+
         $this->merge([
             'appointment_id' => $this->filled('appointment_id') ? $this->integer('appointment_id') : null,
             'discount' => $this->filled('discount') ? $this->input('discount') : 0,
+            'items' => $items,
         ]);
     }
 
@@ -50,14 +56,38 @@ class BillRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($validator->errors()->hasAny(['patient_id', 'appointment_id']) || ! $this->filled('appointment_id')) {
+                if (
+                    ! $validator->errors()->hasAny(['patient_id', 'appointment_id'])
+                    && $this->filled('appointment_id')
+                ) {
+                    $appointment = Appointment::query()->find($this->integer('appointment_id'));
+
+                    if ($appointment && $appointment->patient_id !== $this->integer('patient_id')) {
+                        $validator->errors()->add('appointment_id', 'The selected appointment does not belong to this patient.');
+                    }
+                }
+
+                $items = collect($this->input('items', []))
+                    ->filter(fn ($item): bool => filled(data_get($item, 'description')));
+
+                if ($items->isEmpty()) {
+                    $validator->errors()->add('items', 'Add at least one charge line before saving the bill.');
+
                     return;
                 }
 
-                $appointment = Appointment::query()->find($this->integer('appointment_id'));
+                if ($this->input('action') !== 'issue') {
+                    return;
+                }
 
-                if ($appointment && $appointment->patient_id !== $this->integer('patient_id')) {
-                    $validator->errors()->add('appointment_id', 'The selected appointment does not belong to this patient.');
+                $subtotal = $items->sum(function ($item): float {
+                    return max(1, (int) data_get($item, 'quantity', 1)) * (float) data_get($item, 'unit_price', 0);
+                });
+                $discount = min((float) $this->input('discount', 0), $subtotal);
+                $total = max(0, round($subtotal - $discount, 2));
+
+                if ($total <= 0) {
+                    $validator->errors()->add('items', 'Set a price on the charges before issuing the bill.');
                 }
             },
         ];

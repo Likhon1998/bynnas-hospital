@@ -77,6 +77,48 @@ class AdminBillTest extends TestCase
         ]);
     }
 
+    public function test_create_bill_page_shows_stepped_cashier_flow(): void
+    {
+        $user = $this->createStaffUser(['billing.manage'], 'cashier');
+
+        $this->actingAs($user)
+            ->get(route('admin.bills.create'))
+            ->assertOk()
+            ->assertSee('1. Patient', false)
+            ->assertSee('2. Charges', false)
+            ->assertSee('3. Settle', false)
+            ->assertSee('Add from catalog', false)
+            ->assertSee('No charges yet', false)
+            ->assertDontSee('name="items[0][description]"', false);
+    }
+
+    public function test_issuing_a_zero_total_bill_is_rejected(): void
+    {
+        $user = $this->createStaffUser(['billing.manage'], 'cashier');
+        $patient = Patient::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('admin.bills.create'))
+            ->post(route('admin.bills.store'), [
+                'patient_id' => $patient->id,
+                'bill_date' => now()->toDateString(),
+                'discount' => '0',
+                'action' => 'issue',
+                'items' => [
+                    [
+                        'item_type' => 'custom',
+                        'description' => 'Empty charge',
+                        'quantity' => '1',
+                        'unit_price' => '0',
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('admin.bills.create'))
+            ->assertSessionHasErrors(['items']);
+
+        $this->assertSame(0, Bill::query()->count());
+    }
+
     public function test_receptionist_can_mark_an_issued_bill_as_paid(): void
     {
         $user = $this->createStaffUser(['billing.manage'], 'receptionist');
