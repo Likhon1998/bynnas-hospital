@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AuthorizeAdmissionDischargeRequest;
 use App\Http\Requests\Admin\CompleteAdmissionDischargeRequest;
+use App\Http\Requests\Admin\PostAdmissionDayChargesRequest;
 use App\Http\Requests\Admin\StoreAdmissionRequest;
 use App\Http\Requests\Admin\TransferAdmissionRequest;
 use App\Models\Admission;
@@ -15,6 +16,7 @@ use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\Visit;
 use App\Support\AdmissionDesk;
+use App\Support\BillingDesk;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -106,7 +108,7 @@ class AdmissionController extends Controller
             ->with('status', 'Patient admitted to '.$admission->bed?->bed_code.'.');
     }
 
-    public function show(Admission $admission): View
+    public function show(Admission $admission, BillingDesk $billing): View
     {
         $admission->load([
             'patient',
@@ -122,11 +124,18 @@ class AdmissionController extends Controller
             'events.actor',
             'transfers.fromBed',
             'transfers.toBed',
+            'bills.billItems',
         ]);
 
         $outstandingBills = Bill::query()
             ->unpaid()
-            ->where('patient_id', $admission->patient_id)
+            ->where(function ($query) use ($admission): void {
+                $query->where('admission_id', $admission->id)
+                    ->orWhere(function ($inner) use ($admission): void {
+                        $inner->where('patient_id', $admission->patient_id)
+                            ->whereNull('admission_id');
+                    });
+            })
             ->orderByDesc('id')
             ->get();
 
@@ -138,7 +147,34 @@ class AdmissionController extends Controller
             'admission' => $admission,
             'outstandingBills' => $outstandingBills,
             'transferTargets' => $transferTargets,
+            'dailyBedRate' => $billing->dailyBedRate($admission->ward),
         ]);
+    }
+
+    public function postDayCharges(
+        PostAdmissionDayChargesRequest $request,
+        Admission $admission,
+        BillingDesk $billing,
+    ): RedirectResponse {
+        $actor = $request->user();
+        abort_unless($actor !== null, 403);
+
+        $extraItems = collect($request->validated('items') ?? [])
+            ->filter(fn (array $item): bool => filled($item['description'] ?? null))
+            ->values()
+            ->all();
+
+        $bill = $billing->postAdmissionDayCharges(
+            $admission,
+            $request->string('service_date')->toString(),
+            $extraItems,
+            $actor,
+            $request->boolean('include_bed_charge', true),
+        );
+
+        return redirect()
+            ->route('admin.bills.show', $bill)
+            ->with('status', 'Day charges saved as draft bill '.$bill->bill_no.'. Issue and collect payment when ready.');
     }
 
     public function transfer(TransferAdmissionRequest $request, Admission $admission, AdmissionDesk $desk): RedirectResponse

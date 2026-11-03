@@ -93,12 +93,74 @@
                 </section>
             @endif
 
+            @can('billing.manage')
+                @if ($admission->isOpen())
+                    <div class="mt-4">
+                        <x-admin.form-page
+                            :action="route('admin.admissions.day-charges', $admission)"
+                            method="POST"
+                            :cancel="route('admin.admissions.show', $admission)"
+                            submit="Save day bill"
+                            lede="Post one bill per hospital day. Add the bed charge plus any services used that day (medicine, oxygen, dressing, physiotherapy, etc.). Cashier issues and collects afterward."
+                        >
+                            <x-admin.form-section title="Today’s inpatient charges" note="For a 7-day stay, post a bill on each day with that day’s services." tone="teal">
+                                <x-form.input name="service_date" label="Service date" type="date" :value="old('service_date', now()->toDateString())" required />
+                                <div class="form-span-2">
+                                    <input type="hidden" name="include_bed_charge" value="0">
+                                    <x-form.checkbox
+                                        name="include_bed_charge"
+                                        label="Include daily bed charge ({{ number_format((float) $dailyBedRate, 2) }} for {{ $admission->ward?->name ?: 'this ward' }})"
+                                        :checked="old('include_bed_charge', true)"
+                                    />
+                                </div>
+                                @foreach (range(0, 2) as $index)
+                                    <x-form.input
+                                        :name="'items['.$index.'][description]'"
+                                        :label="$index === 0 ? 'Extra service 1' : 'Extra service '.($index + 1)"
+                                        :value="old('items.'.$index.'.description')"
+                                        :hint="$index === 0 ? 'Example: IV fluids, oxygen, dressing, specialist review' : null"
+                                    />
+                                    <x-form.input
+                                        :name="'items['.$index.'][quantity]'"
+                                        label="Qty"
+                                        type="number"
+                                        :value="old('items.'.$index.'.quantity', 1)"
+                                    />
+                                    <x-form.input
+                                        :name="'items['.$index.'][unit_price]'"
+                                        label="Unit price"
+                                        type="number"
+                                        :value="old('items.'.$index.'.unit_price')"
+                                    />
+                                @endforeach
+                            </x-admin.form-section>
+                        </x-admin.form-page>
+                    </div>
+                @endif
+            @endcan
+
             <section class="form-card mt-4">
                 <header class="form-card__head">
-                    <h2>Outstanding billing</h2>
-                    <p>Tracked on the discharge record</p>
+                    <h2>Stay bills</h2>
+                    <p>One draft/issued bill per service day for this admission, plus other unpaid patient bills</p>
                 </header>
                 <div class="form-card__body">
+                    @if ($admission->bills->isNotEmpty())
+                        <ul class="divide-y divide-sand-100 mb-4">
+                            @foreach ($admission->bills as $bill)
+                                <li class="flex items-center justify-between gap-3 py-3 text-sm">
+                                    <span>
+                                        {{ $bill->bill_date?->format('d M Y') }} · {{ $bill->bill_no }}
+                                        · {{ number_format((float) $bill->total, 2) }}
+                                        · {{ str_replace('_', ' ', $bill->status) }}
+                                    </span>
+                                    @can('billing.manage')
+                                        <a href="{{ route('admin.bills.show', $bill) }}" class="font-semibold text-teal-700">Open</a>
+                                    @endcan
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                     <ul class="divide-y divide-sand-100">
                         @forelse ($outstandingBills as $bill)
                             <li class="flex items-center justify-between gap-3 py-3 text-sm">
@@ -108,7 +170,9 @@
                                 @endcan
                             </li>
                         @empty
-                            <li class="py-6 text-ink-600">No unpaid bills for this patient.</li>
+                            @if ($admission->bills->isEmpty())
+                                <li class="py-6 text-ink-600">No bills posted for this stay yet.</li>
+                            @endif
                         @endforelse
                     </ul>
                 </div>

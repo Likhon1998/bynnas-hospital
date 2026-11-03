@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AppointmentStatusRequest;
 use App\Http\Requests\Admin\StoreAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\Bill;
 use App\Models\Doctor;
 use App\Models\HospitalSetting;
 use App\Models\Patient;
 use App\Support\AppointmentDesk;
 use App\Support\AppointmentWhatsAppNotice;
+use App\Support\BillingDesk;
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,6 +98,7 @@ class AppointmentController extends Controller
         StoreAppointmentRequest $request,
         AppointmentDesk $desk,
         AppointmentWhatsAppNotice $whatsapp,
+        BillingDesk $billing,
     ): RedirectResponse {
         $actor = $request->user();
         abort_unless($actor !== null, 403);
@@ -109,6 +112,10 @@ class AppointmentController extends Controller
         $appointment = $desk->book($payload, $actor);
         $appointment->load(['patient', 'doctor', 'department']);
 
+        if (in_array($appointment->status, ['confirmed', 'completed'], true)) {
+            $billing->ensureAppointmentConsultationBill($appointment, $actor);
+        }
+
         return $this->redirectAfterSerialNotice(
             $appointment,
             $whatsapp,
@@ -121,10 +128,17 @@ class AppointmentController extends Controller
     {
         $appointment->load(['patient', 'doctor.department', 'department', 'createdBy', 'visits']);
 
+        $linkedBill = Bill::query()
+            ->where('appointment_id', $appointment->id)
+            ->where('status', '!=', 'cancelled')
+            ->latest('id')
+            ->first();
+
         return view('admin.appointments.show', [
             'appointment' => $appointment,
             'whatsappSerialUrl' => $whatsapp->url($appointment),
             'whatsappSerialMessage' => $whatsapp->message($appointment),
+            'linkedBill' => $linkedBill,
         ]);
     }
 
@@ -133,11 +147,16 @@ class AppointmentController extends Controller
         Appointment $appointment,
         AppointmentDesk $desk,
         AppointmentWhatsAppNotice $whatsapp,
+        BillingDesk $billing,
     ): RedirectResponse {
         $hadSerial = $appointment->serial_no !== null;
 
         $desk->updateVisit($appointment, $request->validated());
         $appointment->refresh()->load(['patient', 'doctor', 'department']);
+
+        if (in_array($appointment->status, ['confirmed', 'completed'], true)) {
+            $billing->ensureAppointmentConsultationBill($appointment, $request->user());
+        }
 
         $serialJustIssued = ! $hadSerial && $appointment->serial_no !== null;
 

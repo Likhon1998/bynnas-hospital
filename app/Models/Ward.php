@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'code',
     'type',
     'capacity',
+    'daily_bed_rate',
     'is_active',
     'sort_order',
 ])]
@@ -30,6 +31,7 @@ class Ward extends Model
     {
         return [
             'capacity' => 'integer',
+            'daily_bed_rate' => 'decimal:2',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];

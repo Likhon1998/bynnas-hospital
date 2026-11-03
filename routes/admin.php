@@ -194,6 +194,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         });
 
         Route::middleware('permission:billing.manage')->group(function (): void {
+            Route::post('admissions/{admission}/day-charges', [AdmissionController::class, 'postDayCharges'])->name('admissions.day-charges');
             Route::get('bills/collections', [BillController::class, 'collections'])->name('bills.collections');
             Route::post('bills/{bill}/issue', [BillController::class, 'issue'])->name('bills.issue');
             Route::post('bills/{bill}/pay', [BillController::class, 'pay'])->name('bills.pay');

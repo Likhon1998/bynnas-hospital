@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
     'report_access_code',
     'patient_id',
     'appointment_id',
+    'admission_id',
     'issued_by',
     'bill_date',
     'status',
@@ -68,6 +69,11 @@ class Bill extends Model
     public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
+    }
+
+    public function admission(): BelongsTo
+    {
+        return $this->belongsTo(Admission::class);
     }
 
     public function issuedBy(): BelongsTo

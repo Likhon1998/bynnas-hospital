@@ -176,4 +176,9 @@ class Admission extends Model
     {
         return $this->hasMany(BedTransfer::class)->orderBy('created_at')->orderBy('id');
     }
+
+    public function bills(): HasMany
+    {
+        return $this->hasMany(Bill::class)->orderByDesc('bill_date')->orderByDesc('id');
+    }
 }

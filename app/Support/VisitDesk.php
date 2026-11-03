@@ -12,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class VisitDesk
 {
+    public function __construct(private BillingDesk $billing) {}
+
     public function checkInAppointment(Appointment $appointment, User $actor): Visit
     {
         $this->assertAppointmentCanCheckIn($appointment);
@@ -206,6 +208,8 @@ class VisitDesk
                         'cancelled_at' => null,
                         'cancellation_reason' => null,
                     ]);
+
+                    $this->billing->ensureAppointmentConsultationBill($visit->appointment->fresh(), $actor);
                 }
             }
 

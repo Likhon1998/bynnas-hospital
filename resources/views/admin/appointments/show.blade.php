@@ -128,8 +128,14 @@
                     @endif
                 @endcan
                 @can('billing.manage')
-                    <div class="form-span-2">
-                        <a href="{{ route('admin.bills.create', ['patient_id' => $appointment->patient_id, 'appointment_id' => $appointment->id]) }}" class="form-btn form-btn--navy">Generate bill for this visit</a>
+                    <div class="form-span-2 flex flex-wrap gap-2">
+                        @if ($linkedBill)
+                            <a href="{{ route('admin.bills.show', $linkedBill) }}" class="form-btn form-btn--primary">
+                                Open consultation bill {{ $linkedBill->bill_no }}
+                            </a>
+                        @else
+                            <a href="{{ route('admin.bills.create', ['patient_id' => $appointment->patient_id, 'appointment_id' => $appointment->id]) }}" class="form-btn form-btn--navy">Generate bill for this visit</a>
+                        @endif
                     </div>
                 @endcan
             </div>
