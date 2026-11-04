@@ -234,4 +234,103 @@ class VisitEncounterTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $response->getContent());
         $this->assertStringNotContainsString("<script>alert('xss')</script>", $response->getContent());
     }
+
+    public function test_doctor_notes_form_uses_compact_prescription_steps(): void
+    {
+        $doctor = $this->createStaffUser(['visits.view', 'visits.clinical'], 'doctor');
+        $visit = Visit::factory()->withVitals()->create(['status' => 'consultation']);
+
+        $this->actingAs($doctor)
+            ->get(route('admin.visits.show', $visit))
+            ->assertOk()
+            ->assertSee('Write prescription', false)
+            ->assertSee('Clinical findings', false)
+            ->assertSee('Prescribe', false)
+            ->assertSee('Choose medicine', false)
+            ->assertSee('Paracetamol 500mg', false)
+            ->assertSee('Add to Rx', false)
+            ->assertDontSee('Other / custom (optional)', false);
+    }
+
+    public function test_doctor_can_save_clinical_notes_from_selected_options(): void
+    {
+        $doctor = $this->createStaffUser(['visits.view', 'visits.clinical'], 'doctor');
+        $visit = Visit::factory()->withVitals()->create(['status' => 'consultation']);
+
+        $this->actingAs($doctor)
+            ->from(route('admin.visits.show', $visit))
+            ->post(route('admin.visits.clinical', $visit), [
+                'symptoms_options' => ['Fever', 'Cough'],
+                'symptoms_other' => 'Worse at night',
+                'examination_notes_options' => ['Chest clear bilaterally'],
+                'diagnosis_options' => ['Viral fever / viral URI'],
+                'treatment_plan_options' => ['Rest and adequate fluids'],
+                'rx_lines' => [
+                    'Paracetamol 500mg — 1 tablet, 3 times daily, for 3 days',
+                    'ORS — 1 sachet, after each loose motion, for until diarrhoea settles',
+                ],
+                'follow_up_instructions_options' => ['Return in 3 days if not improving'],
+                'complete' => '1',
+            ])
+            ->assertRedirect(route('admin.visits.show', $visit));
+
+        $visit->refresh();
+        $this->assertSame('completed', $visit->status);
+        $this->assertSame('Fever; Cough; Worse at night', $visit->symptoms);
+        $this->assertSame('Chest clear bilaterally', $visit->examination_notes);
+        $this->assertSame('Viral fever / viral URI', $visit->diagnosis);
+        $this->assertSame('Rest and adequate fluids', $visit->treatment_plan);
+        $this->assertSame(
+            "Paracetamol 500mg — 1 tablet, 3 times daily, for 3 days\nORS — 1 sachet, after each loose motion, for until diarrhoea settles",
+            $visit->prescriptions,
+        );
+        $this->assertSame('Return in 3 days if not improving', $visit->follow_up_instructions);
+    }
+
+    public function test_completed_encounter_prints_a_full_prescription_paper(): void
+    {
+        $doctor = $this->createStaffUser(['visits.view', 'visits.clinical'], 'doctor');
+        $patient = Patient::factory()->create(['full_name' => 'Prescription Patient']);
+        $prior = Visit::factory()->create([
+            'patient_id' => $patient->id,
+            'status' => 'completed',
+            'diagnosis' => 'Seasonal allergy',
+            'treatment_plan' => 'Antihistamine course',
+            'completed_at' => now()->subDays(20),
+        ]);
+        $visit = Visit::factory()->withVitals()->create([
+            'patient_id' => $patient->id,
+            'status' => 'completed',
+            'symptoms' => 'Fever and body ache',
+            'examination_notes' => 'Mild throat redness',
+            'diagnosis' => 'Viral fever',
+            'treatment_plan' => 'Rest and fluids',
+            'prescriptions' => "Paracetamol 500mg — 1 tablet 3 times daily for 3 days\nORS — after each loose motion",
+            'follow_up_instructions' => 'Return in 3 days if fever continues',
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($doctor)
+            ->get(route('admin.visits.show', $visit))
+            ->assertOk()
+            ->assertSee('Preview prescription', false)
+            ->assertSee('data-rx-preview', false);
+
+        $this->actingAs($doctor)
+            ->get(route('admin.visits.prescription', $visit))
+            ->assertOk()
+            ->assertSee('Prescription preview', false)
+            ->assertSee('Medical prescription', false)
+            ->assertSee('Prescription Patient', false)
+            ->assertSee('Fever and body ache', false)
+            ->assertSee('Viral fever', false)
+            ->assertSee('Previous reports summary', false)
+            ->assertSee('Seasonal allergy', false)
+            ->assertSee('Paracetamol 500mg', false)
+            ->assertSee('1 tablet 3 times daily for 3 days', false)
+            ->assertSee('Return in 3 days if fever continues', false)
+            ->assertSee('Print prescription', false);
+
+        $this->assertTrue($prior->exists);
+    }
 }

@@ -36,7 +36,7 @@ class HomePageContentTest extends TestCase
         $response->assertSee('Night Clinic Opens in Gulshan', false);
         $response->assertSee('Walk-in consultant cover after sunset.', false);
         $response->assertSee('See hours', false);
-        $response->assertDontSee('Exceptional Care.', false);
+        $response->assertDontSee('See a consultant. Leave with a plan.', false);
     }
 
     public function test_home_patient_services_list_featured_desk_records(): void

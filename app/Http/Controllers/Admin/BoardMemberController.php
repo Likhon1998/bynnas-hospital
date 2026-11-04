@@ -24,7 +24,7 @@ class BoardMemberController extends Controller
     public function create(): View
     {
         return view('admin.board-members.create', [
-            'boardMember' => new BoardMember(['is_active' => true, 'sort_order' => 0]),
+            'boardMember' => new BoardMember(['is_active' => true, 'sort_order' => 0, 'role' => 'director']),
         ]);
     }
 
@@ -32,7 +32,7 @@ class BoardMemberController extends Controller
     {
         BoardMember::query()->create($this->memberPayload($request));
 
-        return redirect()->route('admin.board-members.index')->with('status', 'Board member added. Active members appear on the public About page.');
+        return redirect()->route('admin.board-members.index')->with('status', 'Leader added. Active leaders appear on the public About and leadership pages.');
     }
 
     public function edit(BoardMember $boardMember): View
@@ -44,7 +44,7 @@ class BoardMemberController extends Controller
     {
         $boardMember->update($this->memberPayload($request, $boardMember->photo));
 
-        return redirect()->route('admin.board-members.index')->with('status', 'Board member updated.');
+        return redirect()->route('admin.board-members.index')->with('status', 'Leader updated.');
     }
 
     public function destroy(BoardMember $boardMember): RedirectResponse
@@ -52,7 +52,7 @@ class BoardMemberController extends Controller
         $this->deleteStoredPhoto($boardMember->photo);
         $boardMember->delete();
 
-        return redirect()->route('admin.board-members.index')->with('status', 'Board member removed.');
+        return redirect()->route('admin.board-members.index')->with('status', 'Leader removed.');
     }
 
     /**
@@ -60,7 +60,8 @@ class BoardMemberController extends Controller
      */
     private function memberPayload(BoardMemberRequest $request, ?string $currentPhoto = null): array
     {
-        $data = $request->safe()->except(['photo_upload']);
+        $data = $request->safe()->except(['photo_upload', 'achievements_text']);
+        $data['achievements'] = $request->achievementLines();
 
         if ($request->hasFile('photo_upload')) {
             $path = $request->file('photo_upload')->store('board', 'public');

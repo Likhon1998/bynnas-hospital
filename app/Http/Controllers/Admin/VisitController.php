@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\RecordVisitClinicalRequest;
 use App\Http\Requests\Admin\RecordVisitVitalsRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Models\HospitalSetting;
 use App\Models\LabTest;
 use App\Models\Patient;
 use App\Models\Visit;
@@ -142,5 +143,42 @@ class VisitController extends Controller
         return back()->with('status', $request->boolean('complete')
             ? 'Encounter completed.'
             : 'Consultation notes saved.');
+    }
+
+    public function prescription(Visit $visit): View
+    {
+        abort_unless(auth()->user()?->can('visits.view') ?? false, 403);
+
+        $visit->load([
+            'patient',
+            'doctor.department',
+            'department',
+            'appointment',
+            'clinicallyRecordedBy',
+            'labOrders.test',
+            'labOrders.result',
+        ]);
+
+        $previousVisits = Visit::query()
+            ->with(['doctor', 'labOrders.test', 'labOrders.result'])
+            ->where('patient_id', $visit->patient_id)
+            ->where('id', '!=', $visit->id)
+            ->where('status', 'completed')
+            ->orderByDesc('completed_at')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        $medicineLines = collect(preg_split('/\R+/', (string) $visit->prescriptions) ?: [])
+            ->map(fn (string $line): string => trim($line))
+            ->filter()
+            ->values();
+
+        return view('admin.visits.print-prescription', [
+            'visit' => $visit,
+            'hospital' => HospitalSetting::map(),
+            'previousVisits' => $previousVisits,
+            'medicineLines' => $medicineLines,
+        ]);
     }
 }

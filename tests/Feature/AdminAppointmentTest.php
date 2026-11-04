@@ -394,4 +394,20 @@ class AdminAppointmentTest extends TestCase
             ->assertSee('All visits', false)
             ->assertSee(route('admin.appointments.index', ['doctor' => $doctor->id]), false);
     }
+
+    public function test_list_shows_check_in_action_for_open_appointments(): void
+    {
+        $user = $this->createStaffUser(['appointments.view', 'visits.checkin']);
+        Appointment::factory()->create([
+            'status' => 'confirmed',
+            'appointment_no' => 'APT-CHECKIN-1',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.appointments.index'))
+            ->assertOk()
+            ->assertSee('APT-CHECKIN-1', false)
+            ->assertSee('Check in', false)
+            ->assertSee(route('admin.appointments.check-in', Appointment::query()->first()), false);
+    }
 }

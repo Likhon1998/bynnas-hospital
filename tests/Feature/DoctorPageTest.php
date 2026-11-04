@@ -34,12 +34,52 @@ class DoctorPageTest extends TestCase
         $response = $this->get(route('doctors'));
 
         $response->assertOk();
-        $response->assertSee('Our Doctors', false);
+        $response->assertSee('Find a doctor', false);
+        $response->assertSee('Narrow the roster', false);
+        $response->assertSee('Browse by clinic', false);
         $response->assertSee('Dr. Hamida Jannat', false);
         $response->assertSee('1 consultant', false);
         $response->assertSee('Profile', false);
         $response->assertSee(route('doctors.show', $hamida), false);
         $response->assertDontSee('Dr. Hidden Consultant', false);
+    }
+
+    public function test_doctors_page_supports_name_sort_and_featured_filters(): void
+    {
+        $cardiology = Department::factory()->create([
+            'name' => 'Cardiology',
+            'is_active' => true,
+        ]);
+
+        Doctor::factory()->create([
+            'name' => 'Dr. Featured Heart',
+            'department_id' => $cardiology->id,
+            'is_featured' => true,
+            'is_active' => true,
+            'experience_years' => 8,
+        ]);
+        Doctor::factory()->create([
+            'name' => 'Dr. Standard Heart',
+            'department_id' => $cardiology->id,
+            'is_featured' => false,
+            'is_active' => true,
+            'experience_years' => 20,
+        ]);
+
+        $this->get(route('doctors', ['q' => 'Featured']))
+            ->assertOk()
+            ->assertSee('Dr. Featured Heart', false)
+            ->assertDontSee('Dr. Standard Heart', false)
+            ->assertSee('Active:', false);
+
+        $this->get(route('doctors', ['featured' => 1]))
+            ->assertOk()
+            ->assertSee('Dr. Featured Heart', false)
+            ->assertDontSee('Dr. Standard Heart', false);
+
+        $sorted = $this->get(route('doctors', ['sort' => 'experience']));
+        $sorted->assertOk();
+        $sorted->assertSeeInOrder(['Dr. Standard Heart', 'Dr. Featured Heart'], false);
     }
 
     public function test_doctor_profile_shows_public_consultant_details(): void

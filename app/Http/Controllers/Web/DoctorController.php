@@ -17,12 +17,31 @@ class DoctorController extends Controller
     {
         $searchedName = trim((string) $request->query('q', ''));
         $specialty = trim((string) $request->query('specialty', ''));
+        $sort = trim((string) $request->query('sort', 'featured'));
+        $featuredOnly = $request->boolean('featured');
 
-        $doctors = Doctor::query()
+        if (! in_array($sort, ['featured', 'name', 'experience', 'fee'], true)) {
+            $sort = 'featured';
+        }
+
+        $departments = Department::query()
             ->active()
-            ->with('department')
+            ->withCount(['doctors as consultants_count' => fn (Builder $query) => $query->active()])
+            ->orderByDesc('is_featured')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $doctorsQuery = Doctor::query()
+            ->active()
+            ->with(['department', 'doctorSchedules' => fn ($query) => $query->active()])
             ->when($searchedName !== '', function (Builder $query) use ($searchedName): void {
-                $query->where('name', 'like', '%'.$searchedName.'%');
+                $query->where(function (Builder $match) use ($searchedName): void {
+                    $match->where('name', 'like', '%'.$searchedName.'%')
+                        ->orWhere('specialization', 'like', '%'.$searchedName.'%')
+                        ->orWhere('designation', 'like', '%'.$searchedName.'%')
+                        ->orWhere('qualifications', 'like', '%'.$searchedName.'%');
+                });
             })
             ->when($specialty !== '', function (Builder $query) use ($specialty): void {
                 $query->where(function (Builder $match) use ($specialty): void {
@@ -32,27 +51,48 @@ class DoctorController extends Controller
                         });
                 });
             })
-            ->orderByDesc('is_featured')
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+            ->when($featuredOnly, fn (Builder $query) => $query->featured());
+
+        $doctorsQuery = match ($sort) {
+            'name' => $doctorsQuery->orderBy('name'),
+            'experience' => $doctorsQuery->orderByDesc('experience_years')->orderBy('name'),
+            'fee' => $doctorsQuery->orderBy('consultation_fee')->orderBy('name'),
+            default => $doctorsQuery->orderByDesc('is_featured')->orderBy('sort_order')->orderBy('name'),
+        };
+
+        $doctors = $doctorsQuery->get();
+
+        $isFiltered = $searchedName !== '' || $specialty !== '' || $featuredOnly;
+
+        $featuredDoctors = collect();
+
+        if (! $isFiltered) {
+            $featuredDoctors = $doctors
+                ->where('is_featured', true)
+                ->take(6)
+                ->values();
+        }
+
+        $groupedDoctors = $doctors
+            ->groupBy(fn (Doctor $doctor): string => $doctor->department?->name ?: ($doctor->specialization ?: 'Consultants'))
+            ->sortKeys(SORT_NATURAL | SORT_FLAG_CASE);
+
+        $totalConsultants = Doctor::query()->active()->count();
+        $clinicCount = $departments->where('consultants_count', '>', 0)->count();
 
         return view('web.doctors', [
             'doctors' => $doctors,
-            'directoryDoctors' => Doctor::query()
-                ->active()
-                ->with('department')
-                ->orderBy('name')
-                ->get(),
-            'departments' => Department::query()
-                ->active()
-                ->orderByDesc('is_featured')
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get(),
+            'groupedDoctors' => $groupedDoctors,
+            'featuredDoctors' => $featuredDoctors,
+            'departments' => $departments,
             'specialty' => $specialty,
             'searchedName' => $searchedName,
-            'isFiltered' => $searchedName !== '' || $specialty !== '',
+            'sort' => $sort,
+            'featuredOnly' => $featuredOnly,
+            'isFiltered' => $isFiltered,
+            'totalConsultants' => $totalConsultants,
+            'clinicCount' => $clinicCount,
+            'weekdayToday' => strtolower(Carbon::now()->englishDayOfWeek),
         ]);
     }
 

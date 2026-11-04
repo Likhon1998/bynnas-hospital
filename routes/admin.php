@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\FinanceApprovalController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\HealthPackageController;
 use App\Http\Controllers\Admin\HelpSupportController;
+use App\Http\Controllers\Admin\HospitalAchievementController;
 use App\Http\Controllers\Admin\HospitalSettingController;
 use App\Http\Controllers\Admin\LabOrderController;
 use App\Http\Controllers\Admin\LabResultController;
@@ -108,6 +109,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::middleware('permission:visits.view')->group(function (): void {
             Route::get('visits', [VisitController::class, 'index'])->name('visits.index');
             Route::get('visits/{visit}', [VisitController::class, 'show'])->name('visits.show');
+            Route::get('visits/{visit}/prescription', [VisitController::class, 'prescription'])->name('visits.prescription');
         });
 
         Route::middleware('permission:visits.triage')->group(function (): void {
@@ -225,6 +227,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::resource('testimonials', TestimonialController::class)->except(['show']);
             Route::resource('faqs', FaqController::class)->except(['show']);
             Route::resource('board-members', BoardMemberController::class)->except(['show']);
+            Route::resource('hospital-achievements', HospitalAchievementController::class)->except(['show']);
             Route::resource('galleries', GalleryController::class)->except(['show']);
             Route::resource('banners', BannerController::class)->except(['show']);
             Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'update', 'destroy']);

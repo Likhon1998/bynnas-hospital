@@ -121,6 +121,35 @@ class AdminBillTest extends TestCase
         $this->assertSame(0, Bill::query()->count());
     }
 
+    public function test_bill_show_page_uses_compact_action_rail(): void
+    {
+        $user = $this->createStaffUser(['billing.manage'], 'cashier');
+        $patient = Patient::factory()->create(['full_name' => 'Compact Bill Patient']);
+        $bill = Bill::factory()->create([
+            'patient_id' => $patient->id,
+            'issued_by' => $user->id,
+            'status' => 'issued',
+        ]);
+        $bill->syncItems([
+            [
+                'item_type' => 'custom',
+                'description' => 'OPD fee',
+                'quantity' => 1,
+                'unit_price' => 500,
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.bills.show', $bill))
+            ->assertOk()
+            ->assertSee('bill-desk', false)
+            ->assertSee('data-bill-actions', false)
+            ->assertSee('Print money receipt', false)
+            ->assertSee('Daily collections', false)
+            ->assertSee('Compact Bill Patient', false)
+            ->assertDontSee('rounded-full bg-navy-900', false);
+    }
+
     public function test_receptionist_can_mark_an_issued_bill_as_paid(): void
     {
         $user = $this->createStaffUser(['billing.manage'], 'receptionist');

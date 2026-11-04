@@ -2,83 +2,104 @@
 @section('title', $bill->bill_no)
 @section('heading', $bill->bill_no)
 @section('content')
-    <div class="grid gap-6 xl:grid-cols-[1fr_18rem]">
-        <article class="rounded-3xl bg-white p-6 ring-1 ring-sand-100">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <p class="text-sm text-ink-600">Patient</p>
-                    <p class="font-medium text-navy-900">{{ $bill->patient?->full_name }}</p>
-                    <p class="text-sm text-ink-600">{{ $bill->patient?->phone }}</p>
-                </div>
-                <x-admin.status-pill :value="$bill->status" />
-            </div>
-            <p class="mt-4 text-sm text-ink-600">Bill date</p>
-            <p class="font-medium text-navy-900">{{ $bill->bill_date?->format('d M Y') }}</p>
-            @if ($bill->appointment)
-                <p class="mt-4 text-sm text-ink-600">Appointment</p>
-                <p class="font-medium text-navy-900">{{ $bill->appointment->appointment_no }} · {{ $bill->appointment->doctor?->name }}</p>
-            @endif
-            <div class="table-frame table-frame--fit mt-6">
-                <table class="pro-table">
-                    <thead>
-                        <tr>
-                            <th class="col-idx">#</th>
-                            <th>Item</th>
-                            <th class="col-count">Qty</th>
-                            <th class="col-num">Unit</th>
-                            <th class="col-num">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($bill->billItems as $item)
-                            <tr>
-                                <td class="col-idx">{{ $loop->iteration }}</td>
-                                <td>{{ $item->description }}</td>
-                                <td class="col-count">{{ $item->quantity }}</td>
-                                <td class="col-num">{{ number_format((float) $item->unit_price, 2) }}</td>
-                                <td class="col-num">{{ number_format((float) $item->line_total, 2) }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <dl class="mt-6 space-y-1 text-sm">
-                <div class="flex justify-between gap-8"><dt class="text-ink-600">Subtotal</dt><dd>{{ number_format((float) $bill->subtotal, 2) }}</dd></div>
-                <div class="flex justify-between gap-8"><dt class="text-ink-600">Discount</dt><dd>{{ number_format((float) $bill->discount, 2) }}</dd></div>
-                <div class="flex justify-between gap-8 font-semibold text-navy-900"><dt>Total</dt><dd>{{ number_format((float) $bill->total, 2) }}</dd></div>
-                <div class="flex justify-between gap-8"><dt class="text-ink-600">Paid</dt><dd>{{ number_format((float) $bill->paid_amount, 2) }}</dd></div>
-                <div class="flex justify-between gap-8 font-semibold text-navy-900"><dt>Due</dt><dd>{{ number_format($bill->balanceDue(), 2) }}</dd></div>
-            </dl>
+    <div class="bill-desk">
+        <div class="bill-desk__main">
+            <section class="form-card">
+                <header class="form-card__head">
+                    <div class="form-card__title">
+                        <div>
+                            <h2>Bill summary</h2>
+                            <p>{{ $bill->patient?->full_name }} · {{ $bill->patient?->phone ?: 'No phone' }}</p>
+                        </div>
+                    </div>
+                    <x-admin.status-pill :value="$bill->status" />
+                </header>
+                <div class="form-card__body">
+                    <div class="bill-desk__meta">
+                        <div>
+                            <p class="bill-desk__label">Bill date</p>
+                            <p class="bill-desk__value">{{ $bill->bill_date?->format('d M Y') }}</p>
+                        </div>
+                        @if ($bill->appointment)
+                            <div>
+                                <p class="bill-desk__label">Appointment</p>
+                                <p class="bill-desk__value">{{ $bill->appointment->appointment_no }} · {{ $bill->appointment->doctor?->name }}</p>
+                            </div>
+                        @endif
+                        @if ($bill->issued_at)
+                            <div>
+                                <p class="bill-desk__label">Issued</p>
+                                <p class="bill-desk__value">{{ $bill->issued_at->format('d M Y H:i') }}</p>
+                            </div>
+                        @endif
+                    </div>
 
-            @if ($bill->payments->isNotEmpty())
-                <div class="mt-6">
-                    <p class="text-sm font-semibold text-navy-900">Payments</p>
-                    <ul class="mt-2 divide-y divide-sand-100 text-sm">
-                        @foreach ($bill->payments as $payment)
-                            <li class="flex justify-between gap-3 py-2">
-                                <span>{{ $payment->methodLabel() }} · {{ $payment->collected_at?->format('d M Y H:i') }} · {{ $payment->collectedBy?->name }}</span>
-                                <span class="font-semibold">{{ number_format((float) $payment->amount, 2) }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+                    <div class="table-frame bill-desk__table">
+                        <table class="pro-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-idx">#</th>
+                                    <th>Item</th>
+                                    <th class="col-count">Qty</th>
+                                    <th class="col-num">Unit</th>
+                                    <th class="col-num">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($bill->billItems as $item)
+                                    <tr>
+                                        <td class="col-idx">{{ $loop->iteration }}</td>
+                                        <td>{{ $item->description }}</td>
+                                        <td class="col-count">{{ $item->quantity }}</td>
+                                        <td class="col-num">{{ number_format((float) $item->unit_price, 2) }}</td>
+                                        <td class="col-num">{{ number_format((float) $item->line_total, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
 
-            @if (filled($bill->report_access_code))
-                <div class="mt-6 rounded-2xl border border-teal-100 bg-teal-50 px-4 py-3">
-                    <p class="text-sm text-teal-800">Lab report access code</p>
-                    <p class="mt-1 font-display text-2xl tracking-wide text-navy-900">{{ $bill->report_access_code }}</p>
-                    <p class="mt-1 text-sm text-ink-600">Printed on the money receipt. Patients use phone + this code on the website.</p>
-                </div>
-            @endif
+                    <dl class="bill-desk__totals">
+                        <div><dt>Subtotal</dt><dd>{{ number_format((float) $bill->subtotal, 2) }}</dd></div>
+                        <div><dt>Discount</dt><dd>{{ number_format((float) $bill->discount, 2) }}</dd></div>
+                        <div class="is-strong"><dt>Total</dt><dd>{{ number_format((float) $bill->total, 2) }}</dd></div>
+                        <div><dt>Paid</dt><dd>{{ number_format((float) $bill->paid_amount, 2) }}</dd></div>
+                        <div class="is-strong"><dt>Due</dt><dd>{{ number_format($bill->balanceDue(), 2) }}</dd></div>
+                    </dl>
 
-            @if ($bill->notes)
-                <p class="mt-4 text-sm text-ink-600">Notes</p>
-                <p class="whitespace-pre-wrap text-navy-900">{{ $bill->notes }}</p>
-            @endif
+                    @if ($bill->payments->isNotEmpty())
+                        <div class="bill-desk__payments">
+                            <p class="bill-desk__label">Payments</p>
+                            <ul>
+                                @foreach ($bill->payments as $payment)
+                                    <li>
+                                        <span>{{ $payment->methodLabel() }} · {{ $payment->collected_at?->format('d M Y H:i') }} · {{ $payment->collectedBy?->name }}</span>
+                                        <strong>{{ number_format((float) $payment->amount, 2) }}</strong>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if (filled($bill->report_access_code))
+                        <div class="bill-desk__code">
+                            <p class="bill-desk__label">Lab report access code</p>
+                            <p class="bill-desk__code-value">{{ $bill->report_access_code }}</p>
+                            <p class="bill-desk__hint">Printed on the money receipt. Patients use phone + this code on the website.</p>
+                        </div>
+                    @endif
+
+                    @if ($bill->notes)
+                        <div class="bill-desk__notes">
+                            <p class="bill-desk__label">Notes</p>
+                            <p>{{ $bill->notes }}</p>
+                        </div>
+                    @endif
+                </div>
+            </section>
 
             @if ($bill->canCollectPayment())
-                <div class="mt-6">
+                <div class="mt-3">
                     <x-admin.form-page
                         :action="route('admin.bills.pay', $bill)"
                         method="POST"
@@ -103,7 +124,7 @@
             @endif
 
             @if ($bill->canRequestRefund())
-                <div class="mt-6">
+                <div class="mt-3">
                     <x-admin.form-page
                         :action="route('admin.bills.refund-request', $bill)"
                         method="POST"
@@ -122,27 +143,34 @@
                     </x-admin.form-page>
                 </div>
             @endif
-        </article>
+        </div>
 
-        <aside class="space-y-3 rounded-3xl bg-white p-6 ring-1 ring-sand-100">
-            <a href="{{ route('admin.bills.print', $bill) }}" class="block rounded-full bg-navy-900 px-5 py-2.5 text-center text-sm font-semibold text-white">Print money receipt</a>
-            <a href="{{ route('admin.bills.collections') }}" class="block rounded-full border border-sand-100 px-5 py-2.5 text-center text-sm font-semibold text-navy-900">Daily collections</a>
+        <aside class="bill-desk__side" data-bill-actions>
+            <p class="bill-desk__side-title">Actions</p>
+
+            <a href="{{ route('admin.bills.print', $bill) }}" class="bill-desk__btn bill-desk__btn--primary">Print money receipt</a>
+            <a href="{{ route('admin.bills.collections') }}" class="bill-desk__btn bill-desk__btn--ghost">Daily collections</a>
+
             @if ($bill->isEditable())
-                <a href="{{ route('admin.bills.edit', $bill) }}" class="block rounded-full bg-teal-700 px-5 py-2.5 text-center text-sm font-semibold text-white">Edit draft</a>
-                <form method="POST" action="{{ route('admin.bills.issue', $bill) }}">
-                    @csrf
-                    <button type="submit" class="w-full rounded-full border border-sand-100 px-5 py-2.5 text-sm font-semibold text-navy-900">Issue bill</button>
-                </form>
-                <x-admin.delete-button :action="route('admin.bills.destroy', $bill)" label="Delete draft" />
+                <div class="bill-desk__side-group">
+                    <a href="{{ route('admin.bills.edit', $bill) }}" class="bill-desk__btn bill-desk__btn--teal">Edit draft</a>
+                    <form method="POST" action="{{ route('admin.bills.issue', $bill) }}">
+                        @csrf
+                        <button type="submit" class="bill-desk__btn bill-desk__btn--ghost">Issue bill</button>
+                    </form>
+                    <x-admin.delete-button :action="route('admin.bills.destroy', $bill)" label="Delete draft" class="bill-desk__btn bill-desk__btn--danger" />
+                </div>
             @endif
+
             @if ($bill->canCancel())
-                <form method="POST" action="{{ route('admin.bills.cancel', $bill) }}" class="space-y-2">
+                <form method="POST" action="{{ route('admin.bills.cancel', $bill) }}" class="bill-desk__cancel">
                     @csrf
-                    <input type="text" name="cancellation_reason" placeholder="Cancellation reason" class="w-full rounded-2xl border border-sand-100 bg-sand-50 px-3 py-2 text-sm">
-                    <button type="submit" class="w-full rounded-full px-5 py-2.5 text-sm font-semibold text-red-700">Cancel bill</button>
+                    <input type="text" name="cancellation_reason" placeholder="Cancellation reason" class="bill-desk__input">
+                    <button type="submit" class="bill-desk__btn bill-desk__btn--danger">Cancel bill</button>
                 </form>
             @endif
-            <a href="{{ route('admin.bills.index') }}" class="block px-5 py-2.5 text-center text-sm font-semibold text-ink-600">Back to bills</a>
+
+            <a href="{{ route('admin.bills.index') }}" class="bill-desk__back">Back to bills</a>
         </aside>
     </div>
 @endsection

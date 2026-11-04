@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
-@section('title', ($hospital->get('hospital_name') ?: 'Hospital').' | '.($hospital->get('tagline') ?: 'Exceptional Care'))
-@section('meta_description', $hospital->get('tagline') ?: 'Consultant care, diagnostics, and emergency support closer to home.')
+@section('title', ($hospital->get('hospital_name') ?: 'Hospital').' | '.($hospital->get('tagline') ?: 'Consultant clinics in Dhaka'))
+@section('meta_description', $hospital->get('tagline') ?: 'Book a consultant, use diagnostics, and reach emergency care at our Dhaka campus.')
 
 @php
     $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
@@ -31,9 +31,9 @@
     $leadDoctorInitials = $leadDoctor?->initials() ?? 'DR';
     $finderCount = $isFinderSearch ? $finderDoctors->count() : (int) ($stats['doctors'] ?? 0);
     $finderIsVacant = $isFinderSearch && $finderDoctors->isEmpty();
-    $heroTitle = $heroBanner?->title ?: 'Exceptional Care. Closer to Home.';
-    $heroLead = $heroBanner?->subtitle ?: 'World-class medical care, advanced technology, and a compassionate team — for a healthier tomorrow.';
-    $heroCtaLabel = $heroBanner?->cta_label ?: 'Learn more';
+    $heroTitle = $heroBanner?->title ?: 'See a consultant. Leave with a plan.';
+    $heroLead = $heroBanner?->subtitle ?: 'Book a named doctor, pick an open clinic slot, and get clear next steps at our Dhaka campus.';
+    $heroCtaLabel = $heroBanner?->cta_label ?: 'How visits work';
     $heroCtaUrl = $heroBanner?->destination() ?: route('about');
     $heroLines = preg_split('/(?<=\.)\s+/', $heroTitle, 2) ?: [$heroTitle];
     $patientServices = $services->take(4);
@@ -43,8 +43,8 @@
         : 'Main Campus';
     $mapEmbed = trim((string) $hospital->get('map_embed'));
     $heroTrustLabel = filled($hospital->get('tagline'))
-        ? \Illuminate\Support\Str::limit($hospital->get('tagline'), 42, '')
-        : 'Patient-first';
+        ? \Illuminate\Support\Str::limit($hospital->get('tagline'), 48, '')
+        : 'Open clinic slots online';
     $review = $testimonials->first();
     $reviewAverage = $testimonials->isNotEmpty() ? round((float) $testimonials->avg('rating'), 1) : null;
     $prepPhoto = $galleryItems->first();
@@ -66,8 +66,8 @@
                 <h1>{!! implode('<br>', array_map('e', $heroLines)) !!}</h1>
                 <p class="ch-hero__lead">{{ $heroLead }}</p>
                 <ul class="ch-checks">
-                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['doctors'] ?? 0)) }} expert doctors</li>
-                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['departments'] ?? 0)) }} specialties</li>
+                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['doctors'] ?? 0)) }} consultants listed</li>
+                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['departments'] ?? 0)) }} clinics on campus</li>
                     <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ $heroTrustLabel }}</li>
                 </ul>
                 <a class="ch-more" href="{{ $heroCtaUrl }}">{{ $heroCtaLabel }} →</a>
@@ -160,11 +160,11 @@
         <div class="ch-wrap">
             <div class="ch-sec__head">
                 <div>
-                    <p class="ch-find__kicker">Specialist clinics</p>
-                    <h2 class="ch-sec__title">Our Departments</h2>
-                    <p class="ch-depts-intro">Comprehensive care under one roof</p>
+                    <p class="ch-find__kicker">On this campus</p>
+                    <h2 class="ch-sec__title">Departments</h2>
+                    <p class="ch-depts-intro">Pick a clinic first — cardiology, women &amp; child, emergency, and more.</p>
                 </div>
-                <a class="ch-more" href="{{ route('departments') }}">View all Departments →</a>
+                <a class="ch-more" href="{{ route('departments') }}">All departments →</a>
             </div>
             <div class="ch-depts">
                 @forelse ($departments->take(8) as $department)
@@ -195,17 +195,17 @@
                     <span class="ch-find__photo ch-find__photo--empty" data-finder-vacant aria-hidden="true" @if (! $finderIsVacant) hidden @endif>
                         <x-icon name="stethoscope" />
                     </span>
-                    <p data-finder-caption>{{ $finderIsVacant ? 'No consultants in this clinic' : 'Consult with our expert doctors' }}</p>
+                    <p data-finder-caption>{{ $finderIsVacant ? 'No consultants in this clinic yet' : 'Consultants you can book today' }}</p>
                     <p class="ch-find__count">
                         <strong data-finder-count>{{ $finderCount }}</strong>
-                        <span data-finder-count-label>{{ \Illuminate\Support\Str::plural('Specialist', $finderCount) }}</span>
+                        <span data-finder-count-label>{{ \Illuminate\Support\Str::plural('consultant', $finderCount) }}</span>
                     </p>
-                    <a class="ch-more" href="{{ route('doctors') }}">View all Specialists →</a>
+                    <a class="ch-more" href="{{ route('doctors') }}">Full doctor list →</a>
                 </div>
                 <div class="ch-find__body">
-                    <p class="ch-find__kicker">Doctor directory</p>
-                    <h2>Find the Right Doctor for You</h2>
-                    <p>Search by a specialty. We will show consultants you can book — you do not need to know a name first.</p>
+                    <p class="ch-find__kicker">Directory</p>
+                    <h2>Find a doctor</h2>
+                    <p>Start with a specialty if you do not know a name. We only show consultants with open booking.</p>
                     <form class="ch-search" action="{{ route('home') }}#find-doctor" method="get" data-doctor-filter>
                         <label class="ch-search__field">
                             <span>Specialty</span>
@@ -271,11 +271,11 @@
         <div class="ch-wrap">
             <div class="ch-sec__head">
                 <div>
-                    <p class="ch-find__kicker">For patients & families</p>
-                    <h2 class="ch-sec__title">Patient Services</h2>
-                    <p class="ch-depts-intro">The desks people use most: emergency, records, visiting, and billing.</p>
+                    <p class="ch-find__kicker">Before you arrive</p>
+                    <h2 class="ch-sec__title">Patient services</h2>
+                    <p class="ch-depts-intro">Emergency, records, visiting, and billing — what each desk handles.</p>
                 </div>
-                <a class="ch-more" href="{{ route('services') }}">Explore services →</a>
+                <a class="ch-more" href="{{ route('services') }}">All services →</a>
             </div>
             <div class="ch-services">
                 @forelse ($patientServices as $service)
@@ -306,10 +306,10 @@
         <div class="ch-wrap">
             <div class="ch-sec__head">
                 <div>
-                    <h2 class="ch-sec__title">Our Expert Doctors</h2>
-                    <p class="ch-depts-intro">Skilled. Experienced. Compassionate.</p>
+                    <h2 class="ch-sec__title">Consultants</h2>
+                    <p class="ch-depts-intro">Specialty, years in practice, and a direct book link.</p>
                 </div>
-                <a class="ch-more" href="{{ route('doctors') }}">View all Doctors →</a>
+                <a class="ch-more" href="{{ route('doctors') }}">All consultants →</a>
             </div>
             <div class="ch-docs">
                 @forelse ($doctorItems as $doctor)
@@ -328,10 +328,10 @@
                         </a>
                         <div class="ch-doc__actions">
                             @if (filled($doctor['slug']))
-                                <a class="ch-doc__book" href="{{ route('doctors.show', $doctor['slug']) }}">Profile</a>
+                                <a class="ch-doc__btn ch-doc__btn--ghost" href="{{ route('doctors.show', $doctor['slug']) }}">Profile</a>
                             @endif
                             <a
-                                class="ch-doc__book"
+                                class="ch-doc__btn ch-doc__btn--solid"
                                 href="{{ route('home') }}#appointment"
                                 @if ($doctor['id'])
                                     data-book-doctor="{{ $doctor['id'] }}"
@@ -352,10 +352,10 @@
                 <div class="ch-sec__head">
                     <div>
                         <p class="ch-find__kicker">Screening</p>
-                        <h2 class="ch-sec__title">Health Packages</h2>
-                        <p class="ch-depts-intro">Packages published by the desk — compare inclusions, then book.</p>
+                        <h2 class="ch-sec__title">Health packages</h2>
+                        <p class="ch-depts-intro">Compare what is included and the price before you book.</p>
                     </div>
-                    <a class="ch-more" href="{{ route('packages') }}">View all packages →</a>
+                    <a class="ch-more" href="{{ route('packages') }}">All packages →</a>
                 </div>
                 <div class="ch-pkgs">
                     @foreach ($packages as $package)
@@ -384,16 +384,16 @@
         </section>
     @endif
 
-    <x-web.campus-band :stats="$stats" headline="Book Your Appointment Today" cta-href="#appointment" />
+    <x-web.campus-band :stats="$stats" headline="Ready to book a slot?" cta-href="#appointment" cta-label="Book a visit →" />
 
     <section id="locations" class="ch-sec">
         <div class="ch-wrap">
             <div class="ch-sec__head">
                 <div>
-                    <h2 class="ch-sec__title">Our Locations</h2>
-                    <p class="ch-depts-intro">Find the nearest {{ $hospitalName }} campus.</p>
+                    <h2 class="ch-sec__title">How to get here</h2>
+                    <p class="ch-depts-intro">{{ $hospitalName }} campus address and map.</p>
                 </div>
-                <a class="ch-more" href="#locations">Get Directions →</a>
+                <a class="ch-more" href="#locations">Open map →</a>
             </div>
             <div class="ch-locs">
                 <div class="ch-loc-list">
@@ -414,8 +414,8 @@
                     @endif
                 </div>
                 <form class="ch-dir" action="https://www.google.com/maps/dir/" method="get" target="_blank" rel="noopener">
-                    <h3>Get Directions</h3>
-                    <p>Find the nearest {{ $hospitalName }} campus.</p>
+                    <h3>Directions</h3>
+                    <p>Enter where you are starting from.</p>
                     <input type="hidden" name="api" value="1">
                     <input type="hidden" name="destination" value="{{ $campusAddress }}">
                     <label class="ch-field">
@@ -432,8 +432,8 @@
         <div class="ch-wrap ch-trio">
             <div class="ch-trio__col">
                 <div class="ch-trio__head">
-                    <h2 class="ch-sec__title">Frequently Asked Questions</h2>
-                    <p class="ch-lead">Common questions before you book a visit.</p>
+                    <h2 class="ch-sec__title">Questions before a visit</h2>
+                    <p class="ch-lead">Booking, papers, and what happens at the desk.</p>
                 </div>
                 <div class="ch-faq">
                     @forelse ($faqs as $faq)
@@ -448,8 +448,8 @@
             </div>
             <div class="ch-trio__col">
                 <div class="ch-trio__head">
-                    <h2 class="ch-sec__title">Patient Preparation</h2>
-                    <p class="ch-lead">Everything you need to know before you arrive.</p>
+                    <h2 class="ch-sec__title">What to bring</h2>
+                    <p class="ch-lead">Short guides from the desk before you come in.</p>
                 </div>
                 <figure class="ch-trio__media">
                     <img src="{{ $prepImage }}" alt="Preparing for a visit at {{ $hospitalName }}">
@@ -466,8 +466,8 @@
             </div>
             <div class="ch-trio__col">
                 <div class="ch-trio__head">
-                    <h2 class="ch-sec__title">Patient Reviews</h2>
-                    <p class="ch-lead">What families said after they used the desk.</p>
+                    <h2 class="ch-sec__title">Recent reviews</h2>
+                    <p class="ch-lead">Notes from patients after their visit.</p>
                 </div>
                 <figure class="ch-trio__media">
                     <img src="{{ $reviewScene }}" alt="Care at {{ $hospitalName }}">
@@ -494,10 +494,10 @@
         <div class="ch-wrap">
             <div class="ch-sec__head">
                 <div>
-                    <h2 class="ch-sec__title">News & Updates</h2>
-                    <p class="ch-depts-intro">Latest news, health tips and campus updates.</p>
+                    <h2 class="ch-sec__title">From the desk</h2>
+                    <p class="ch-depts-intro">Clinic notices, health notes, and campus updates.</p>
                 </div>
-                <a class="ch-more" href="{{ route('news') }}">View all news →</a>
+                <a class="ch-more" href="{{ route('news') }}">All updates →</a>
             </div>
             <div class="ch-news">
                 @forelse ($posts as $article)

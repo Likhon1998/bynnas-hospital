@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             BlogSeeder::class,
             WebsiteContentSeeder::class,
             BoardMemberSeeder::class,
+            HospitalAchievementSeeder::class,
             PatientAndAppointmentSeeder::class,
             BillSeeder::class,
             LabTestSeeder::class,

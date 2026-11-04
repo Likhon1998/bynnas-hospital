@@ -215,6 +215,8 @@ class RoleAndUserSeeder extends Seeder
                 'beds.view',
                 'beds.operate',
                 'visits.view',
+                'visits.checkin',
+                'visits.triage',
                 'visits.clinical',
                 'nursing.view',
                 'nursing.chart',

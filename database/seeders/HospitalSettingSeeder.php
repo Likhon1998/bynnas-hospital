@@ -14,7 +14,7 @@ class HospitalSettingSeeder extends Seeder
     {
         $settings = [
             ['key' => 'hospital_name', 'group' => 'general', 'value' => DemoContent::HOSPITAL_NAME],
-            ['key' => 'tagline', 'group' => 'general', 'value' => 'Compassionate care for every family'],
+            ['key' => 'tagline', 'group' => 'general', 'value' => 'Consultant clinics and emergency care in Gulshan'],
             ['key' => 'logo', 'group' => 'general', 'value' => DemoContent::image('Lakeside Logo', 400, 120)],
             ['key' => 'phone', 'group' => 'contact', 'value' => '+880 1700-000000'],
             ['key' => 'emergency_phone', 'group' => 'contact', 'value' => '+880 1700-911911'],

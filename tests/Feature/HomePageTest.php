@@ -39,21 +39,21 @@ class HomePageTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('Exceptional Care.', false);
-        $response->assertSee('Closer to Home.', false);
+        $response->assertSee('See a consultant.', false);
+        $response->assertSee('Leave with a plan.', false);
         $response->assertSee('Book an Appointment', false);
-        $response->assertSee('Our Departments', false);
+        $response->assertSee('Departments', false);
         $response->assertSee('Cardiology', false);
-        $response->assertSee('Find the Right Doctor for You', false);
-        $response->assertSee('Patient Services', false);
+        $response->assertSee('Find a doctor', false);
+        $response->assertSee('Patient services', false);
         $response->assertSee('Emergency Care', false);
-        $response->assertSee('Our Expert Doctors', false);
+        $response->assertSee('Consultants', false);
         $response->assertSee('Dr. Hamida Jannat', false);
-        $response->assertSee('Book Your Appointment Today', false);
-        $response->assertSee('Our Locations', false);
-        $response->assertSee('Frequently Asked Questions', false);
-        $response->assertSee('News & Updates', false);
-        $response->assertSee('Your Health. Our Priority.', false);
+        $response->assertSee('Ready to book a slot?', false);
+        $response->assertSee('How to get here', false);
+        $response->assertSee('Questions before a visit', false);
+        $response->assertSee('From the desk', false);
+        $response->assertSee('Need a clinic slot this week?', false);
         $response->assertSee('data-nav-toggle', false);
         $response->assertSee('id="mobile-navigation"', false);
         $response->assertSee('ch-menu__label', false);
@@ -104,7 +104,7 @@ class HomePageTest extends TestCase
         $home->assertSee('Browse consultants', false);
         $home->assertSee('Dr. Featured 1', false);
         $home->assertSee('Dr. Featured 8', false);
-        $home->assertSee('View all Doctors', false);
+        $home->assertSee('All consultants', false);
         $home->assertSee(route('doctors'), false);
         $home->assertSee('<strong>Dr. Featured 1</strong>', false);
         $home->assertSee('<strong>Dr. Featured 8</strong>', false);
@@ -186,9 +186,9 @@ class HomePageTest extends TestCase
 
         $home = $this->get(route('home'));
         $home->assertOk();
-        $home->assertSee('Specialist', false);
+        $home->assertSee('consultant', false);
         $home->assertSee('Dr. Hamida Jannat', false);
-        $home->assertSee('Search by a specialty', false);
+        $home->assertSee('Start with a specialty', false);
         $home->assertDontSee('250+', false);
         $home->assertDontSee('Banani Clinic', false);
         $home->assertDontSee('Dr. Michael Anderson', false);
@@ -261,7 +261,7 @@ class HomePageTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('Book Your Appointment Today', false);
+        $response->assertSee('Ready to book a slot?', false);
         $response->assertSee('3 consultants across 1 specialty', false);
         $response->assertSee('data-stat="doctors"><strong>3</strong>', false);
         $response->assertSee('data-stat="departments"><strong>1</strong>', false);

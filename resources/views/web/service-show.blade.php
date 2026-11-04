@@ -111,8 +111,8 @@
                                 <em>{{ $doctor->specialization ?: $doctor->department?->name ?: 'Consultant' }}</em>
                             </a>
                             <div class="ch-doc__actions">
-                                <a class="ch-doc__book" href="{{ route('doctors.show', $doctor) }}">Profile</a>
-                                <a class="ch-doc__book" href="{{ route('home', ['doctor' => $doctor->id]) }}#appointment">Book</a>
+                                <a class="ch-doc__btn ch-doc__btn--ghost" href="{{ route('doctors.show', $doctor) }}">Profile</a>
+                                <a class="ch-doc__btn ch-doc__btn--solid" href="{{ route('home', ['doctor' => $doctor->id]) }}#appointment">Book</a>
                             </div>
                         </article>
                     @endforeach

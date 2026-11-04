@@ -168,7 +168,7 @@ class WebsiteContentAdminTest extends TestCase
         $home->assertSee('Executive Health Checkup', false);
         $home->assertSee('See packages', false);
         $home->assertSee(route('packages'), false);
-        $home->assertDontSee('Exceptional Care.', false);
+        $home->assertDontSee('See a consultant. Leave with a plan.', false);
     }
 
     public function test_creating_an_faq_and_review_shows_them_on_the_homepage(): void

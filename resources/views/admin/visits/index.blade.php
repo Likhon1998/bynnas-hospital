@@ -77,7 +77,13 @@
                             </td>
                         </tr>
                     @empty
-                        <tr class="is-empty"><td colspan="6">No open encounters. Check in a booked appointment or a walk-in.</td></tr>
+                        <tr class="is-empty">
+                            <td colspan="6">
+                                No open encounters yet. Confirming an appointment does not check the patient in.
+                                Go to <a href="{{ route('admin.appointments.index') }}" class="font-semibold text-teal-700 underline">Appointments</a>
+                                → Action → Check in, or use Check in walk-in above.
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>

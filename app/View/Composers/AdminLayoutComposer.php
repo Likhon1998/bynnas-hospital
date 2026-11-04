@@ -154,9 +154,12 @@ class AdminLayoutComposer
                         'route' => 'admin.appointments.index',
                         'permission' => 'appointments.view',
                         'icon' => 'clipboard',
-                        'children' => [
-                            ['label' => 'Check-in', 'route' => 'admin.visits.index', 'permission' => 'visits.view', 'icon' => 'clipboard-check'],
-                        ],
+                    ],
+                    [
+                        'label' => 'Check-in',
+                        'route' => 'admin.visits.index',
+                        'permission' => 'visits.view',
+                        'icon' => 'clipboard-check',
                     ],
                     [
                         'label' => 'Patients',
@@ -228,7 +231,8 @@ class AdminLayoutComposer
                             ['label' => 'News', 'route' => 'admin.blog-posts.index', 'permission' => 'content.manage', 'icon' => 'clipboard'],
                             ['label' => 'News categories', 'route' => 'admin.blog-categories.index', 'permission' => 'content.manage', 'icon' => 'grid'],
                             ['label' => 'Reviews', 'route' => 'admin.testimonials.index', 'permission' => 'content.manage', 'icon' => 'users'],
-                            ['label' => 'Board members', 'route' => 'admin.board-members.index', 'permission' => 'content.manage', 'icon' => 'users'],
+                            ['label' => 'Leadership', 'route' => 'admin.board-members.index', 'permission' => 'content.manage', 'icon' => 'users'],
+                            ['label' => 'Achievements', 'route' => 'admin.hospital-achievements.index', 'permission' => 'content.manage', 'icon' => 'spark'],
                             ['label' => 'Gallery', 'route' => 'admin.galleries.index', 'permission' => 'content.manage', 'icon' => 'eye'],
                             ['label' => 'Packages', 'route' => 'admin.health-packages.index', 'permission' => 'content.manage', 'icon' => 'pill'],
                         ],

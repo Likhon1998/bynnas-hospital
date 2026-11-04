@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\DoctorController;
 use App\Http\Controllers\Web\EmergencyController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\LabReportController;
+use App\Http\Controllers\Web\LeadershipController;
 use App\Http\Controllers\Web\LegalPageController;
 use App\Http\Controllers\Web\PackageController;
 use App\Http\Controllers\Web\ServiceController;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', AboutController::class)->name('about');
+Route::get('/about/leadership/{role}', [LeadershipController::class, 'role'])->name('about.leadership.role');
+Route::get('/about/people/{boardMember:slug}', [LeadershipController::class, 'show'])->name('about.people.show');
 Route::get('/departments', DepartmentController::class)->name('departments');
 Route::get('/doctors', [DoctorController::class, 'index'])->name('doctors');
 Route::get('/doctors/{doctor:slug}', [DoctorController::class, 'show'])->name('doctors.show');

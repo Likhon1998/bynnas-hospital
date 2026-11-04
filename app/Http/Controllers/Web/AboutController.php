@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\BoardMember;
-use App\Models\Department;
-use App\Models\Doctor;
+use App\Models\HospitalAchievement;
 use App\Support\PublicCampusStats;
 use Illuminate\View\View;
 
@@ -13,36 +12,29 @@ class AboutController extends Controller
 {
     public function __invoke(PublicCampusStats $campusStats): View
     {
-        $featuredDoctors = Doctor::query()
+        $boardMembers = BoardMember::query()
             ->active()
-            ->featured()
-            ->with('department')
             ->orderBy('sort_order')
-            ->limit(8)
+            ->orderBy('name')
             ->get();
 
-        if ($featuredDoctors->isEmpty()) {
-            $featuredDoctors = Doctor::query()
-                ->active()
-                ->with('department')
-                ->orderBy('sort_order')
-                ->limit(8)
-                ->get();
-        }
+        $rolePages = $boardMembers
+            ->groupBy('role')
+            ->filter(fn ($group, $role) => BoardMember::isValidRole((string) $role))
+            ->map(fn ($group, $role) => [
+                'label' => BoardMember::ROLES[$role],
+                'count' => $group->count(),
+            ])
+            ->sortBy(fn (array $item, string $role) => array_search($role, array_keys(BoardMember::ROLES), true));
 
         return view('web.about', [
-            'boardMembers' => BoardMember::query()
+            'boardMembers' => $boardMembers,
+            'rolePages' => $rolePages,
+            'achievements' => HospitalAchievement::query()
                 ->active()
                 ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get(),
-            'doctors' => $featuredDoctors,
-            'departments' => Department::query()
-                ->active()
-                ->orderByDesc('is_featured')
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->limit(8)
+                ->orderByDesc('year')
+                ->orderBy('id')
                 ->get(),
             'stats' => $campusStats->snapshot(),
         ]);

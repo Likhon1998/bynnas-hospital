@@ -22,7 +22,9 @@ class AboutPageTest extends TestCase
         $response->assertSee('About us', false);
         $response->assertSee('Our story', false);
         $response->assertSee('Named consultants', false);
-        $response->assertSee('Visit the campus', false);
+        $response->assertDontSee('Departments in the building', false);
+        $response->assertDontSee('Visit the campus', false);
+        $response->assertDontSee('Consultants on the roster', false);
         $response->assertSee(route('doctors'), false);
     }
 
@@ -30,7 +32,9 @@ class AboutPageTest extends TestCase
     {
         BoardMember::factory()->create([
             'name' => 'Engr. Farhana Rahman',
+            'slug' => 'engr-farhana-rahman',
             'title' => 'Managing Director',
+            'role' => 'managing_director',
             'role_label' => 'Executive leadership',
             'bio' => 'Oversees operations and patient experience.',
             'is_active' => true,
@@ -39,10 +43,43 @@ class AboutPageTest extends TestCase
 
         $this->get(route('about'))
             ->assertOk()
-            ->assertSee('Board of directors', false)
+            ->assertSee('People who guide the campus', false)
+            ->assertSee('All guardians', false)
+            ->assertSee('data-guardian-option', false)
+            ->assertSee('data-guardian-role="managing_director"', false)
             ->assertSee('Engr. Farhana Rahman', false)
             ->assertSee('Managing Director', false)
-            ->assertSee('Oversees operations and patient experience.', false);
+            ->assertSee('Oversees operations and patient experience.', false)
+            ->assertSee(route('about.leadership.role', 'managing_director'), false)
+            ->assertSee('About the hospital', false)
+            ->assertSee('>Managing Director</a>', false);
+    }
+
+    public function test_about_nav_dropdown_lists_published_guardian_roles(): void
+    {
+        BoardMember::factory()->create([
+            'name' => 'Prof. Dr. Anwar Hossain',
+            'slug' => 'prof-dr-anwar-hossain',
+            'role' => 'founder',
+            'title' => 'Founder',
+            'is_active' => true,
+        ]);
+        BoardMember::factory()->create([
+            'name' => 'Mrs. Nasrin Akter',
+            'slug' => 'mrs-nasrin-akter',
+            'role' => 'co_founder',
+            'title' => 'Co-founder',
+            'is_active' => true,
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('About us', false)
+            ->assertSee('About the hospital', false)
+            ->assertSee('Founder', false)
+            ->assertSee('Co-founder', false)
+            ->assertSee(route('about.leadership.role', 'founder'), false)
+            ->assertSee(route('about.leadership.role', 'co_founder'), false);
     }
 
     public function test_about_page_band_shows_live_desk_counts(): void

@@ -7,16 +7,16 @@
     $emergency = $hospital->get('emergency_phone') ?: '';
     $email = $hospital->get('email');
     $address = $hospital->get('address') ?: '';
-    $tagline = $hospital->get('tagline') ?: 'Committed to exceptional healthcare, medical integrity, and innovation.';
+    $tagline = $hospital->get('tagline') ?: 'Consultant clinics and emergency care in Dhaka.';
     $logo = $hospital->get('logo');
     $socials = collect([
         'Facebook' => $hospital->get('facebook_url'),
         'YouTube' => $hospital->get('youtube_url'),
         'Instagram' => $hospital->get('instagram_url'),
     ])->filter(fn (?string $url): bool => filled($url) && $url !== 'https://facebook.com' && $url !== 'https://youtube.com' && $url !== 'https://instagram.com');
-    $priorityTitle = $promoBanner?->title ?: 'Your Health. Our Priority.';
-    $priorityLead = $promoBanner?->subtitle ?: 'Experience world-class care from a trusted medical team.';
-    $priorityCta = $promoBanner?->cta_label ?: 'Book Appointment Now';
+    $priorityTitle = $promoBanner?->title ?: 'Need a clinic slot this week?';
+    $priorityLead = $promoBanner?->subtitle ?: 'Pick a doctor and an open time. We confirm your visit by phone.';
+    $priorityCta = $promoBanner?->cta_label ?: 'Book a visit';
     $priorityHref = $promoBanner?->destination() ?: route('home').'#appointment';
     $privacy = filled($hospital->get('privacy_content'));
     $terms = filled($hospital->get('terms_content'));

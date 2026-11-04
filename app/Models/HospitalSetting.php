@@ -54,7 +54,7 @@ class HospitalSetting extends Model
     {
         return [
             ['key' => 'hospital_name', 'group' => 'general', 'value' => 'Hospital'],
-            ['key' => 'tagline', 'group' => 'general', 'value' => 'Compassionate care for every family'],
+            ['key' => 'tagline', 'group' => 'general', 'value' => 'Consultant clinics and emergency care in Dhaka'],
             ['key' => 'logo', 'group' => 'general', 'value' => ''],
             ['key' => 'phone', 'group' => 'contact', 'value' => ''],
             ['key' => 'emergency_phone', 'group' => 'contact', 'value' => ''],

@@ -2,15 +2,30 @@
     :action="$action"
     :method="$method"
     :cancel="route('admin.board-members.index')"
-    lede="These people appear on the public About page as the hospital board. Keep titles accurate and photos clear."
+    lede="Leaders appear on About us and on a dedicated page for their role (Founder, Chairman, and so on). Keep titles accurate and photos clear."
     enctype="multipart/form-data"
 >
     <x-admin.form-section title="Person" note="Name and role visitors will read on the website." tone="teal">
         <x-form.input name="name" label="Full name" :value="$boardMember->name" required />
-        <x-form.input name="title" label="Title" :value="$boardMember->title" required hint="Example: Chairman, Managing Director, Board Member" />
-        <x-form.input name="role_label" label="Board label" :value="$boardMember->role_label" hint="Optional. Example: Board of Directors" />
+        <x-form.input name="slug" label="URL slug" :value="$boardMember->slug" hint="Optional. Used in /about/people/{slug}. Leave blank to generate from the name." />
+        <x-form.input name="title" label="Display title" :value="$boardMember->title" required hint="Example: Founder & Chief Patron, Chairman of the Board" />
+        <x-form.select name="role" label="Leadership role" required>
+            @foreach (\App\Models\BoardMember::ROLES as $value => $label)
+                <option value="{{ $value }}" @selected(old('role', $boardMember->role ?: 'director') === $value)>{{ $label }}</option>
+            @endforeach
+        </x-form.select>
+        <x-form.input name="role_label" label="Board label" :value="$boardMember->role_label" hint="Optional short group label. Example: Board of Directors" />
         <div class="form-span-2">
             <x-form.textarea name="bio" label="Short bio" :value="$boardMember->bio" rows="4" />
+        </div>
+        <div class="form-span-2">
+            <x-form.textarea
+                name="achievements_text"
+                label="Personal achievements"
+                :value="old('achievements_text', $boardMember->achievementsText())"
+                rows="5"
+                hint="One achievement per line. Shown on the person’s public page and About us cards."
+            />
         </div>
     </x-admin.form-section>
 

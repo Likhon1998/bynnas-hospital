@@ -12,8 +12,24 @@
     $hoursLabel = $workingHours['saturday'] ?? $workingHours['monday'] ?? 'Open 24 hours';
     $emergencyLabel = $emergencyBanner?->title ?: '24/7 Emergency';
     $logo = $hospital->get('logo');
+    $aboutChildren = array_merge(
+        [
+            [
+                'label' => 'About the hospital',
+                'href' => route('about'),
+                'active' => request()->routeIs('about'),
+            ],
+        ],
+        $leadershipNavRoles ?? [],
+    );
+
     $links = [
-        ['label' => 'About us', 'href' => route('about'), 'active' => request()->routeIs('about')],
+        [
+            'label' => 'About us',
+            'href' => route('about'),
+            'active' => request()->routeIs('about', 'about.leadership.*', 'about.people.*'),
+            'children' => $aboutChildren,
+        ],
         ['label' => 'Departments', 'href' => route('departments'), 'active' => request()->routeIs('departments')],
         ['label' => 'Doctors', 'href' => route('doctors'), 'active' => request()->routeIs('doctors', 'doctors.show')],
         [

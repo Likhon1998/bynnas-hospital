@@ -126,7 +126,7 @@
                                 <strong>{{ $related->name }}</strong>
                                 <em>{{ $related->specialization ?: $related->department?->name ?: 'Consultant' }}</em>
                             </a>
-                            <a class="ch-doc__book" href="{{ route('home', ['doctor' => $related->id]) }}#appointment">Book</a>
+                            <a class="ch-doc__btn ch-doc__btn--solid" href="{{ route('home', ['doctor' => $related->id]) }}#appointment">Book</a>
                         </article>
                     @endforeach
                 </div>

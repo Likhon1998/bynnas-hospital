@@ -91,8 +91,23 @@
                                 @endcan
                             </td>
                             <td class="col-open">
+                                @php
+                                    $linkedVisit = $appointment->visits->first(fn ($visit) => $visit->status !== 'cancelled');
+                                    $canCheckIn = ! $linkedVisit && ! in_array($appointment->status, ['cancelled', 'no_show', 'completed'], true);
+                                @endphp
                                 <x-admin.row-menu>
                                     <a href="{{ route('admin.appointments.show', $appointment) }}">Open</a>
+                                    @can('visits.checkin')
+                                        @if ($canCheckIn)
+                                            <form method="POST" action="{{ route('admin.appointments.check-in', $appointment) }}">
+                                                @csrf
+                                                <button type="submit">Check in</button>
+                                            </form>
+                                        @endif
+                                    @endcan
+                                    @if ($linkedVisit)
+                                        <a href="{{ route('admin.visits.show', $linkedVisit) }}">Open encounter</a>
+                                    @endif
                                     @if (! empty($whatsappUrls[$appointment->id] ?? null))
                                         <a href="{{ $whatsappUrls[$appointment->id] }}" target="_blank" rel="noopener">WhatsApp</a>
                                     @endif

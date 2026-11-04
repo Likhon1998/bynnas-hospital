@@ -42,7 +42,7 @@ class AppointmentController extends Controller
         $selectedDate = $this->selectedVisitDate($request);
 
         $appointments = Appointment::query()
-            ->with(['patient', 'doctor', 'department'])
+            ->with(['patient', 'doctor', 'department', 'visits'])
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($source !== '', fn ($query) => $query->where('source', $source))
             ->when($selectedDoctor !== null, fn ($query) => $query->where('doctor_id', $selectedDoctor->id))

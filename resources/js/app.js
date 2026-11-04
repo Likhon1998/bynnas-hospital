@@ -1951,7 +1951,63 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    document.querySelectorAll('[data-row-menu]').forEach((menu) => {
+    const rowMenuTone = (label) => {
+        const text = String(label || '').trim().toLowerCase();
+
+        if (/(delete|cancel|reject|deactivate|remove)/.test(text)) {
+            return 'danger';
+        }
+
+        if (/whatsapp/.test(text)) {
+            return 'whatsapp';
+        }
+
+        if (/(edit|admit|approve|issue|save|complete|order)/.test(text)) {
+            return 'edit';
+        }
+
+        if (/(print|collect|receipt)/.test(text)) {
+            return 'print';
+        }
+
+        if (/(deactivate|activate|mute|hold|maintenance)/.test(text)) {
+            return 'warn';
+        }
+
+        if (/(open|view|chart|ward|history|appointment|follow)/.test(text)) {
+            return 'open';
+        }
+
+        return 'neutral';
+    };
+
+    const paintRowMenuItems = (menu) => {
+        const panel = menu.querySelector('[data-row-menu-panel]');
+
+        if (! panel) {
+            return;
+        }
+
+        panel.querySelectorAll('a, button').forEach((item) => {
+            item.classList.add('row-menu__item');
+            item.classList.remove(
+                'row-menu__item--open',
+                'row-menu__item--edit',
+                'row-menu__item--print',
+                'row-menu__item--whatsapp',
+                'row-menu__item--warn',
+                'row-menu__item--danger',
+                'row-menu__item--neutral',
+            );
+            item.classList.add(`row-menu__item--${rowMenuTone(item.textContent)}`);
+        });
+    };
+
+    const bindRowMenu = (menu) => {
+        if (menu.dataset.rowMenuBound === '1') {
+            return;
+        }
+
         const trigger = menu.querySelector('[data-row-menu-trigger]');
         const panel = menu.querySelector('[data-row-menu-panel]');
 
@@ -1959,16 +2015,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        paintRowMenuItems(menu);
+        menu.dataset.rowMenuBound = '1';
+
         trigger.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
+            paintRowMenuItems(menu);
             const willOpen = panel.hidden;
             closeRowMenus(willOpen ? menu : null);
             menu.classList.toggle('is-open', willOpen);
             panel.hidden = ! willOpen;
             trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
-    });
+    };
+
+    document.querySelectorAll('[data-row-menu]').forEach(bindRowMenu);
 
     document.addEventListener('click', (event) => {
         if (! event.target.closest('[data-row-menu]')) {
@@ -1981,4 +2043,266 @@ document.addEventListener('DOMContentLoaded', () => {
             closeRowMenus();
         }
     });
+
+    const bindClinicalPick = (root) => {
+        if (root.dataset.clinicalPickBound === '1') {
+            return;
+        }
+
+        const select = root.querySelector('[data-clinical-pick-add]');
+        const chips = root.querySelector('[data-clinical-pick-chips]');
+        const customToggle = root.querySelector('[data-clinical-pick-custom-toggle]');
+        const other = root.querySelector('[data-clinical-pick-other]');
+        const field = root.dataset.field;
+
+        if (! select || ! chips || ! field) {
+            return;
+        }
+
+        root.dataset.clinicalPickBound = '1';
+
+        const selectedValues = () => Array.from(chips.querySelectorAll('input[type="hidden"]'))
+            .map((input) => input.value);
+
+        const refreshEmpty = () => {
+            chips.hidden = selectedValues().length === 0;
+        };
+
+        const addValue = (value) => {
+            const next = String(value || '').trim();
+
+            if (! next || selectedValues().includes(next)) {
+                select.selectedIndex = 0;
+                return;
+            }
+
+            const item = document.createElement('li');
+            item.className = 'clinical-pick__chip';
+            item.innerHTML = `
+                <input type="hidden" name="${field}_options[]" value="">
+                <span></span>
+                <button type="button" class="clinical-pick__remove" data-clinical-pick-remove aria-label="Remove">×</button>
+            `;
+            item.querySelector('input').value = next;
+            item.querySelector('span').textContent = next;
+            chips.appendChild(item);
+            select.selectedIndex = 0;
+            refreshEmpty();
+        };
+
+        select.addEventListener('change', () => {
+            if (select.value) {
+                addValue(select.value);
+            }
+        });
+
+        chips.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-clinical-pick-remove]');
+
+            if (! button) {
+                return;
+            }
+
+            button.closest('.clinical-pick__chip')?.remove();
+            refreshEmpty();
+        });
+
+        customToggle?.addEventListener('click', () => {
+            if (! other) {
+                return;
+            }
+
+            other.hidden = false;
+            customToggle.hidden = true;
+            other.focus();
+        });
+    };
+
+    const bindRxBuilder = (root) => {
+        if (root.dataset.rxBuilderBound === '1') {
+            return;
+        }
+
+        const medicine = root.querySelector('[data-rx-medicine]');
+        const dose = root.querySelector('[data-rx-dose]');
+        const frequency = root.querySelector('[data-rx-frequency]');
+        const duration = root.querySelector('[data-rx-duration]');
+        const addBtn = root.querySelector('[data-rx-add]');
+        const list = root.querySelector('[data-rx-list]');
+        const empty = root.querySelector('[data-rx-empty]');
+        const error = root.querySelector('[data-rx-error]');
+
+        if (! medicine || ! dose || ! frequency || ! duration || ! addBtn || ! list) {
+            return;
+        }
+
+        root.dataset.rxBuilderBound = '1';
+
+        const refresh = () => {
+            const hasItems = list.querySelectorAll('.rx-builder__item').length > 0;
+            list.hidden = ! hasItems;
+            if (empty) {
+                empty.hidden = hasItems;
+            }
+        };
+
+        const resetSelects = () => {
+            medicine.selectedIndex = 0;
+            dose.selectedIndex = 0;
+            frequency.selectedIndex = 0;
+            duration.selectedIndex = 0;
+        };
+
+        addBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+
+            const lineMedicine = medicine.value.trim();
+            const lineDose = dose.value.trim();
+            const lineFrequency = frequency.value.trim();
+            const lineDuration = duration.value.trim();
+
+            if (! lineMedicine || ! lineDose || ! lineFrequency || ! lineDuration) {
+                if (error) {
+                    error.hidden = false;
+                }
+                return;
+            }
+
+            if (error) {
+                error.hidden = true;
+            }
+
+            const line = `${lineMedicine} — ${lineDose}, ${lineFrequency}, for ${lineDuration}`;
+            const existing = Array.from(list.querySelectorAll('input[type="hidden"]')).map((input) => input.value);
+
+            if (existing.includes(line)) {
+                resetSelects();
+                return;
+            }
+
+            const item = document.createElement('li');
+            item.className = 'rx-builder__item';
+            item.innerHTML = `
+                <input type="hidden" name="rx_lines[]" value="">
+                <span></span>
+                <button type="button" class="rx-builder__remove" data-rx-remove>Remove</button>
+            `;
+            item.querySelector('input').value = line;
+            item.querySelector('span').textContent = line;
+            list.appendChild(item);
+            resetSelects();
+            refresh();
+        });
+
+        list.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-rx-remove]');
+
+            if (! button) {
+                return;
+            }
+
+            button.closest('.rx-builder__item')?.remove();
+            refresh();
+        });
+    };
+
+    document.querySelectorAll('[data-clinical-pick]').forEach(bindClinicalPick);
+    document.querySelectorAll('[data-rx-builder]').forEach(bindRxBuilder);
+
+    const guardianBoard = document.querySelector('[data-guardian-board]');
+
+    if (guardianBoard) {
+        const menu = guardianBoard.querySelector('[data-guardian-menu]');
+        const triggerLabel = guardianBoard.querySelector('[data-guardian-trigger-label]');
+        const status = guardianBoard.querySelector('[data-guardian-status]');
+        const roleLink = guardianBoard.querySelector('[data-guardian-role-link]');
+        const options = Array.from(guardianBoard.querySelectorAll('[data-guardian-option]'));
+        const cards = Array.from(guardianBoard.querySelectorAll('[data-guardian-card]'));
+        const params = new URLSearchParams(window.location.search);
+        const initialRole = params.get('guardian') || '';
+
+        const applyGuardianFilter = (role, label = 'All guardians', roleUrl = '', { scroll = false } = {}) => {
+            let matchCount = 0;
+
+            cards.forEach((card) => {
+                const matches = role === '' || card.dataset.guardianRole === role;
+                card.classList.toggle('is-highlighted', role !== '' && matches);
+                card.classList.toggle('is-dimmed', role !== '' && ! matches);
+
+                if (matches) {
+                    matchCount += 1;
+                }
+            });
+
+            options.forEach((option) => {
+                option.classList.toggle('is-active', option.dataset.role === role);
+            });
+
+            if (triggerLabel) {
+                triggerLabel.textContent = label;
+            }
+
+            if (status) {
+                status.textContent = role === ''
+                    ? `Showing all ${cards.length} guardians`
+                    : `Highlighting ${matchCount} ${label} profile${matchCount === 1 ? '' : 's'}`;
+            }
+
+            if (roleLink) {
+                if (role !== '' && roleUrl) {
+                    roleLink.hidden = false;
+                    roleLink.href = roleUrl;
+                    roleLink.textContent = `View ${label}`;
+                } else {
+                    roleLink.hidden = true;
+                    roleLink.setAttribute('href', `${window.location.pathname}#board`);
+                }
+            }
+
+            if (scroll && role !== '') {
+                const firstMatch = cards.find((card) => card.dataset.guardianRole === role);
+                firstMatch?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            const url = new URL(window.location.href);
+
+            if (role === '') {
+                url.searchParams.delete('guardian');
+            } else {
+                url.searchParams.set('guardian', role);
+            }
+
+            url.hash = 'board';
+            window.history.replaceState({}, '', url);
+        };
+
+        options.forEach((option) => {
+            option.addEventListener('click', () => {
+                applyGuardianFilter(
+                    option.dataset.role || '',
+                    option.dataset.roleLabel || option.textContent.trim(),
+                    option.dataset.roleUrl || '',
+                    { scroll: true },
+                );
+
+                menu?.classList.remove('is-open');
+                const panel = menu?.querySelector('[data-nav-dropdown-panel]');
+                const trigger = menu?.querySelector('[data-nav-dropdown-trigger]');
+
+                if (panel) {
+                    panel.hidden = true;
+                }
+
+                trigger?.setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        const initialOption = options.find((option) => option.dataset.role === initialRole) || options[0];
+
+        applyGuardianFilter(
+            initialOption?.dataset.role || '',
+            initialOption?.dataset.roleLabel || 'All guardians',
+            initialOption?.dataset.roleUrl || '',
+        );
+    }
 });

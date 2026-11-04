@@ -45,8 +45,10 @@ class AdminBoardMemberTest extends TestCase
             ->post(route('admin.board-members.store'), [
                 'name' => 'Prof. Dr. Nazmul Haque',
                 'title' => 'Chairman',
+                'role' => 'chairman',
                 'role_label' => 'Board of Directors',
                 'bio' => 'Leads hospital governance.',
+                'achievements_text' => "Expanded specialty clinics\nStrengthened governance",
                 'photo_upload' => $upload,
                 'is_active' => '1',
                 'sort_order' => '1',
@@ -57,17 +59,28 @@ class AdminBoardMemberTest extends TestCase
 
         $this->assertSame('Prof. Dr. Nazmul Haque', $member->name);
         $this->assertSame('Chairman', $member->title);
+        $this->assertSame('chairman', $member->role);
+        $this->assertSame('prof-dr-nazmul-haque', $member->slug);
+        $this->assertSame(['Expanded specialty clinics', 'Strengthened governance'], $member->achievementList());
         $this->assertTrue($member->is_active);
         $this->assertStringStartsWith('/storage/board/', (string) $member->photo);
         Storage::disk('public')->assertExists(ltrim(str_replace('/storage/', '', (string) $member->photo), '/'));
 
         $this->get(route('about'))
             ->assertOk()
-            ->assertSee('Board of directors', false)
+            ->assertSee('People who guide the campus', false)
             ->assertSee('Prof. Dr. Nazmul Haque', false)
             ->assertSee('Chairman', false)
             ->assertSee('Leads hospital governance.', false)
             ->assertSee($member->photo, false);
+
+        $this->get(route('about.leadership.role', 'chairman'))
+            ->assertOk()
+            ->assertSee('Prof. Dr. Nazmul Haque', false);
+
+        $this->get(route('about.leadership.role', 'chairman'))
+            ->assertOk()
+            ->assertSee('Expanded specialty clinics', false);
     }
 
     public function test_inactive_board_members_stay_off_the_about_page(): void
