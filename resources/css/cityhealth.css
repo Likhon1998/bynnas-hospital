@@ -3821,10 +3821,10 @@ body.ch-cal-lock {
 }
 
 .ch-lead-profile {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;
+    align-items: start;
     padding: 1.15rem;
     border: 1px solid #e2e9f3;
     border-radius: 1.45rem;
@@ -4056,16 +4056,14 @@ body.ch-cal-lock {
     }
 
     .ch-lead-profile {
-        flex-direction: row;
-        align-items: stretch;
+        grid-template-columns: 15rem minmax(0, 1fr);
         gap: 1.75rem;
         padding: 1.45rem;
     }
 
     .ch-lead-profile__media {
         justify-items: start;
-        width: 15rem;
-        flex: 0 0 15rem;
+        width: 100%;
     }
 
     .ch-lead-profile__photo {
@@ -4073,13 +4071,9 @@ body.ch-cal-lock {
     }
 
     .ch-lead-stage--solo .ch-lead-profile {
-        padding: 1.7rem;
+        grid-template-columns: 17rem minmax(0, 1fr);
         gap: 2rem;
-    }
-
-    .ch-lead-stage--solo .ch-lead-profile__media {
-        width: 17rem;
-        flex-basis: 17rem;
+        padding: 1.7rem;
     }
 
     .ch-lead-stage--pair,
@@ -4088,10 +4082,10 @@ body.ch-cal-lock {
         gap: 1.2rem;
     }
 
-    .ch-lead-stage--pair .ch-lead-profile__media,
-    .ch-lead-stage--grid .ch-lead-profile__media {
-        width: 11rem;
-        flex-basis: 11rem;
+    .ch-lead-stage--pair .ch-lead-profile,
+    .ch-lead-stage--grid .ch-lead-profile {
+        grid-template-columns: 11rem minmax(0, 1fr);
+        gap: 1.15rem;
     }
 
     .ch-lead-profile__contact {
