@@ -21,7 +21,7 @@
                     @if ($peers->isNotEmpty())
                         <a class="ch-btn ch-btn--solid" href="{{ route('about.leadership.role', $member->role) }}">All {{ $member->roleName() }}</a>
                     @endif
-                    <a class="ch-btn" href="{{ route('about') }}#board">About us</a>
+                    <a class="ch-btn" href="{{ route('about') }}">About us</a>
                 </div>
             </div>
         </div>

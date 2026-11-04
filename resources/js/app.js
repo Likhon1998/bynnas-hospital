@@ -2255,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     roleLink.textContent = `View ${label}`;
                 } else {
                     roleLink.hidden = true;
-                    roleLink.setAttribute('href', `${window.location.pathname}#board`);
+                    roleLink.setAttribute('href', window.location.pathname);
                 }
             }
 
@@ -2268,12 +2268,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (role === '') {
                 url.searchParams.delete('guardian');
+                url.hash = '';
             } else {
                 url.searchParams.set('guardian', role);
+                url.hash = 'board';
             }
 
-            url.hash = 'board';
-            window.history.replaceState({}, '', url);
+            window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
         };
 
         options.forEach((option) => {
@@ -2298,11 +2299,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const initialOption = options.find((option) => option.dataset.role === initialRole) || options[0];
+        const hadBoardHash = window.location.hash === '#board';
 
         applyGuardianFilter(
             initialOption?.dataset.role || '',
             initialOption?.dataset.roleLabel || 'All guardians',
             initialOption?.dataset.roleUrl || '',
         );
+
+        if (! initialRole && hadBoardHash) {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        }
     }
 });

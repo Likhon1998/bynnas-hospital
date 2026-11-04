@@ -34,7 +34,7 @@
                     <p>{{ $heroLede }}</p>
                 </div>
                 <div class="ch-lead-hero__actions">
-                    <a class="ch-btn" href="{{ route('about') }}#board">All guardians</a>
+                    <a class="ch-btn" href="{{ route('about') }}">All guardians</a>
                     <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Book appointment</a>
                 </div>
             </div>
@@ -48,7 +48,7 @@
                     <p class="ch-find__kicker">Leadership</p>
                     <h2>No {{ strtolower($roleTitle) }} published yet</h2>
                     <p>When the desk adds this role, the profile will appear here.</p>
-                    <a class="ch-btn ch-btn--solid" href="{{ route('about') }}#board">Back to About us</a>
+                    <a class="ch-btn ch-btn--solid" href="{{ route('about') }}">Back to About us</a>
                 </div>
             @else
                 <div @class([
@@ -142,7 +142,7 @@
                 <p class="ch-depts-intro">Return to the guardians list, or book a consultant visit at the desk.</p>
             </div>
             <div class="ch-lead-footer__actions">
-                <a class="ch-btn ch-btn--solid" href="{{ route('about') }}#board">About us</a>
+                <a class="ch-btn ch-btn--solid" href="{{ route('about') }}">About us</a>
                 <a class="ch-btn" href="{{ route('doctors') }}">Find a doctor</a>
             </div>
         </div>

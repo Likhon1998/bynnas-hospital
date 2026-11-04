@@ -183,7 +183,7 @@
                         <p class="ch-guardian-bar__status" id="guardian-status" data-guardian-status>Showing all guardians</p>
                         <a
                             class="ch-btn ch-btn--solid"
-                            href="{{ route('about') }}#board"
+                            href="{{ route('about') }}"
                             data-guardian-role-link
                             hidden
                         >View profile</a>
