@@ -1,4 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const revealItems = Array.from(document.querySelectorAll('[data-reveal]'));
+
+    if (revealItems.length > 0) {
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (reduceMotion || ! ('IntersectionObserver' in window)) {
+            revealItems.forEach((item) => item.classList.add('is-revealed'));
+        } else {
+            const revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (! entry.isIntersecting) {
+                        return;
+                    }
+
+                    entry.target.classList.add('is-revealed');
+                    revealObserver.unobserve(entry.target);
+                });
+            }, {
+                threshold: 0.16,
+                rootMargin: '0px 0px -8% 0px',
+            });
+
+            revealItems.forEach((item) => revealObserver.observe(item));
+        }
+    }
+
     const toggle = document.querySelector('[data-nav-toggle]');
     const panel = document.querySelector('[data-nav-panel]');
     const closeButtons = document.querySelectorAll('[data-nav-close]');

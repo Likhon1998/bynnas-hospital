@@ -28,11 +28,16 @@
         </div>
     </section>
 
-    <section class="ch-clinics">
+    <section class="ch-clinics" data-reveal-scope>
         <div class="ch-wrap">
             <div class="ch-clinics__grid">
                 @forelse ($departments as $department)
-                    <a class="ch-clinic" href="{{ route('doctors', ['specialty' => $department->name]) }}">
+                    <a
+                        class="ch-clinic"
+                        href="{{ route('doctors', ['specialty' => $department->name]) }}"
+                        data-reveal
+                        style="--reveal-delay: {{ min($loop->index * 0.07, 0.42) }}s"
+                    >
                         <span class="ch-clinic__top">
                             <span class="ch-clinic__icon"><x-icon :name="$department->icon ?: 'hospital'" /></span>
                             @if ($department->is_featured)
