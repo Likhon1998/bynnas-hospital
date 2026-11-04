@@ -51,12 +51,12 @@
                                 <td>{{ $visit->reason ?: 'Walk-in emergency' }}</td>
                                 <td class="col-status"><x-admin.status-pill :value="$visit->status" /></td>
                                 <td class="col-pair-actions">
-                                    <div class="table-actions">
-                                        <a href="{{ route('admin.appointments.show', $visit) }}" class="mc-btn mc-btn--ghost">Open</a>
+                                    <x-admin.row-menu>
+                                        <a href="{{ route('admin.appointments.show', $visit) }}">Open</a>
                                         @can('admissions.admit')
-                                            <a href="{{ route('admin.admissions.create', ['source' => 'emergency', 'appointment_id' => $visit->id]) }}" class="mc-btn mc-btn--primary">Admit</a>
+                                            <a href="{{ route('admin.admissions.create', ['source' => 'emergency', 'appointment_id' => $visit->id]) }}">Admit</a>
                                         @endcan
-                                    </div>
+                                    </x-admin.row-menu>
                                 </td>
                             </tr>
                         @empty

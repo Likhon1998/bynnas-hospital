@@ -26,10 +26,10 @@
                             <td class="col-count">{{ $category->blog_posts_count }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$category->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.blog-categories.edit', $category) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.blog-categories.destroy', $category)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

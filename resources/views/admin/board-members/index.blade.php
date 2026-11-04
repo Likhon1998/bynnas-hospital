@@ -31,10 +31,10 @@
                             <td class="col-count">{{ $member->sort_order }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$member->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
-                                    <a href="{{ route('admin.board-members.edit', $member) }}" class="table-btn table-btn--edit">Edit</a>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.board-members.edit', $member) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.board-members.destroy', $member)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

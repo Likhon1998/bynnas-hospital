@@ -46,10 +46,10 @@
                             <td>{{ $post->blogCategory?->name ?: '—' }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$post->is_published ? 'published' : 'pending'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.blog-posts.edit', $post) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.blog-posts.destroy', $post)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

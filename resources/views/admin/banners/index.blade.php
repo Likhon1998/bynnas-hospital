@@ -38,10 +38,10 @@
                             </td>
                             <td class="col-status"><x-admin.status-pill :value="$banner->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.banners.edit', $banner) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.banners.destroy', $banner)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

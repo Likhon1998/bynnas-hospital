@@ -50,7 +50,7 @@
                         <th>Doctor</th>
                         <th class="col-when">Arrived</th>
                         <th class="col-status">Stage</th>
-                        <th class="col-open">Open</th>
+                        <th class="col-open">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,7 +70,11 @@
                             </td>
                             <td class="col-when">{{ $visit->arrived_at?->format('H:i') ?: '—' }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$visit->status" /></td>
-                            <td class="col-open"><a href="{{ route('admin.visits.show', $visit) }}">Open</a></td>
+                            <td class="col-open">
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.visits.show', $visit) }}">Open</a>
+                                </x-admin.row-menu>
+                            </td>
                         </tr>
                     @empty
                         <tr class="is-empty"><td colspan="6">No open encounters. Check in a booked appointment or a walk-in.</td></tr>

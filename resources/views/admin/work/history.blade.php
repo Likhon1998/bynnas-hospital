@@ -32,7 +32,11 @@
                                 <td>{{ $item->kindLabel() }}</td>
                                 <td>{{ $item->detail ?: '—' }}</td>
                                 <td class="col-when">{{ $item->completed_at?->format('d M Y g:i A') ?: '—' }}</td>
-                                <td class="col-open"><a href="{{ $item->href }}">Open</a></td>
+                                <td class="col-open">
+                                    <x-admin.row-menu>
+                                        <a href="{{ $item->href }}">Open</a>
+                                    </x-admin.row-menu>
+                                </td>
                             </tr>
                         @empty
                             <tr class="is-empty"><td colspan="5">No completed work yet.</td></tr>

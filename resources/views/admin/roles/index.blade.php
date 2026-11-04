@@ -40,14 +40,14 @@
                                 @endif
                             </td>
                             <td class="col-pair-actions">
-                                <div class="table-actions">
-                                    <a href="{{ route('admin.roles.edit', $role) }}" class="table-btn table-btn--edit">Edit</a>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.roles.edit', $role) }}">Edit</a>
                                     @unless ($role->isProtected())
                                         @if ($role->users_count === 0)
-                                            <x-admin.delete-button :action="route('admin.roles.destroy', $role)" label="Delete" variant="pill" />
+                                            <x-admin.delete-button :action="route('admin.roles.destroy', $role)" label="Delete" />
                                         @endif
                                     @endunless
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

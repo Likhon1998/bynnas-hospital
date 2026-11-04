@@ -43,7 +43,7 @@
                         <th>Ward / bed</th>
                         <th>Source</th>
                         <th class="col-status">Status</th>
-                        <th class="col-open">Open</th>
+                        <th class="col-open">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,7 +63,11 @@
                             </td>
                             <td>{{ $admission->sourceLabel() }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$admission->status" /></td>
-                            <td class="col-open"><a href="{{ route('admin.admissions.show', $admission) }}">Open</a></td>
+                            <td class="col-open">
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.admissions.show', $admission) }}">Open</a>
+                                </x-admin.row-menu>
+                            </td>
                         </tr>
                     @empty
                         <tr class="is-empty"><td colspan="6">No open admissions. Admit from an appointment, emergency, or the floor.</td></tr>

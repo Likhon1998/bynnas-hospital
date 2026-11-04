@@ -21,7 +21,7 @@
                         <th>Patient</th>
                         <th>Contact</th>
                         <th class="col-status">Status</th>
-                        <th class="col-open">Open</th>
+                        <th class="col-open">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,7 +38,9 @@
                             </td>
                             <td class="col-status"><x-admin.status-pill :value="$patient->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-open">
-                                <a href="{{ route('admin.patients.show', $patient) }}">View</a>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.patients.show', $patient) }}">View</a>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

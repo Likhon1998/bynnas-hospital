@@ -55,7 +55,7 @@
                         <th class="col-when">When</th>
                         <th class="col-from">From</th>
                         <th class="col-status">Status</th>
-                        <th class="col-open">Open</th>
+                        <th class="col-open">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,12 +91,12 @@
                                 @endcan
                             </td>
                             <td class="col-open">
-                                <div class="table-actions">
-                                    <a href="{{ route('admin.appointments.show', $appointment) }}" class="table-btn table-btn--edit">Open</a>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.appointments.show', $appointment) }}">Open</a>
                                     @if (! empty($whatsappUrls[$appointment->id] ?? null))
-                                        <a href="{{ $whatsappUrls[$appointment->id] }}" class="table-btn table-btn--whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+                                        <a href="{{ $whatsappUrls[$appointment->id] }}" target="_blank" rel="noopener">WhatsApp</a>
                                     @endif
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

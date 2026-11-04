@@ -61,7 +61,7 @@
                         <th>Test</th>
                         <th>Encounter</th>
                         <th class="col-status">Status</th>
-                        <th class="col-open">Open</th>
+                        <th class="col-open">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,7 +83,11 @@
                                     <x-admin.status-pill value="critical" />
                                 @endif
                             </td>
-                            <td class="col-open"><a href="{{ route('admin.labs.show', $order) }}">Open</a></td>
+                            <td class="col-open">
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.labs.show', $order) }}">Open</a>
+                                </x-admin.row-menu>
+                            </td>
                         </tr>
                     @empty
                         <tr class="is-empty"><td colspan="6">No open laboratory orders.</td></tr>

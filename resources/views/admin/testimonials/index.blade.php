@@ -31,10 +31,10 @@
                             <td class="col-count">{{ $testimonial->rating }}/5</td>
                             <td class="col-status"><x-admin.status-pill :value="$testimonial->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.testimonials.edit', $testimonial) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.testimonials.destroy', $testimonial)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

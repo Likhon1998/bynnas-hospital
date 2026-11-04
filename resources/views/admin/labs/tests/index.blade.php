@@ -26,7 +26,7 @@
                         <th>Price</th>
                         <th class="col-status">Status</th>
                         @can('lab.report')
-                            <th class="col-open">Edit</th>
+                            <th class="col-open">Action</th>
                         @endcan
                     </tr>
                 </thead>
@@ -42,7 +42,11 @@
                             <td>{{ number_format((float) $test->price, 2) }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$test->is_active ? 'active' : 'inactive'" /></td>
                             @can('lab.report')
-                                <td class="col-open"><a href="{{ route('admin.labs.tests.edit', $test) }}">Edit</a></td>
+                                <td class="col-open">
+                                    <x-admin.row-menu>
+                                        <a href="{{ route('admin.labs.tests.edit', $test) }}">Edit</a>
+                                    </x-admin.row-menu>
+                                </td>
                             @endcan
                         </tr>
                     @empty

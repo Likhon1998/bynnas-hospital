@@ -35,10 +35,10 @@
                             <td>{{ $item->album ?: 'Uncategorized' }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$item->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.galleries.edit', $item) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.galleries.destroy', $item)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

@@ -28,10 +28,10 @@
                             <td>{{ filled($faq->answer) ? str($faq->answer)->limit(90) : '—' }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$faq->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.faqs.edit', $faq) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.faqs.destroy', $faq)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

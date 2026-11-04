@@ -52,18 +52,18 @@
                                 @endif
                             </td>
                             <td class="col-pair-actions">
-                                <div class="table-actions">
-                                    <a href="{{ route('admin.users.edit', $user) }}" class="table-btn table-btn--edit">Edit</a>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.users.edit', $user) }}">Edit</a>
                                     @unless ($isSelf)
                                         <form method="POST" action="{{ route('admin.users.toggle-active', $user) }}">
                                             @csrf
-                                            <button type="submit" class="table-btn table-btn--mute">
+                                            <button type="submit">
                                                 {{ $user->is_active ? 'Deactivate' : 'Activate' }}
                                             </button>
                                         </form>
-                                        <x-admin.delete-button :action="route('admin.users.destroy', $user)" variant="pill" />
+                                        <x-admin.delete-button :action="route('admin.users.destroy', $user)" />
                                     @endunless
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

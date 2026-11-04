@@ -3027,7 +3027,8 @@ select.admin-field--multiple {
 }
 
 .table-scroll {
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .table-frame--fill {
@@ -3055,7 +3056,7 @@ select.admin-field--multiple {
 
 .pro-table {
     width: 100%;
-    min-width: 60rem;
+    min-width: 0;
     table-layout: fixed;
     border-collapse: collapse;
     border-spacing: 0;
@@ -3068,7 +3069,7 @@ select.admin-field--multiple {
 
 .table-frame--fit .pro-table,
 .pro-table--form {
-    min-width: 36rem;
+    min-width: 0;
 }
 
 .pro-table th,
@@ -3136,8 +3137,8 @@ select.admin-field--multiple {
 }
 
 .pro-table .col-status {
-    width: 9rem;
-    min-width: 9rem;
+    width: 7.25rem;
+    min-width: 0;
     overflow: visible;
     text-align: center;
     white-space: nowrap;
@@ -3297,23 +3298,12 @@ select.admin-field--multiple {
     overflow: visible;
 }
 
-.pro-table .col-action {
-    width: 12rem;
-    min-width: 12rem;
-    text-align: right;
-    white-space: nowrap;
-}
-
-.pro-table .col-open {
-    width: 9.75rem;
-    min-width: 9.75rem;
-    text-align: right;
-    white-space: nowrap;
-}
-
+.pro-table .col-action,
+.pro-table .col-open,
 .pro-table .col-pair-actions {
-    width: 19rem;
-    min-width: 19rem;
+    width: 6.75rem;
+    min-width: 6.75rem;
+    max-width: 7.25rem;
     text-align: right;
     white-space: nowrap;
 }
@@ -3324,6 +3314,123 @@ select.admin-field--multiple {
     justify-content: flex-end;
     flex-wrap: nowrap;
     gap: 0.45rem;
+}
+
+.row-menu {
+    position: relative;
+    display: inline-flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.row-menu__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.28rem 0.55rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.45rem;
+    background: #ffffff;
+    color: #1f2937;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.row-menu__btn:hover,
+.row-menu__btn:focus-visible,
+.row-menu.is-open .row-menu__btn {
+    border-color: #d09de0;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(208 157 224 / 0.22);
+}
+
+.row-menu__chevron {
+    width: 0.85rem;
+    height: 0.85rem;
+    flex: 0 0 auto;
+    color: #64748b;
+}
+
+.row-menu.is-open .row-menu__chevron {
+    transform: rotate(180deg);
+}
+
+.row-menu__panel {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    z-index: 40;
+    display: grid;
+    min-width: 9.5rem;
+    padding: 0.3rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    background: #ffffff;
+    box-shadow: 0 14px 30px -18px rgb(15 23 42 / 0.45);
+}
+
+.row-menu__panel[hidden] {
+    display: none;
+}
+
+.row-menu__panel > a,
+.row-menu__panel > button,
+.row-menu__panel form,
+.row-menu__panel form > button {
+    display: block;
+    width: 100%;
+}
+
+.row-menu__panel > a,
+.row-menu__panel > button,
+.row-menu__panel form > button,
+.pro-table .row-menu__panel > a,
+.pro-table .row-menu__panel form > button,
+.pro-table td.col-action .row-menu__panel > a,
+.pro-table td.col-open .row-menu__panel > a,
+.pro-table td.col-pair-actions .row-menu__panel > a,
+.pro-table td.col-action .row-menu__panel form > button,
+.pro-table td.col-open .row-menu__panel form > button,
+.pro-table td.col-pair-actions .row-menu__panel form > button {
+    min-height: 2rem;
+    padding: 0.4rem 0.65rem;
+    border: 0;
+    border-radius: 0.45rem;
+    background: transparent;
+    color: #1f2937;
+    font-size: 0.8rem;
+    font-weight: 650;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.row-menu__panel > a:hover,
+.row-menu__panel > button:hover,
+.row-menu__panel form > button:hover,
+.pro-table .row-menu__panel > a:hover,
+.pro-table .row-menu__panel form > button:hover {
+    background: #f6eaf9;
+    color: #5f346a;
+}
+
+.row-menu__panel form > button.text-red-700,
+.row-menu__panel form > button.table-btn--danger,
+.pro-table .row-menu__panel form > button.text-red-700,
+.pro-table .row-menu__panel form > button.table-btn--danger {
+    color: #b91c1c;
+}
+
+.row-menu__panel form > button.text-red-700:hover,
+.row-menu__panel form > button.table-btn--danger:hover,
+.pro-table .row-menu__panel form > button.text-red-700:hover,
+.pro-table .row-menu__panel form > button.table-btn--danger:hover {
+    background: #fef2f2;
+    color: #991b1b;
 }
 
 /* Turn plain Open/Edit/Delete links into pill buttons across all admin tables */
@@ -3537,12 +3644,14 @@ select.admin-field--multiple {
 }
 
 .roster__scroll {
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .roster__table {
     width: 100%;
-    min-width: 48rem;
+    min-width: 0;
+    table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
     text-align: left;
@@ -3581,7 +3690,7 @@ select.admin-field--multiple {
 }
 
 .roster__table .is-action {
-    width: 16.5rem;
+    width: 7rem;
     text-align: right;
 }
 
@@ -4110,7 +4219,7 @@ select.admin-field--multiple {
 }
 
 .owner-approvals__table .pro-table {
-    min-width: 40rem;
+    min-width: 0;
 }
 
 .mc-layout {
@@ -4470,7 +4579,7 @@ select.mc-input {
 }
 
 .mc-board-scroll {
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: visible;
     background:
         linear-gradient(#fff 30%, rgb(255 255 255 / 0)),
@@ -4720,7 +4829,7 @@ select.mc-input {
 }
 
 .mc-table {
-    min-width: 54rem;
+    min-width: 0;
 }
 
 .mc-table thead th,
@@ -4740,7 +4849,7 @@ select.mc-input {
 
 .mc-beds {
     width: 100%;
-    min-width: 52rem;
+    min-width: 0;
     table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;

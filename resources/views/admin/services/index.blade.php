@@ -33,10 +33,10 @@
                             <td>{{ $service->department?->name ?: '—' }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$service->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.services.edit', $service) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.services.destroy', $service)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

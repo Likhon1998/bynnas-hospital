@@ -61,13 +61,13 @@
                                 </span>
                             </td>
                             <td class="is-action">
-                                <div class="roster__actions">
-                                    <a href="{{ route('admin.doctors.edit', $doctor) }}" class="roster__btn">Edit</a>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.doctors.edit', $doctor) }}">Edit</a>
                                     @can('appointments.view')
-                                        <a href="{{ route('admin.appointments.index', ['doctor' => $doctor->id]) }}" class="roster__btn">Appointments</a>
+                                        <a href="{{ route('admin.appointments.index', ['doctor' => $doctor->id]) }}">Appointments</a>
                                     @endcan
-                                    <x-admin.delete-button :action="route('admin.doctors.destroy', $doctor)" class="roster__btn roster__btn--danger" />
-                                </div>
+                                    <x-admin.delete-button :action="route('admin.doctors.destroy', $doctor)" />
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

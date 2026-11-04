@@ -57,9 +57,9 @@
                                 @endif
                             </td>
                             <td class="col-pair-actions">
-                                <div class="table-actions">
-                                    <a href="{{ route('admin.nursing.wards.show', $ward) }}" class="table-btn table-btn--edit">Open ward</a>
-                                </div>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.nursing.wards.show', $ward) }}">Open ward</a>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

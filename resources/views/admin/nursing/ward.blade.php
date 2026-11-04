@@ -46,7 +46,7 @@
                         <th>Care / allergies</th>
                         <th>Diagnosis</th>
                         <th>Admission</th>
-                        <th class="col-open">Chart</th>
+                        <th class="col-open">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,7 +75,9 @@
                             </td>
                             <td class="col-open">
                                 @if ($bed->patient)
-                                    <a href="{{ route('admin.nursing.patients.show', $bed->patient) }}">Open chart</a>
+                                    <x-admin.row-menu>
+                                        <a href="{{ route('admin.nursing.patients.show', $bed->patient) }}">Open chart</a>
+                                    </x-admin.row-menu>
                                 @endif
                             </td>
                         </tr>

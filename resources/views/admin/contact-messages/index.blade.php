@@ -15,7 +15,7 @@
                         <th>Subject</th>
                         <th class="col-when">Received</th>
                         <th class="col-status">Status</th>
-                        <th class="col-open">Open</th>
+                        <th class="col-open">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -33,7 +33,9 @@
                             </td>
                             <td class="col-status"><x-admin.status-pill :value="$message->is_read ? 'completed' : 'pending'" /></td>
                             <td class="col-open">
-                                <a href="{{ route('admin.contact-messages.show', $message) }}">Open</a>
+                                <x-admin.row-menu>
+                                    <a href="{{ route('admin.contact-messages.show', $message) }}">Open</a>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty

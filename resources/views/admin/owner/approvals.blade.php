@@ -85,13 +85,13 @@
                                         <td class="col-status">{{ ucfirst($approval->status) }}</td>
                                         <td class="col-open">
                                             @if ($approval->isPending() && auth()->user()?->can('finance.approve'))
-                                                <div class="table-actions">
-                                                    <form method="POST" action="{{ route('admin.owner.approvals.decide', $approval) }}" class="inline-flex gap-2">
+                                                <x-admin.row-menu>
+                                                    <form method="POST" action="{{ route('admin.owner.approvals.decide', $approval) }}">
                                                         @csrf
-                                                        <button type="submit" name="decision" value="approved" class="table-btn table-btn--edit">Approve</button>
-                                                        <button type="submit" name="decision" value="rejected" class="table-btn table-btn--danger">Reject</button>
+                                                        <button type="submit" name="decision" value="approved">Approve</button>
+                                                        <button type="submit" name="decision" value="rejected" class="text-red-700">Reject</button>
                                                     </form>
-                                                </div>
+                                                </x-admin.row-menu>
                                             @else
                                                 —
                                             @endif

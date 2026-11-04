@@ -34,10 +34,10 @@
                             <td class="col-count">{{ $department->doctors_count }}</td>
                             <td class="col-status"><x-admin.status-pill :value="$department->is_active ? 'active' : 'inactive'" /></td>
                             <td class="col-action">
-                                <div class="table-actions">
+                                <x-admin.row-menu>
                                     <a href="{{ route('admin.departments.edit', $department) }}">Edit</a>
                                     <x-admin.delete-button :action="route('admin.departments.destroy', $department)" />
-                                </div>
+                                </x-admin.row-menu>
                             </td>
                         </tr>
                     @empty
