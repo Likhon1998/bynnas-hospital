@@ -46,6 +46,6 @@ class DepartmentPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSee(route('departments'), false);
-        $response->assertSee('View all Departments', false);
+        $response->assertSee('All departments', false);
     }
 }
