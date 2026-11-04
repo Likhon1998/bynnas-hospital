@@ -42,11 +42,13 @@ class LeadershipPageTest extends TestCase
             ->assertSee('Founded the campus with consultant clinics.', false)
             ->assertSee('Opened emergency desk', false)
             ->assertSee('Built consultant roster', false)
+            ->assertSee('About', false)
+            ->assertSee('Achievements', false)
             ->assertSee('ch-lead-stage--solo', false)
             ->assertSee('ch-lead-profile--enter-left', false)
+            ->assertSee('All guardians', false)
             ->assertDontSee('Hidden Co-founder', false)
-            ->assertDontSee('Draft Founder', false)
-            ->assertDontSee('Open profile', false);
+            ->assertDontSee('Draft Founder', false);
     }
 
     public function test_two_people_in_a_role_show_side_by_side_profiles_with_enter_animations(): void
