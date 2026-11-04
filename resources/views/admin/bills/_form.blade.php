@@ -107,45 +107,48 @@
         @error('items') <p class="mb-3 text-sm text-red-700">{{ $message }}</p> @enderror
         @error('items.*') <p class="mb-3 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        <div class="table-frame table-frame--fit bill-form__table">
-            <table class="pro-table pro-table--form">
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th class="col-num">Qty</th>
-                        <th class="col-num">Unit price (৳)</th>
-                        <th class="col-num">Line total</th>
-                        <th class="col-action">Action</th>
-                    </tr>
-                </thead>
-                <tbody data-bill-rows>
-                    @forelse ($itemRows as $index => $item)
-                        @php $isLab = ($item['item_type'] ?? '') === 'lab'; @endphp
-                        <tr data-bill-row @if ($isLab) data-bill-locked @endif>
-                            <td>
-                                <input type="hidden" name="items[{{ $index }}][item_type]" value="{{ $item['item_type'] ?? 'custom' }}">
-                                <input type="hidden" name="items[{{ $index }}][item_id]" value="{{ $item['item_id'] ?? '' }}">
-                                <input name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required class="admin-field w-full min-w-56 px-3 py-2 text-sm" placeholder="Charge description" @if ($isLab) readonly @endif>
-                            </td>
-                            <td class="col-num">
-                                <input type="number" min="1" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" data-bill-qty class="admin-field w-20 px-3 py-2 text-right text-sm" @if ($isLab) readonly @endif>
-                            </td>
-                            <td class="col-num">
-                                <input type="number" min="0" step="0.01" name="items[{{ $index }}][unit_price]" value="{{ $item['unit_price'] ?? 0 }}" data-bill-price class="admin-field w-28 px-3 py-2 text-right text-sm" @if ($isLab) readonly @endif>
-                            </td>
-                            <td class="col-num" data-bill-line>0.00</td>
-                            <td class="col-action">
-                                @unless ($isLab)
-                                    <button type="button" class="table-btn table-btn--danger" data-bill-remove>Remove</button>
-                                @else
-                                    <span class="text-xs font-semibold text-ink-500">Lab locked</span>
-                                @endunless
-                            </td>
-                        </tr>
-                    @empty
-                    @endforelse
-                </tbody>
-            </table>
+        <div class="bill-form__charges">
+            <div class="bill-form__charge-head" aria-hidden="true">
+                <span>Description</span>
+                <span>Qty</span>
+                <span>Unit ৳</span>
+                <span>Line</span>
+                <span>Action</span>
+            </div>
+            <div data-bill-rows>
+                @foreach ($itemRows as $index => $item)
+                    @php $isLab = ($item['item_type'] ?? '') === 'lab'; @endphp
+                    <article class="bill-form__charge" data-bill-row @if ($isLab) data-bill-locked @endif>
+                        <input type="hidden" name="items[{{ $index }}][item_type]" value="{{ $item['item_type'] ?? 'custom' }}">
+                        <input type="hidden" name="items[{{ $index }}][item_id]" value="{{ $item['item_id'] ?? '' }}">
+                        <div class="bill-form__charge-desc">
+                            <input name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required class="admin-field bill-form__field" placeholder="Charge description" @if ($isLab) readonly @endif>
+                        </div>
+                        <div class="bill-form__charge-qty">
+                            <label class="bill-form__mobile-label">Qty</label>
+                            <input type="number" min="1" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" data-bill-qty class="admin-field bill-form__field bill-form__field--num" @if ($isLab) readonly @endif>
+                        </div>
+                        <div class="bill-form__charge-price">
+                            <label class="bill-form__mobile-label">Unit ৳</label>
+                            <input type="number" min="0" step="0.01" name="items[{{ $index }}][unit_price]" value="{{ $item['unit_price'] ?? 0 }}" data-bill-price class="admin-field bill-form__field bill-form__field--num" @if ($isLab) readonly @endif>
+                        </div>
+                        <div class="bill-form__charge-line">
+                            <label class="bill-form__mobile-label">Line</label>
+                            <span data-bill-line>0.00</span>
+                        </div>
+                        <div class="bill-form__charge-action">
+                            @unless ($isLab)
+                                <select class="bill-form__action" data-bill-action aria-label="Charge action">
+                                    <option value="">Action</option>
+                                    <option value="remove">Remove</option>
+                                </select>
+                            @else
+                                <span class="bill-form__locked">Lab locked</span>
+                            @endunless
+                        </div>
+                    </article>
+                @endforeach
+            </div>
             <p class="bill-form__empty @if (count($itemRows) > 0) is-hidden @endif" data-bill-empty>
                 No charges yet. Pick a consultation/package from the catalog, or add a custom charge.
             </p>
@@ -169,23 +172,31 @@
 </x-admin.form-page>
 
 <template id="bill-row-template">
-    <tr data-bill-row>
-        <td>
-            <input type="hidden" name="items[__INDEX__][item_type]" value="custom">
-            <input type="hidden" name="items[__INDEX__][item_id]" value="">
-            <input name="items[__INDEX__][description]" required class="admin-field w-full min-w-56 px-3 py-2 text-sm" placeholder="Charge description">
-        </td>
-        <td class="col-num">
-            <input type="number" min="1" name="items[__INDEX__][quantity]" value="1" data-bill-qty class="admin-field w-20 px-3 py-2 text-right text-sm">
-        </td>
-        <td class="col-num">
-            <input type="number" min="0" step="0.01" name="items[__INDEX__][unit_price]" value="0" data-bill-price class="admin-field w-28 px-3 py-2 text-right text-sm">
-        </td>
-        <td class="col-num" data-bill-line>0.00</td>
-        <td class="col-action">
-            <button type="button" class="table-btn table-btn--danger" data-bill-remove>Remove</button>
-        </td>
-    </tr>
+    <article class="bill-form__charge" data-bill-row>
+        <input type="hidden" name="items[__INDEX__][item_type]" value="custom">
+        <input type="hidden" name="items[__INDEX__][item_id]" value="">
+        <div class="bill-form__charge-desc">
+            <input name="items[__INDEX__][description]" required class="admin-field bill-form__field" placeholder="Charge description">
+        </div>
+        <div class="bill-form__charge-qty">
+            <label class="bill-form__mobile-label">Qty</label>
+            <input type="number" min="1" name="items[__INDEX__][quantity]" value="1" data-bill-qty class="admin-field bill-form__field bill-form__field--num">
+        </div>
+        <div class="bill-form__charge-price">
+            <label class="bill-form__mobile-label">Unit ৳</label>
+            <input type="number" min="0" step="0.01" name="items[__INDEX__][unit_price]" value="0" data-bill-price class="admin-field bill-form__field bill-form__field--num">
+        </div>
+        <div class="bill-form__charge-line">
+            <label class="bill-form__mobile-label">Line</label>
+            <span data-bill-line>0.00</span>
+        </div>
+        <div class="bill-form__charge-action">
+            <select class="bill-form__action" data-bill-action aria-label="Charge action">
+                <option value="">Action</option>
+                <option value="remove">Remove</option>
+            </select>
+        </div>
+    </article>
 </template>
 
 <script>
@@ -216,6 +227,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 input.name = input.name.replace(/items\[\d+\]/, `items[${index}]`);
             });
         });
+    };
+
+    const removeRow = (row) => {
+        if (!row || row.hasAttribute('data-bill-locked')) {
+            return;
+        }
+        row.remove();
+        reindex();
+        syncEmpty();
+        totals();
     };
 
     const totals = () => {
@@ -329,14 +350,12 @@ document.addEventListener('DOMContentLoaded', () => {
         catalog.value = '';
     });
 
-    rows.addEventListener('click', (event) => {
-        if (!event.target.closest('[data-bill-remove]')) return;
-        const row = event.target.closest('[data-bill-row]');
-        if (row?.hasAttribute('data-bill-locked')) return;
-        row?.remove();
-        reindex();
-        syncEmpty();
-        totals();
+    rows.addEventListener('change', (event) => {
+        const action = event.target.closest('[data-bill-action]');
+        if (!action || action.value !== 'remove') {
+            return;
+        }
+        removeRow(action.closest('[data-bill-row]'));
     });
 
     form.addEventListener('input', totals);

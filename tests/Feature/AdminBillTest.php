@@ -89,6 +89,8 @@ class AdminBillTest extends TestCase
             ->assertSee('3. Settle', false)
             ->assertSee('Add from catalog', false)
             ->assertSee('No charges yet', false)
+            ->assertSee('bill-form__charges', false)
+            ->assertSee('data-bill-action', false)
             ->assertDontSee('name="items[0][description]"', false);
     }
 
