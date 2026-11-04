@@ -28,13 +28,11 @@
                         @endif
                     </p>
                 </div>
-                <div class="ch-clinics-hero__actions">
-                    @if ($isFiltered)
+                @if ($isFiltered)
+                    <div class="ch-clinics-hero__actions">
                         <a class="ch-btn" href="{{ route('services') }}">All services</a>
-                    @endif
-                    <a class="ch-btn" href="{{ route('home') }}#find-doctor">Find a doctor</a>
-                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Book appointment</a>
-                </div>
+                    </div>
+                @endif
             </div>
             <p class="ch-clinics-hero__count">
                 {{ $services->count() }} {{ \Illuminate\Support\Str::plural('service', $services->count()) }}

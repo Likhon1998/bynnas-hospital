@@ -40,10 +40,6 @@
                     <h1>About us</h1>
                     <p>{{ $tagline }}. Families come here for a named consultant, a blood test, or because something cannot wait until morning.</p>
                 </div>
-                <div class="ch-clinics-hero__actions">
-                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#find-doctor">Find a doctor</a>
-                    <a class="ch-btn" href="{{ route('home') }}#appointment">Book appointment</a>
-                </div>
             </div>
             <p class="ch-clinics-hero__count">
                 {{ $stats['doctors'] }} {{ \Illuminate\Support\Str::plural('consultant', $stats['doctors']) }}

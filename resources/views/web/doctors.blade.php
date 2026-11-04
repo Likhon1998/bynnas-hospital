@@ -25,10 +25,6 @@
                     <h1>Find a doctor</h1>
                     <p>Search by name or specialty, open a consultant profile, then book a free slot at {{ $hospitalName }}.</p>
                 </div>
-                <div class="ch-clinics-hero__actions">
-                    <a class="ch-btn" href="#directory-search">Search consultants</a>
-                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Book appointment</a>
-                </div>
             </div>
             <div class="ch-dir-hero__stats" aria-label="Directory summary">
                 <p><strong>{{ $totalConsultants }}</strong> {{ \Illuminate\Support\Str::plural('consultant', $totalConsultants) }}</p>
@@ -244,7 +240,6 @@
                 @if ($phone)
                     <a class="ch-btn ch-btn--solid" href="tel:{{ preg_replace('/\s+/', '', $phone) }}">Call {{ $phone }}</a>
                 @endif
-                <a class="ch-btn" href="{{ route('home') }}#appointment">Book appointment</a>
                 <a class="ch-btn" href="{{ route('emergency') }}">Emergency desk</a>
             </div>
         </div>

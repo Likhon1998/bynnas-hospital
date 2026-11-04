@@ -16,10 +16,6 @@
                     <h1>Our Departments</h1>
                     <p>Choose a specialty and we will show the doctors you can book — you do not need a name first.</p>
                 </div>
-                <div class="ch-clinics-hero__actions">
-                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#find-doctor">Find a doctor</a>
-                    <a class="ch-btn" href="{{ route('home') }}#appointment">Book appointment</a>
-                </div>
             </div>
             <p class="ch-clinics-hero__count">
                 {{ $departments->count() }} {{ \Illuminate\Support\Str::plural('clinic', $departments->count()) }}
