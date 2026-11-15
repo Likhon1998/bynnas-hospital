@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\GalleryRequest;
 use App\Models\Gallery;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class GalleryController extends Controller
@@ -27,7 +28,7 @@ class GalleryController extends Controller
 
     public function store(GalleryRequest $request): RedirectResponse
     {
-        Gallery::query()->create($request->safe()->except(['_token']));
+        Gallery::query()->create($this->galleryPayload($request));
 
         return redirect()->route('admin.galleries.index')->with('status', 'Gallery item created.');
     }
@@ -39,15 +40,47 @@ class GalleryController extends Controller
 
     public function update(GalleryRequest $request, Gallery $gallery): RedirectResponse
     {
-        $gallery->update($request->safe()->except(['_token']));
+        $gallery->update($this->galleryPayload($request, $gallery->image));
 
         return redirect()->route('admin.galleries.index')->with('status', 'Gallery item updated.');
     }
 
     public function destroy(Gallery $gallery): RedirectResponse
     {
+        $this->deleteStoredImage($gallery->image);
         $gallery->delete();
 
         return redirect()->route('admin.galleries.index')->with('status', 'Gallery item deleted.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function galleryPayload(GalleryRequest $request, ?string $currentImage = null): array
+    {
+        $data = $request->safe()->except(['image_upload']);
+
+        if ($request->hasFile('image_upload')) {
+            $path = $request->file('image_upload')->store('galleries', 'public');
+            $data['image'] = '/storage/'.$path;
+            $this->deleteStoredImage($currentImage);
+        }
+
+        return $data;
+    }
+
+    private function deleteStoredImage(?string $image): void
+    {
+        if (! filled($image)) {
+            return;
+        }
+
+        $path = parse_url($image, PHP_URL_PATH) ?: $image;
+
+        if (! is_string($path) || ! str_contains($path, '/storage/galleries/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(ltrim(str_replace('/storage/', '', $path), '/'));
     }
 }

@@ -45,13 +45,13 @@ class LeadershipPageTest extends TestCase
             ->assertSee('About', false)
             ->assertSee('Achievements', false)
             ->assertSee('ch-lead-stage--solo', false)
-            ->assertSee('ch-lead-profile--enter-left', false)
-            ->assertSee('All guardians', false)
+            ->assertSee('ch-lead-profile', false)
+            ->assertSee('Back to About us', false)
             ->assertDontSee('Hidden Co-founder', false)
             ->assertDontSee('Draft Founder', false);
     }
 
-    public function test_two_people_in_a_role_show_side_by_side_profiles_with_enter_animations(): void
+    public function test_two_people_in_a_role_show_side_by_side_profiles(): void
     {
         BoardMember::factory()->create([
             'name' => 'Prof. Dr. Anwar Hossain',
@@ -80,8 +80,7 @@ class LeadershipPageTest extends TestCase
             ->assertSee('First founder bio.', false)
             ->assertSee('Second founder bio.', false)
             ->assertSee('ch-lead-stage--pair', false)
-            ->assertSee('ch-lead-profile--enter-left', false)
-            ->assertSee('ch-lead-profile--enter-right', false)
+            ->assertSee('ch-lead-profile', false)
             ->assertDontSee('Open profile', false);
     }
 

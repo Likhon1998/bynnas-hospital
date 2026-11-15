@@ -15,8 +15,15 @@
         </div>
 
         <div class="rounded-3xl border border-sand-200 p-6">
+            <img
+                src="{{ filled($hospital->get('logo')) ? $hospital->get('logo') : asset('images/branding/bynnas-hospital-logo.png') }}"
+                alt="{{ $hospital->get('hospital_name') ?: 'Bynnas Hospital' }}"
+                class="mb-4 h-14 w-auto max-w-[15rem] object-contain object-left"
+                width="220"
+                height="72"
+            >
             <p class="text-xs uppercase tracking-[0.18em] text-teal-700">OPD ticket</p>
-            <h1 class="mt-1 font-display text-2xl text-navy-900">{{ $hospital->get('hospital_name') ?: config('app.name') }}</h1>
+            <h1 class="mt-1 font-display text-2xl text-navy-900">{{ $hospital->get('hospital_name') ?: 'Bynnas Hospital' }}</h1>
             <p class="mt-1 text-sm text-ink-600">{{ $hospital->get('address') }}</p>
 
             <div class="mt-6 grid gap-4 sm:grid-cols-2">

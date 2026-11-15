@@ -10,8 +10,15 @@
     <main class="mx-auto max-w-3xl px-6 py-10">
         <div class="flex items-start justify-between gap-6">
             <div>
+                <img
+                    src="{{ filled($hospital->get('logo')) ? $hospital->get('logo') : asset('images/branding/bynnas-hospital-logo.png') }}"
+                    alt="{{ $hospital->get('hospital_name') ?: 'Bynnas Hospital' }}"
+                    class="mb-3 h-14 w-auto max-w-[15rem] object-contain object-left"
+                    width="220"
+                    height="72"
+                >
                 <p class="text-sm uppercase tracking-[0.18em] text-teal-700">Hospital bill</p>
-                <h1 class="mt-1 font-display text-3xl text-navy-900">{{ $hospital->get('hospital_name') ?: config('app.name') }}</h1>
+                <h1 class="mt-1 font-display text-3xl text-navy-900">{{ $hospital->get('hospital_name') ?: 'Bynnas Hospital' }}</h1>
                 <p class="mt-2 text-sm text-ink-600">{{ $hospital->get('address') }}</p>
                 <p class="text-sm text-ink-600">{{ $hospital->get('phone') }} · {{ $hospital->get('email') }}</p>
             </div>

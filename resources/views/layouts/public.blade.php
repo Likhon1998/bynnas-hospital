@@ -3,9 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>@yield('title', $hospital->get('hospital_name') ?: 'Hospital')</title>
-    <meta name="description" content="@yield('meta_description', $hospital->get('tagline') ?: 'Hospital care in Dhaka.')">
+    <title>@yield('title', $hospital->get('hospital_name') ?: 'Bynnas Hospital')</title>
+    <meta name="description" content="@yield('meta_description', $hospital->get('tagline') ?: 'Care Today • Healthier Tomorrow')">
     <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/branding/favicon.png') }}?v={{ @filemtime(public_path('images/branding/favicon.png')) ?: 2 }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/branding/bynnas-mark.png') }}?v={{ @filemtime(public_path('images/branding/bynnas-mark.png')) ?: 2 }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="ch-site min-h-screen bg-white font-sans text-ink-900 antialiased">

@@ -80,7 +80,7 @@
                 <p>
                     {{ filled($doctor->biography)
                         ? $doctor->biography
-                        : $doctor->name.' sees patients in '.$specialty.' at '.$hospitalName.'. Ask the desk for the next free visit.' }}
+                        : $doctor->name.' sees patients in '.$specialty.' at '.$hospitalName.'. Book online or call reception.' }}
                 </p>
 
                 <h2>Clinic hours</h2>
@@ -94,12 +94,12 @@
                         @endforeach
                     </ul>
                 @else
-                    <p>Ask the desk for this consultant’s clinic hours.</p>
+                    <p>Call reception for clinic hours.</p>
                 @endif
 
                 <div class="ch-profile__cta">
                     <a class="ch-btn ch-btn--solid" href="{{ route('home', ['doctor' => $doctor->id]) }}#appointment">Book this doctor</a>
-                    <a class="ch-btn" href="{{ route('home') }}#find-doctor">Find another doctor</a>
+                    <a class="ch-btn" href="{{ route('doctors') }}">All doctors</a>
                 </div>
             </div>
         </div>

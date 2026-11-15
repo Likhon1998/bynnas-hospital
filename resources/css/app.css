@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 @import 'tailwindcss';
 @import './cityhealth.css';
 
@@ -56,7 +57,7 @@ html {
 }
 
 body {
-    color: #12221c;
+    color: #0a1b2b;
     background: #ffffff;
 }
 
@@ -1578,7 +1579,8 @@ body {
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.7rem 0.7rem 0.45rem;
+    padding: 0.85rem 0.75rem 0.55rem;
+    min-height: 3.6rem;
 }
 
 .admin-collapse-btn {
@@ -1643,13 +1645,25 @@ body {
     height: 100%;
 }
 
+.admin-brand.has-logo {
+    gap: 0;
+}
+
 .admin-brand__logo {
     display: block;
-    max-width: 7.5rem;
-    max-height: 2rem;
+    max-width: 10.5rem;
+    max-height: 2.85rem;
     width: auto;
     height: auto;
     object-fit: contain;
+    object-position: left center;
+    filter: brightness(1.06);
+}
+
+.admin-brand__logo--mark {
+    display: none;
+    max-width: 2.15rem;
+    max-height: 2.15rem;
 }
 
 .admin-brand__name {
@@ -1682,8 +1696,14 @@ body {
         display: none;
     }
 
-    .admin-shell.is-collapsed .admin-brand__logo {
-        max-width: 2rem;
+    .admin-shell.is-collapsed .admin-brand__logo--full {
+        display: none;
+    }
+
+    .admin-shell.is-collapsed .admin-brand__logo--mark {
+        display: block;
+        max-width: 2.15rem;
+        max-height: 2.15rem;
     }
 
     .admin-shell.is-collapsed .admin-nav-section__toggle,

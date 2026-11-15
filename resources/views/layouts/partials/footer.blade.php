@@ -1,59 +1,42 @@
 @php
-    $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
-    $nameParts = preg_split('/\s+/', trim($hospitalName)) ?: [$hospitalName];
-    $brandMark = $nameParts[0] ?? 'Hospital';
-    $brandRest = trim(implode(' ', array_slice($nameParts, 1))) ?: 'Medical Center';
+    $hospitalName = $hospital->get('hospital_name') ?: 'Bynnas Hospital';
     $phone = $hospital->get('phone') ?: '';
     $emergency = $hospital->get('emergency_phone') ?: '';
     $email = $hospital->get('email');
     $address = $hospital->get('address') ?: '';
-    $tagline = $hospital->get('tagline') ?: 'Consultant clinics and emergency care in Dhaka.';
-    $logo = $hospital->get('logo');
+    $tagline = $hospital->get('tagline') ?: 'Care Today • Healthier Tomorrow';
+    $logo = filled($hospital->get('logo'))
+        ? $hospital->get('logo')
+        : '/images/branding/bynnas-hospital-logo.png';
+    if (str_starts_with((string) $logo, '/images/branding/')) {
+        $logoPath = public_path(ltrim((string) $logo, '/'));
+        $logo .= '?v='.(is_file($logoPath) ? filemtime($logoPath) : '2');
+    }
     $socials = collect([
         'Facebook' => $hospital->get('facebook_url'),
         'YouTube' => $hospital->get('youtube_url'),
         'Instagram' => $hospital->get('instagram_url'),
     ])->filter(fn (?string $url): bool => filled($url) && $url !== 'https://facebook.com' && $url !== 'https://youtube.com' && $url !== 'https://instagram.com');
-    $priorityTitle = $promoBanner?->title ?: 'Need a clinic slot this week?';
-    $priorityLead = $promoBanner?->subtitle ?: 'Pick a doctor and an open time. We confirm your visit by phone.';
-    $priorityCta = $promoBanner?->cta_label ?: 'Book a visit';
-    $priorityHref = $promoBanner?->destination() ?: route('home').'#appointment';
     $privacy = filled($hospital->get('privacy_content'));
     $terms = filled($hospital->get('terms_content'));
 @endphp
 
-<section class="ch-priority">
-    <div class="ch-priority__pulse" aria-hidden="true"></div>
-    <div class="ch-wrap ch-priority__row">
-        <div class="ch-priority__copy">
-            <div>
-                <h2>{{ $priorityTitle }}</h2>
-                <p>{{ $priorityLead }}</p>
-            </div>
-        </div>
-        <a href="{{ $priorityHref }}" class="ch-btn ch-btn--light">{{ $priorityCta }}</a>
-    </div>
-</section>
-
 <footer id="contact" class="ch-foot">
     <div class="ch-wrap ch-foot__grid">
         <div class="ch-foot__brand">
-            <a href="{{ route('home') }}" class="ch-brand">
-                @if (filled($logo))
-                    <img src="{{ $logo }}" alt="" class="ch-brand__logo">
-                @else
-                    <span class="ch-brand__mark" aria-hidden="true">
-                        <svg viewBox="0 0 36 36" class="h-5 w-5" fill="none">
-                            <path d="M18 8v20M9 18h18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
-                        </svg>
-                    </span>
-                @endif
-                <span class="ch-brand__copy">
-                    <span class="ch-brand__name">{{ $brandMark }}</span>
-                    <span class="ch-brand__sub">{{ $brandRest }}</span>
-                </span>
+            <a href="{{ route('home') }}" class="ch-brand has-logo" aria-label="{{ $hospitalName }} home">
+                <img
+                    src="{{ $logo }}"
+                    alt="{{ $hospitalName }}"
+                    class="ch-brand__logo ch-brand__logo--foot"
+                    width="220"
+                    height="72"
+                    decoding="async"
+                >
             </a>
-            <p class="mt-4">{{ $tagline }}</p>
+            @if (filled($tagline) && ! str_contains(strtolower($tagline), 'care today'))
+                <p class="mt-4">{{ $tagline }}</p>
+            @endif
             @if ($socials->isNotEmpty())
                 <p class="mt-3">
                     @foreach ($socials as $label => $url)
@@ -77,12 +60,11 @@
         <div>
             <h3>Patients & Visitors</h3>
             <ul>
-                <li><a href="{{ route('home') }}#patients">Patient Services</a></li>
+                <li><a href="{{ route('services') }}">Patient Services</a></li>
                 <li><a href="{{ route('lab-reports.index') }}">Lab reports</a></li>
                 <li><a href="{{ route('about') }}">Visiting Hours</a></li>
                 <li><a href="{{ route('services') }}">Billing & Insurance</a></li>
-                <li><a href="{{ route('packages') }}">Health Packages</a></li>
-                <li><a href="{{ route('home') }}#faq">FAQ</a></li>
+                <li><a href="{{ route('notices') }}">Notices</a></li>
             </ul>
         </div>
 

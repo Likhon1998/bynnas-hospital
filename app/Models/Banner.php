@@ -67,7 +67,7 @@ class Banner extends Model
 
         return match (true) {
             $url === '', $url === '/appointments' => url('/').'#appointment',
-            $url === '/health-packages' => route('packages'),
+            $url === '/health-packages' => route('services'),
             $url === '/doctors' => route('doctors'),
             $url === '/emergency' => route('emergency'),
             default => $url,

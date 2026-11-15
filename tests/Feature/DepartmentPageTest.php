@@ -32,7 +32,7 @@ class DepartmentPageTest extends TestCase
         $response = $this->get(route('departments'));
 
         $response->assertOk();
-        $response->assertSee('Our Departments', false);
+        $response->assertSee('Departments', false);
         $response->assertSee('Cardiology', false);
         $response->assertSee('Heart clinics and ward support.', false);
         $response->assertSee('1 consultant', false);

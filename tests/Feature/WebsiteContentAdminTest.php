@@ -8,6 +8,7 @@ use App\Models\BlogPost;
 use App\Models\Department;
 use App\Models\Doctor;
 use App\Models\Faq;
+use App\Models\Gallery;
 use App\Models\HealthPackage;
 use App\Models\HospitalSetting;
 use App\Models\Service;
@@ -41,6 +42,10 @@ class WebsiteContentAdminTest extends TestCase
         $this->get(route('admin.banners.create'))->assertOk()->assertSee('Homepage hero', false);
         $this->get(route('admin.faqs.index'))->assertOk();
         $this->get(route('admin.faqs.create'))->assertOk();
+        $this->get(route('admin.notices.index'))->assertOk();
+        $this->get(route('admin.notices.create'))->assertOk();
+        $this->get(route('admin.acknowledgements.index'))->assertOk();
+        $this->get(route('admin.acknowledgements.create'))->assertOk();
         $this->get(route('admin.blog-posts.index'))->assertOk()->assertSee('Categories', false);
         $this->get(route('admin.blog-posts.create'))->assertOk();
         $this->get(route('admin.blog-categories.index'))->assertOk()->assertSee('News categories', false);
@@ -49,7 +54,12 @@ class WebsiteContentAdminTest extends TestCase
         $this->get(route('admin.board-members.index'))->assertOk()->assertSee('Add board member', false);
         $this->get(route('admin.board-members.create'))->assertOk()->assertSee('Board of Directors', false);
         $this->get(route('admin.galleries.index'))->assertOk();
-        $this->get(route('admin.galleries.create'))->assertOk();
+        $this->get(route('admin.galleries.create'))
+            ->assertOk()
+            ->assertSee('1200 × 750', false)
+            ->assertSee('Upload gallery image', false);
+        $this->get(route('admin.doctor-talks.index'))->assertOk();
+        $this->get(route('admin.doctor-talks.create'))->assertOk();
         $this->get(route('admin.health-packages.index'))->assertOk();
         $this->get(route('admin.health-packages.create'))->assertOk();
         $this->get(route('admin.settings.edit'))->assertOk();
@@ -149,8 +159,8 @@ class WebsiteContentAdminTest extends TestCase
                 'title' => 'Executive Health Checkup',
                 'subtitle' => 'Full screening before the work week.',
                 'image' => $photo,
-                'cta_label' => 'See packages',
-                'cta_url' => '/health-packages',
+                'cta_label' => 'See services',
+                'cta_url' => '/services',
                 'placement' => 'promo',
                 'is_active' => '1',
                 'sort_order' => '1',
@@ -166,8 +176,8 @@ class WebsiteContentAdminTest extends TestCase
         $home->assertSee('photo-1586773860418-d37222d8fce3', false);
         $home->assertSee('Stroke desk open now', false);
         $home->assertSee('Executive Health Checkup', false);
-        $home->assertSee('See packages', false);
-        $home->assertSee(route('packages'), false);
+        $home->assertSee('See services', false);
+        $home->assertSee(route('services'), false);
         $home->assertDontSee('See a consultant. Leave with a plan.', false);
     }
 
@@ -223,7 +233,37 @@ class WebsiteContentAdminTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('photo-1516549655169-df83a0774514', false);
+            ->assertSee('photo-1516549655169-df83a0774514', false)
+            ->assertSee('Gallery', false);
+    }
+
+    public function test_gallery_upload_from_the_desk_appears_on_the_homepage(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->createStaffUser(['content.manage']);
+        $upload = UploadedFile::fake()->image('lobby.jpg', 1200, 750);
+
+        $this->actingAs($user)
+            ->post(route('admin.galleries.store'), [
+                'title' => 'Lobby at dusk',
+                'caption' => 'Evening reception.',
+                'album' => 'Campus',
+                'is_active' => '1',
+                'sort_order' => '1',
+                'image_upload' => $upload,
+            ])
+            ->assertRedirect(route('admin.galleries.index'));
+
+        $item = Gallery::query()->firstOrFail();
+
+        $this->assertStringStartsWith('/storage/galleries/', $item->image);
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', $item->image));
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee($item->image, false)
+            ->assertSee('Lobby at dusk', false);
     }
 
     public function test_publishing_an_article_shows_it_on_news_and_home(): void
@@ -267,7 +307,7 @@ class WebsiteContentAdminTest extends TestCase
             ->assertSee('Bring one adult attendant only.', false);
     }
 
-    public function test_creating_a_health_package_shows_it_on_the_packages_page(): void
+    public function test_creating_a_health_package_saves_it_in_the_desk(): void
     {
         $user = $this->createStaffUser(['content.manage']);
 
@@ -284,17 +324,14 @@ class WebsiteContentAdminTest extends TestCase
             ])
             ->assertRedirect(route('admin.health-packages.index'));
 
-        $this->get(route('packages'))
-            ->assertOk()
-            ->assertSee('Executive Heart Screen', false)
-            ->assertSee('ECG', false)
-            ->assertSee('Consultant review', false);
+        $this->assertDatabaseHas('health_packages', [
+            'title' => 'Executive Heart Screen',
+            'is_active' => true,
+        ]);
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Executive Heart Screen', false)
-            ->assertSee('Health Packages', false)
-            ->assertSee(route('packages'), false);
+            ->assertDontSee('Executive Heart Screen', false);
     }
 
     public function test_featured_service_from_the_desk_appears_on_the_homepage(): void
@@ -538,7 +575,7 @@ class WebsiteContentAdminTest extends TestCase
 
         $this->assertFalse(HealthPackage::query()->firstOrFail()->is_active);
 
-        $this->get(route('packages'))
+        $this->get(route('home'))
             ->assertOk()
             ->assertDontSee('Draft Wellness Screen', false);
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AcknowledgementController;
 use App\Http\Controllers\Admin\AdmissionController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\Auth\LoginController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DoctorLeaveController;
 use App\Http\Controllers\Admin\DoctorScheduleController;
+use App\Http\Controllers\Admin\DoctorTalkController;
 use App\Http\Controllers\Admin\EmergencyFlowController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\FinanceApprovalController;
@@ -30,6 +32,7 @@ use App\Http\Controllers\Admin\LabOrderController;
 use App\Http\Controllers\Admin\LabResultController;
 use App\Http\Controllers\Admin\LabTestController;
 use App\Http\Controllers\Admin\MedicationAdministrationController;
+use App\Http\Controllers\Admin\NoticeController;
 use App\Http\Controllers\Admin\NotificationFeedController;
 use App\Http\Controllers\Admin\NursingController;
 use App\Http\Controllers\Admin\NursingHandoverController;
@@ -226,9 +229,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::resource('blog-posts', BlogPostController::class)->except(['show']);
             Route::resource('testimonials', TestimonialController::class)->except(['show']);
             Route::resource('faqs', FaqController::class)->except(['show']);
+            Route::resource('notices', NoticeController::class)->except(['show']);
+            Route::resource('acknowledgements', AcknowledgementController::class)->except(['show']);
             Route::resource('board-members', BoardMemberController::class)->except(['show']);
             Route::resource('hospital-achievements', HospitalAchievementController::class)->except(['show']);
             Route::resource('galleries', GalleryController::class)->except(['show']);
+            Route::resource('doctor-talks', DoctorTalkController::class)->except(['show']);
             Route::resource('banners', BannerController::class)->except(['show']);
             Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'update', 'destroy']);
         });

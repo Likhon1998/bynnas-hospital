@@ -197,8 +197,15 @@
         <article class="rx-paper">
             <header class="rx-head">
                 <div class="rx-brand">
+                    <img
+                        src="{{ filled($hospital->get('logo')) ? $hospital->get('logo') : asset('images/branding/bynnas-hospital-logo.png') }}"
+                        alt="{{ $hospital->get('hospital_name') ?: 'Bynnas Hospital' }}"
+                        class="mb-2 h-12 w-auto max-w-[14rem] object-contain object-left"
+                        width="220"
+                        height="72"
+                    >
                     <p class="rx-eyebrow">Medical prescription</p>
-                    <h1>{{ $hospital->get('hospital_name') ?: config('app.name') }}</h1>
+                    <h1>{{ $hospital->get('hospital_name') ?: 'Bynnas Hospital' }}</h1>
                     <p class="rx-meta">
                         {{ $hospital->get('address') ?: '' }}
                         @if ($hospital->get('phone'))

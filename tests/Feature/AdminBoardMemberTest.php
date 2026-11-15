@@ -68,7 +68,7 @@ class AdminBoardMemberTest extends TestCase
 
         $this->get(route('about'))
             ->assertOk()
-            ->assertSee('People who guide the campus', false)
+            ->assertSee('Hospital leadership', false)
             ->assertSee('Prof. Dr. Nazmul Haque', false)
             ->assertSee('Chairman', false)
             ->assertSee('Leads hospital governance.', false)

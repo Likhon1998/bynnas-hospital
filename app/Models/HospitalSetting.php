@@ -53,9 +53,9 @@ class HospitalSetting extends Model
     public static function defaultDefinitions(): array
     {
         return [
-            ['key' => 'hospital_name', 'group' => 'general', 'value' => 'Hospital'],
-            ['key' => 'tagline', 'group' => 'general', 'value' => 'Consultant clinics and emergency care in Dhaka'],
-            ['key' => 'logo', 'group' => 'general', 'value' => ''],
+            ['key' => 'hospital_name', 'group' => 'general', 'value' => 'Bynnas Hospital'],
+            ['key' => 'tagline', 'group' => 'general', 'value' => 'Care Today • Healthier Tomorrow'],
+            ['key' => 'logo', 'group' => 'general', 'value' => '/images/branding/bynnas-hospital-logo.png'],
             ['key' => 'phone', 'group' => 'contact', 'value' => ''],
             ['key' => 'emergency_phone', 'group' => 'contact', 'value' => ''],
             ['key' => 'email', 'group' => 'contact', 'value' => ''],

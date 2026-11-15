@@ -9,9 +9,8 @@
 
 @section('content')
     <x-web.page-intro
-        kicker="Campus updates"
         title="News & Updates"
-        note="Articles the desk publishes for families. This is general information, not a personal medical plan."
+        note="General hospital information — not personal medical advice."
     />
 
     <section class="site-block">
@@ -28,7 +27,7 @@
                         <a class="ch-more" href="{{ route('news.show', $post) }}">Read more →</a>
                     </article>
                 @empty
-                    <p class="ch-lead">Campus updates will appear here when the desk publishes them.</p>
+                    <p class="ch-lead">No articles yet.</p>
                 @endforelse
             </div>
             <div class="mt-10">{{ $posts->links() }}</div>

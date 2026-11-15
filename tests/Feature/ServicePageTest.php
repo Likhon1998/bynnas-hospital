@@ -77,8 +77,10 @@ class ServicePageTest extends TestCase
         $response = $this->get(route('services', ['department' => 'Cardiology']));
 
         $response->assertOk();
-        $response->assertSee('Desks in Cardiology', false);
+        $response->assertSee('Services in Cardiology', false);
+        $response->assertSee('1 service', false);
         $response->assertSee(route('services.show', $ecg), false);
-        $response->assertDontSee(route('services.show', $pharmacy), false);
+        $response->assertSee('Live ECG Trace Desk', false);
+        $response->assertDontSee('>Hidden Infusion Lounge XYZ</h2>', false);
     }
 }

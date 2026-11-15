@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Staff sign in')</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/branding/favicon.png') }}?v={{ @filemtime(public_path('images/branding/favicon.png')) ?: 2 }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/branding/bynnas-mark.png') }}?v={{ @filemtime(public_path('images/branding/bynnas-mark.png')) ?: 2 }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="admin-guest min-h-screen bg-lilac-950 font-sans text-white antialiased">
@@ -17,13 +19,14 @@
             <div class="hero-lilac-overlay absolute inset-0"></div>
             <div class="relative flex h-full flex-col justify-between p-12">
                 <p class="flex items-center gap-3 text-[1.65rem] font-bold tracking-tight">
-                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
-                        <svg viewBox="0 0 32 32" class="h-7 w-7" fill="none" aria-hidden="true">
-                            <rect x="3" y="3" width="26" height="26" rx="8" fill="#1769AA"/>
-                            <path d="M16 9v14M9 16h14" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
-                        </svg>
-                    </span>
-                    Staff
+                    <img
+                        src="{{ asset('images/branding/bynnas-hospital-logo.png') }}"
+                        alt="Bynnas Hospital"
+                        class="h-12 w-auto max-w-[15rem] object-contain object-left drop-shadow"
+                        width="220"
+                        height="72"
+                        decoding="async"
+                    >
                 </p>
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Staff console</p>

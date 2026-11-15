@@ -8,15 +8,13 @@
     $heroTitle = $solo?->name ?: $roleTitle;
     $heroLede = $solo
         ? trim(($solo->title ?: $roleTitle).($solo->role_label ? ' · '.$solo->role_label : ''))
-        : ($isPair
-            ? 'Both '.$roleTitle.' profiles for '.$hospitalName.'.'
-            : $roleTitle.' at '.$hospitalName.'.');
+        : $roleTitle.' at '.$hospitalName.'.';
 @endphp
 
 @section('title', ($solo?->name ?: $roleTitle).' | Leadership | '.$hospitalName)
 @section('meta_description', $solo
     ? ($solo->name.' — '.($solo->title ?: $roleTitle).' at '.$hospitalName)
-    : ($roleTitle.' at '.$hospitalName.' — people who guide the campus.'))
+    : ($roleTitle.' at '.$hospitalName.'.'))
 
 @section('content')
     <section class="ch-lead-hero">
@@ -29,13 +27,14 @@
 
             <div class="ch-lead-hero__row">
                 <div>
-                    <p class="ch-find__kicker">{{ $roleTitle }}</p>
                     <h1>{{ $heroTitle }}</h1>
-                    <p>{{ $heroLede }}</p>
+                    @if (filled($heroLede))
+                        <p>{{ $heroLede }}</p>
+                    @endif
                 </div>
                 <div class="ch-lead-hero__actions">
-                    <a class="ch-btn" href="{{ route('about') }}">All guardians</a>
-                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Book appointment</a>
+                    <a class="ch-btn" href="{{ route('about') }}">Back to About us</a>
+                    <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Book a visit</a>
                 </div>
             </div>
         </div>
@@ -45,9 +44,8 @@
         <div class="ch-wrap">
             @if ($members->isEmpty())
                 <div class="ch-lead-empty">
-                    <p class="ch-find__kicker">Leadership</p>
                     <h2>No {{ strtolower($roleTitle) }} published yet</h2>
-                    <p>When the desk adds this role, the profile will appear here.</p>
+                    <p>This profile is not published yet.</p>
                     <a class="ch-btn ch-btn--solid" href="{{ route('about') }}">Back to About us</a>
                 </div>
             @else
@@ -59,13 +57,10 @@
                 ])>
                     @foreach ($members as $member)
                         @php
-                            $enterFrom = $loop->index % 2 === 0 ? 'left' : 'right';
-                            $delay = min($loop->index * 0.14, 0.42);
                             $achievements = $member->achievementList();
                         @endphp
                         <article
-                            class="ch-lead-profile ch-lead-profile--enter-{{ $enterFrom }}"
-                            style="--lead-delay: {{ $delay }}s"
+                            class="ch-lead-profile"
                             id="guardian-{{ $member->slug }}"
                         >
                             <div class="ch-lead-profile__media">
@@ -137,9 +132,7 @@
     <section class="ch-lead-footer">
         <div class="ch-wrap ch-lead-footer__row">
             <div>
-                <p class="ch-find__kicker">Campus</p>
-                <h2 class="ch-sec__title">Continue exploring {{ $hospitalName }}</h2>
-                <p class="ch-depts-intro">Return to the guardians list, or book a consultant visit at the desk.</p>
+                <h2 class="ch-sec__title">Explore {{ $hospitalName }}</h2>
             </div>
             <div class="ch-lead-footer__actions">
                 <a class="ch-btn ch-btn--solid" href="{{ route('about') }}">About us</a>

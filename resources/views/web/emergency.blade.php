@@ -12,9 +12,8 @@
 
 @section('content')
     <x-web.page-intro
-        kicker="Urgent care"
-        title="Emergency desk"
-        note="This desk stays open. Do not wait for clinic hours if breathing, chest pain, stroke signs, or heavy bleeding are present."
+        title="Emergency"
+        note="Open 24/7. Come immediately for chest pain, breathing difficulty, stroke symptoms, or heavy bleeding."
     />
 
     <section class="site-block">
@@ -25,7 +24,7 @@
                 </div>
                 <div class="prose-service text-[0.95rem] leading-7 text-[#475569]">
                     <p>{{ $content }}</p>
-                    <p>Walk to the emergency entrance and tell the desk what happened. Staff will triage, then move the patient to an ICU, isolation, or general bed if admission is needed.</p>
+                    <p>Go to the emergency entrance. Staff will triage and admit if needed.</p>
                 </div>
                 <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
                     @if ($phone)
@@ -39,7 +38,7 @@
             <aside class="rounded-3xl bg-[#0f172a] p-6 text-white">
                 <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#86efac]">Open now</p>
                 <p class="mt-2 text-2xl font-semibold">24/7 emergency</p>
-                <p class="mt-3 text-sm leading-6 text-slate-300">Friday clinic may be closed. The emergency desk is not.</p>
+                <p class="mt-3 text-sm leading-6 text-slate-300">Outpatient clinics may close; emergency does not.</p>
             </aside>
         </div>
     </section>

@@ -43,8 +43,8 @@ class WebsiteContentSeeder extends Seeder
             ],
             [
                 'display_name' => 'Lamia Chowdhury',
-                'display_role' => 'Health checkup guest',
-                'quote' => 'The health packages made it simple to compare what each checkup includes.',
+                'display_role' => 'Outpatient guest',
+                'quote' => 'The consultant explained each step clearly before we left.',
                 'rating' => 4,
             ],
             [
@@ -120,8 +120,8 @@ class WebsiteContentSeeder extends Seeder
 
         $banners = [
             [
-                'title' => 'See a consultant. Leave with a plan.',
-                'subtitle' => 'Book a named doctor, pick an open clinic slot, and get clear next steps at our Dhaka campus.',
+                'title' => 'Care you can count on.',
+                'subtitle' => 'Named consultants. Clear next steps.',
                 'cta_label' => 'Book a visit',
                 'cta_url' => '/#appointment',
                 'placement' => 'hero',
@@ -134,8 +134,8 @@ class WebsiteContentSeeder extends Seeder
                 'placement' => 'emergency',
             ],
             [
-                'title' => 'Need a clinic slot this week?',
-                'subtitle' => 'Pick a doctor and an open time. We confirm your visit by phone.',
+                'title' => 'Need a clinic slot?',
+                'subtitle' => 'Choose a doctor and time — we confirm by phone.',
                 'cta_label' => 'Book a visit',
                 'cta_url' => '/#appointment',
                 'placement' => 'promo',

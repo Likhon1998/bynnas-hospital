@@ -35,13 +35,18 @@ class DoctorPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Find a doctor', false);
-        $response->assertSee('Narrow the roster', false);
-        $response->assertSee('Browse by clinic', false);
+        $response->assertSee('Department Wise', false);
+        $response->assertSee('Branch Wise', false);
+        $response->assertSee('Doctor Name Wise', false);
+        $response->assertSee('All departments', false);
+        $response->assertSee('data-live-filter', false);
         $response->assertSee('Dr. Hamida Jannat', false);
-        $response->assertSee('1 consultant', false);
+        $response->assertSee('1 doctor', false);
         $response->assertSee('Profile', false);
         $response->assertSee(route('doctors.show', $hamida), false);
         $response->assertDontSee('Dr. Hidden Consultant', false);
+        $response->assertDontSee('ch-dir-card__media', false);
+        $response->assertSee('ch-dir-card__photo', false);
     }
 
     public function test_doctors_page_supports_name_sort_and_featured_filters(): void
@@ -70,12 +75,7 @@ class DoctorPageTest extends TestCase
             ->assertOk()
             ->assertSee('Dr. Featured Heart', false)
             ->assertDontSee('Dr. Standard Heart', false)
-            ->assertSee('Active:', false);
-
-        $this->get(route('doctors', ['featured' => 1]))
-            ->assertOk()
-            ->assertSee('Dr. Featured Heart', false)
-            ->assertDontSee('Dr. Standard Heart', false);
+            ->assertSee('Clear', false);
 
         $sorted = $this->get(route('doctors', ['sort' => 'experience']));
         $sorted->assertOk();
@@ -136,6 +136,36 @@ class DoctorPageTest extends TestCase
         $this->get('/doctors/missing-consultant')->assertNotFound();
     }
 
+    public function test_doctors_page_supports_department_branch_and_name_views(): void
+    {
+        $cardiology = Department::factory()->create([
+            'name' => 'Cardiology',
+            'is_active' => true,
+        ]);
+        Doctor::factory()->create([
+            'name' => 'Dr. Hamida Jannat',
+            'department_id' => $cardiology->id,
+            'specialization' => 'Cardiologist',
+            'is_active' => true,
+        ]);
+
+        $this->get(route('doctors', ['view' => 'department']))
+            ->assertOk()
+            ->assertSee('All departments', false)
+            ->assertSee('Cardiology', false);
+
+        $this->get(route('doctors', ['view' => 'branch']))
+            ->assertOk()
+            ->assertSee('Doctors by branch', false)
+            ->assertSee('Main Campus', false);
+
+        $this->get(route('doctors', ['view' => 'name']))
+            ->assertOk()
+            ->assertSee('Doctors A–Z', false)
+            ->assertSee('Dr. Hamida Jannat', false)
+            ->assertSee('letter-', false);
+    }
+
     public function test_doctors_page_filters_by_specialty_and_shows_empty_clinics(): void
     {
         $cardiology = Department::factory()->create([
@@ -157,11 +187,11 @@ class DoctorPageTest extends TestCase
         $filtered = $this->get(route('doctors', ['specialty' => 'Cardiology']));
         $filtered->assertOk();
         $filtered->assertSee('Dr. Hamida Jannat', false);
-        $filtered->assertSee('Showing consultants for Cardiology', false);
+        $filtered->assertSee('Results for Cardiology', false);
 
         $empty = $this->get(route('doctors', ['specialty' => 'Oncology']));
         $empty->assertOk();
-        $empty->assertSee('No consultants in this clinic yet', false);
-        $empty->assertSee('Showing consultants for Oncology', false);
+        $empty->assertSee('No doctors found', false);
+        $empty->assertSee('Results for Oncology', false);
     }
 }

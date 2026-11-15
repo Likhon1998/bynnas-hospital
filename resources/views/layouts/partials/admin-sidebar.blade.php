@@ -1,24 +1,38 @@
 @php
-    $nameParts = preg_split('/\s+/', trim((string) $hospitalName)) ?: ['Hospital'];
-    $brandMark = $nameParts[0] ?? 'Hospital';
+    $logo = filled($hospitalLogo ?? null)
+        ? $hospitalLogo
+        : '/images/branding/bynnas-hospital-logo.png';
+    $logoMark = '/images/branding/bynnas-mark.png';
+    if (str_starts_with((string) $logo, '/images/branding/')) {
+        $logoFile = public_path(ltrim((string) $logo, '/'));
+        $logo .= '?v='.(is_file($logoFile) ? filemtime($logoFile) : '2');
+    }
+    $markFile = public_path('images/branding/bynnas-mark.png');
+    $logoMark .= '?v='.(is_file($markFile) ? filemtime($markFile) : '2');
 @endphp
 
 <div id="admin-sidebar" class="fixed inset-0 z-40 hidden lg:static lg:block lg:h-dvh" data-admin-sidebar>
     <button type="button" class="absolute inset-0 bg-lilac-950/40 lg:hidden" data-admin-sidebar-close aria-label="Close menu"></button>
     <aside class="admin-sidebar absolute inset-y-0 left-0 flex h-full w-[min(15.25rem,88%)] flex-col lg:static lg:h-dvh lg:w-auto">
         <div class="admin-brand-row">
-            <a href="{{ route('admin.dashboard') }}" class="admin-brand">
-                @if (filled($hospitalLogo ?? null))
-                    <img src="{{ $hospitalLogo }}" alt="{{ $hospitalName }}" class="admin-brand__logo" width="120" height="32">
-                @else
-                    <span class="admin-brand__mark" aria-hidden="true">
-                        <svg viewBox="0 0 32 32" fill="none">
-                            <rect x="3" y="3" width="26" height="26" rx="8" fill="#D09DE0"/>
-                            <path d="M16 9v14M9 16h14" stroke="#43244B" stroke-width="2.6" stroke-linecap="round"/>
-                        </svg>
-                    </span>
-                    <span class="admin-brand__name">{{ $brandMark }}</span>
-                @endif
+            <a href="{{ route('admin.dashboard') }}" class="admin-brand has-logo" aria-label="{{ $hospitalName }} dashboard">
+                <img
+                    src="{{ $logo }}"
+                    alt="{{ $hospitalName }}"
+                    class="admin-brand__logo admin-brand__logo--full"
+                    width="160"
+                    height="52"
+                    decoding="async"
+                >
+                <img
+                    src="{{ $logoMark }}"
+                    alt=""
+                    class="admin-brand__logo admin-brand__logo--mark"
+                    width="40"
+                    height="40"
+                    decoding="async"
+                    aria-hidden="true"
+                >
             </a>
 
             <button

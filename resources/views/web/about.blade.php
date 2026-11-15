@@ -13,32 +13,31 @@
         [
             'icon' => 'stethoscope',
             'title' => 'Named consultants',
-            'text' => 'You book a real doctor from the roster — not a placeholder. The same name stays on your visit from clinic to follow-up.',
+            'text' => 'Book a named doctor from our roster — the same name stays with you from clinic to follow-up.',
         ],
         [
             'icon' => 'flask',
             'title' => 'Care on one campus',
-            'text' => 'Clinics, diagnostics, and the emergency desk sit together. Reports should not travel across town if we can help it.',
+            'text' => 'Clinics, diagnostics, and emergency care together — so reports stay on site when possible.',
         ],
         [
             'icon' => 'siren',
             'title' => 'Emergency never closes',
-            'text' => 'The night desk does not close on Friday. If it is urgent, come in. Do not wait for OPD hours.',
+            'text' => 'Open overnight, including Fridays. Come in if it is urgent — do not wait for OPD hours.',
         ],
     ];
 @endphp
 
 @section('title', 'About us | '.$hospitalName)
-@section('meta_description', 'How '.$hospitalName.' works, who practises here, and how to reach the desk.')
+@section('meta_description', 'About '.$hospitalName.' — consultants, campus care, and how to reach us.')
 
 @section('content')
     <section class="ch-clinics-hero">
         <div class="ch-wrap">
-            <p class="ch-find__kicker">About the hospital</p>
             <div class="ch-clinics-hero__row">
                 <div>
                     <h1>About us</h1>
-                    <p>{{ $tagline }}. Families come here for a named consultant, a blood test, or because something cannot wait until morning.</p>
+                    <p>{{ $tagline }}.</p>
                 </div>
             </div>
             <p class="ch-clinics-hero__count">
@@ -52,10 +51,9 @@
     <section class="ch-about-story">
         <div class="ch-wrap ch-about-story__grid">
             <div class="ch-about-story__copy">
-                <p class="ch-find__kicker">Our campus</p>
                 <h2 class="ch-sec__title">Our story</h2>
                 <p>{{ $aboutContent }}</p>
-                <p>Reception is on the ground floor. If you have old papers, bring them — it often saves a second visit.</p>
+                <p>Reception is on the ground floor. Bring old papers if you have them — it often saves a second visit.</p>
                 <div class="ch-profile__cta">
                     <a class="ch-btn ch-btn--solid" href="{{ route('home') }}#appointment">Request a visit</a>
                     @if ($phone)
@@ -77,9 +75,7 @@
         <div class="ch-wrap">
             <div class="ch-sec__head">
                 <div>
-                    <p class="ch-find__kicker">How we work</p>
-                    <h2 class="ch-sec__title">Care you can follow</h2>
-                    <p class="ch-depts-intro">Simple rules the desk tries to keep every day.</p>
+                    <h2 class="ch-sec__title">How care runs here</h2>
                 </div>
             </div>
             <div class="ch-values">
@@ -106,9 +102,7 @@
             <div class="ch-wrap">
                 <div class="ch-sec__head">
                     <div>
-                        <p class="ch-find__kicker">Milestones</p>
                         <h2 class="ch-sec__title">Our achievements</h2>
-                        <p class="ch-depts-intro">Campus milestones published by the hospital desk — updated as the story grows.</p>
                     </div>
                 </div>
                 <ol class="ch-achieve">
@@ -135,9 +129,7 @@
             <div class="ch-wrap">
                 <div class="ch-sec__head ch-board-sec__head">
                     <div>
-                        <p class="ch-find__kicker">Guardians</p>
-                        <h2 class="ch-sec__title">People who guide the campus</h2>
-                        <p class="ch-depts-intro">Open the guardians menu to highlight a role, or use About us in the top nav for Founder, Co-founder, Chairman, and more.</p>
+                        <h2 class="ch-sec__title">Hospital leadership</h2>
                     </div>
                 </div>
 
@@ -151,14 +143,14 @@
                             aria-expanded="false"
                             aria-haspopup="true"
                         >
-                            <span data-guardian-trigger-label>All guardians</span>
+                            <span data-guardian-trigger-label>All roles</span>
                             <svg class="ch-nav__caret" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
                         <div class="ch-nav__menu ch-guardian-menu__panel" data-nav-dropdown-panel data-guardian-panel hidden>
-                            <button type="button" class="is-active" data-guardian-option data-role="" data-role-label="All guardians">
-                                All guardians
+                            <button type="button" class="is-active" data-guardian-option data-role="" data-role-label="All roles">
+                                All roles
                             </button>
                             @foreach (($rolePages ?? collect()) as $roleKey => $page)
                                 <button
@@ -176,7 +168,7 @@
                     </div>
 
                     <div class="ch-guardian-bar__aside">
-                        <p class="ch-guardian-bar__status" id="guardian-status" data-guardian-status>Showing all guardians</p>
+                        <p class="ch-guardian-bar__status" id="guardian-status" data-guardian-status>Showing all roles</p>
                         <a
                             class="ch-btn ch-btn--solid"
                             href="{{ route('about') }}"

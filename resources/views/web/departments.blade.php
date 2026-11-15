@@ -5,16 +5,15 @@
 @endphp
 
 @section('title', 'Departments | '.$hospitalName)
-@section('meta_description', 'Specialist clinics at '.$hospitalName.'. Choose a department to see the consultants you can book.')
+@section('meta_description', 'Specialist clinics at '.$hospitalName.'. Choose a department to see bookable consultants.')
 
 @section('content')
     <section class="ch-clinics-hero">
         <div class="ch-wrap">
-            <p class="ch-find__kicker">Specialist clinics</p>
             <div class="ch-clinics-hero__row">
                 <div>
-                    <h1>Our Departments</h1>
-                    <p>Choose a specialty and we will show the doctors you can book — you do not need a name first.</p>
+                    <h1>Departments</h1>
+                    <p>Choose a specialty to see bookable doctors.</p>
                 </div>
             </div>
             <p class="ch-clinics-hero__count">
@@ -24,15 +23,13 @@
         </div>
     </section>
 
-    <section class="ch-clinics" data-reveal-scope>
+    <section class="ch-clinics">
         <div class="ch-wrap">
             <div class="ch-clinics__grid">
                 @forelse ($departments as $department)
                     <a
                         class="ch-clinic"
                         href="{{ route('doctors', ['specialty' => $department->name]) }}"
-                        data-reveal
-                        style="--reveal-delay: {{ min($loop->index * 0.07, 0.42) }}s"
                     >
                         <span class="ch-clinic__top">
                             <span class="ch-clinic__icon"><x-icon :name="$department->icon ?: 'hospital'" /></span>
@@ -41,7 +38,9 @@
                             @endif
                         </span>
                         <h2>{{ $department->name }}</h2>
-                        <p>{{ filled($department->description) ? str($department->description)->limit(110) : 'Specialist clinic care at '.$hospitalName.'.' }}</p>
+                        @if (filled($department->description))
+                            <p>{{ str($department->description)->limit(110) }}</p>
+                        @endif
                         <span class="ch-clinic__go">
                             @if ($department->consultants_count > 0)
                                 {{ $department->consultants_count }} {{ \Illuminate\Support\Str::plural('consultant', $department->consultants_count) }} →
@@ -51,7 +50,7 @@
                         </span>
                     </a>
                 @empty
-                    <p class="ch-lead">Departments will appear here when the desk publishes them.</p>
+                    <p class="ch-lead">No departments listed yet.</p>
                 @endforelse
             </div>
         </div>

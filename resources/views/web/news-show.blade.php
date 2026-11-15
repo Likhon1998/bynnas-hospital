@@ -30,7 +30,7 @@
             </div>
             @if ($related->isNotEmpty())
                 <aside>
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-[#16a34a]">More from the desk</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-[#16a34a]">Related articles</p>
                     <div class="mt-4 grid gap-4">
                         @foreach ($related as $item)
                             <a href="{{ route('news.show', $item) }}" class="block rounded-[1.2rem] border border-[#e2e8f0] bg-white p-4">

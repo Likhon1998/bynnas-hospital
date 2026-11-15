@@ -1,56 +1,52 @@
 @extends('layouts.public')
 
-@section('title', ($hospital->get('hospital_name') ?: 'Hospital').' | '.($hospital->get('tagline') ?: 'Consultant clinics in Dhaka'))
-@section('meta_description', $hospital->get('tagline') ?: 'Book a consultant, use diagnostics, and reach emergency care at our Dhaka campus.')
+@section('title', ($hospital->get('hospital_name') ?: 'Hospital').' | '.($hospital->get('tagline') ?: 'Consultant care in Dhaka'))
+@section('meta_description', $hospital->get('tagline') ?: 'Consultants, diagnostics, and emergency care in Dhaka.')
 
 @php
     $hospitalName = $hospital->get('hospital_name') ?: 'Hospital';
     $bookableList = isset($bookableServices) && $bookableServices->isNotEmpty() ? $bookableServices : $services;
-    $doctorItems = $doctors->values()->map(function ($doctor) {
-        return [
-            'id' => $doctor->id,
-            'name' => $doctor->name,
-            'specialization' => $doctor->specialization ?: $doctor->department?->name ?: 'Consultant',
-            'department' => $doctor->department?->name,
-            'years' => $doctor->experience_years,
-            'photo' => $doctor->photo,
-            'initials' => $doctor->initials(),
-            'slug' => $doctor->slug,
-        ];
-    });
-    $finderDoctors = $finderDoctors ?? collect();
-    $faqs = $faqs ?? collect();
     $galleryItems = $galleryItems ?? collect();
-    $testimonials = $testimonials ?? collect();
     $posts = $posts ?? collect();
-    $packages = $packages ?? collect();
-    $isFinderSearch = $isFinderSearch ?? false;
-    $leadDoctor = $isFinderSearch
-        ? ($finderDoctors->first(fn ($doctor) => filled($doctor->photo)) ?? $finderDoctors->first())
-        : ($doctors->first(fn ($doctor) => filled($doctor->photo)) ?? $doctors->first());
-    $leadDoctorInitials = $leadDoctor?->initials() ?? 'DR';
-    $finderCount = $isFinderSearch ? $finderDoctors->count() : (int) ($stats['doctors'] ?? 0);
-    $finderIsVacant = $isFinderSearch && $finderDoctors->isEmpty();
-    $heroTitle = $heroBanner?->title ?: 'See a consultant. Leave with a plan.';
-    $heroLead = $heroBanner?->subtitle ?: 'Book a named doctor, pick an open clinic slot, and get clear next steps at our Dhaka campus.';
-    $heroCtaLabel = $heroBanner?->cta_label ?: 'How visits work';
-    $heroCtaUrl = $heroBanner?->destination() ?: route('about');
-    $heroLines = preg_split('/(?<=\.)\s+/', $heroTitle, 2) ?: [$heroTitle];
-    $patientServices = $services->take(4);
+    $notices = $notices ?? collect();
+    $doctorTalks = $doctorTalks ?? collect();
+    $heroTitle = $heroBanner?->title ?: 'Care you can count on.';
+    $heroLead = $heroBanner?->subtitle ?: 'Named consultants. Clear next steps.';
+    $heroCtaLabel = $heroBanner?->cta_label ?: 'Book a visit';
+    $heroCtaUrl = $heroBanner?->destination() ?: route('home').'#appointment';
     $campusAddress = $hospital->get('address') ?: 'Main Campus';
     $campusLabel = filled($hospital->get('campus_name'))
         ? $hospital->get('campus_name')
         : 'Main Campus';
     $mapEmbed = trim((string) $hospital->get('map_embed'));
-    $heroTrustLabel = filled($hospital->get('tagline'))
-        ? \Illuminate\Support\Str::limit($hospital->get('tagline'), 48, '')
-        : 'Open clinic slots online';
-    $review = $testimonials->first();
-    $reviewAverage = $testimonials->isNotEmpty() ? round((float) $testimonials->avg('rating'), 1) : null;
-    $prepPhoto = $galleryItems->first();
-    $prepImage = \App\Support\PublicPhoto::usable($prepPhoto?->image) ?? \App\Support\PublicPhoto::LOBBY;
-    $reviewScene = \App\Support\PublicPhoto::usable($galleryItems->get(1)?->image) ?? \App\Support\PublicPhoto::CARE;
-    $reviewAvatar = \App\Support\PublicPhoto::usable($review?->photo);
+    $gallerySlides = $galleryItems
+        ->map(function ($item) {
+            $image = \App\Support\PublicPhoto::usable($item->image);
+
+            if ($image === null) {
+                return null;
+            }
+
+            return [
+                'image' => $image,
+                'title' => $item->title,
+                'caption' => $item->caption,
+            ];
+        })
+        ->filter()
+        ->values();
+
+    if ($gallerySlides->isEmpty() && $notices->isNotEmpty()) {
+        $gallerySlides = collect(\App\Support\PublicPhoto::CAMPUS)
+            ->take(4)
+            ->values()
+            ->map(fn (string $image, int $index) => [
+                'image' => $image,
+                'title' => $hospitalName,
+                'caption' => $index === 0 ? 'Campus life' : null,
+            ]);
+    }
+
     $selectedVisitDate = old('date');
     $selectedVisitTime = old('time');
     $selectedVisitLabel = ($selectedVisitDate && $selectedVisitTime)
@@ -62,14 +58,8 @@
     <section class="ch-hero" @if ($heroBanner?->image) style="--ch-hero-image: url('{{ $heroBanner->image }}')" @endif>
         <div class="ch-wrap ch-hero__grid">
             <div class="ch-hero__copy">
-                <p class="ch-hero__kicker">{{ strtoupper($hospitalName) }} —</p>
-                <h1>{!! implode('<br>', array_map('e', $heroLines)) !!}</h1>
+                <h1>{{ $heroTitle }}</h1>
                 <p class="ch-hero__lead">{{ $heroLead }}</p>
-                <ul class="ch-checks">
-                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['doctors'] ?? 0)) }} consultants listed</li>
-                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ number_format((int) ($stats['departments'] ?? 0)) }} clinics on campus</li>
-                    <li><span class="ch-check"><svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l4 4 10-10"/></svg></span> {{ $heroTrustLabel }}</li>
-                </ul>
                 <a class="ch-more" href="{{ $heroCtaUrl }}">{{ $heroCtaLabel }} →</a>
             </div>
 
@@ -103,7 +93,7 @@
                         <span>Find a Doctor</span>
                         <select class="ch-input" name="doctor" required>
                             <option value="">Select doctor</option>
-                            @foreach ($directoryDoctors ?? $doctors as $doctor)
+                            @foreach ($directoryDoctors as $doctor)
                                 <option value="{{ $doctor->id }}" data-department="{{ $doctor->department_id }}" @selected((string) old('doctor') === (string) $doctor->id)>{{ $doctor->name }} — {{ $doctor->specialization ?: $doctor->department?->name }}</option>
                             @endforeach
                         </select>
@@ -156,232 +146,205 @@
         </div>
     </section>
 
-    <section id="departments" class="ch-depts-sec">
-        <div class="ch-wrap">
-            <div class="ch-sec__head">
-                <div>
-                    <p class="ch-find__kicker">On this campus</p>
-                    <h2 class="ch-sec__title">Departments</h2>
-                    <p class="ch-depts-intro">Pick a clinic first — cardiology, women &amp; child, emergency, and more.</p>
-                </div>
-                <a class="ch-more" href="{{ route('departments') }}">All departments →</a>
-            </div>
-            <div class="ch-depts">
-                @forelse ($departments->take(8) as $department)
-                    <a class="ch-dept" href="{{ route('home', ['specialty' => $department->name]) }}#find-doctor" title="{{ $department->description ?: $department->name }}">
-                        <span class="ch-dept__icon"><x-icon :name="$department->icon ?: 'hospital'" /></span>
-                        <strong>{{ $department->name }}</strong>
-                    </a>
-                @empty
-                    <p class="ch-lead">Departments will appear here when the desk publishes them.</p>
-                @endforelse
-            </div>
-        </div>
-    </section>
-
-    <section id="find-doctor" class="ch-find-sec">
-        <div class="ch-wrap">
-            <script type="application/json" data-finder-directory>@json($finderDirectory ?? [])</script>
-            <div class="ch-find{{ $finderIsVacant ? ' is-vacant' : '' }}" data-doctor-finder data-finder-total="{{ $stats['doctors'] }}">
-                <div class="ch-find__media">
-                    <img
-                        class="ch-find__photo"
-                        data-finder-photo
-                        src="{{ $leadDoctor?->photo ?: '' }}"
-                        alt="{{ $leadDoctor?->name ?: '' }}"
-                        @if (! $leadDoctor?->photo) hidden @endif
-                    >
-                    <span class="ch-find__photo ch-find__initials" data-finder-initials aria-hidden="true" @if ($leadDoctor?->photo || ! $leadDoctor) hidden @endif>{{ $leadDoctorInitials }}</span>
-                    <span class="ch-find__photo ch-find__photo--empty" data-finder-vacant aria-hidden="true" @if (! $finderIsVacant) hidden @endif>
-                        <x-icon name="stethoscope" />
-                    </span>
-                    <p data-finder-caption>{{ $finderIsVacant ? 'No consultants in this clinic yet' : 'Consultants you can book today' }}</p>
-                    <p class="ch-find__count">
-                        <strong data-finder-count>{{ $finderCount }}</strong>
-                        <span data-finder-count-label>{{ \Illuminate\Support\Str::plural('consultant', $finderCount) }}</span>
-                    </p>
-                    <a class="ch-more" href="{{ route('doctors') }}">Full doctor list →</a>
-                </div>
-                <div class="ch-find__body">
-                    <p class="ch-find__kicker">Directory</p>
-                    <h2>Find a doctor</h2>
-                    <p>Start with a specialty if you do not know a name. We only show consultants with open booking.</p>
-                    <form class="ch-search" action="{{ route('home') }}#find-doctor" method="get" data-doctor-filter>
-                        <label class="ch-search__field">
-                            <span>Specialty</span>
-                            <select class="ch-input" name="specialty" data-doctor-specialty>
-                                <option value="">All specialties</option>
-                                @foreach ($departments as $department)
-                                    <option value="{{ $department->name }}" @selected(request('specialty') === $department->name)>{{ $department->name }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <label class="ch-search__field">
-                            <span>Choose a doctor</span>
-                            <select class="ch-input" name="q" data-doctor-list>
-                                <option value="">Browse consultants</option>
-                                @foreach ($directoryDoctors as $doctor)
-                                    <option
-                                        value="{{ $doctor->name }}"
-                                        data-specialty="{{ $doctor->department?->name }}"
-                                        data-specialization="{{ $doctor->specialization }}"
-                                        @selected(request('q') === $doctor->name)
-                                    >{{ $doctor->name }}@if ($doctor->specialization || $doctor->department) — {{ $doctor->specialization ?: $doctor->department?->name }}@endif</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <button type="submit" class="ch-btn ch-btn--solid ch-search__go">Show doctors</button>
-                    </form>
-                    <p class="ch-find__result" data-finder-result @if (! $isFinderSearch) hidden @endif>
-                        <span data-finder-result-text>
-                            @if ($isFinderSearch && $finderDoctors->isNotEmpty())
-                                {{ $finderDoctors->count() }} {{ \Illuminate\Support\Str::plural('consultant', $finderDoctors->count()) }}{{ $finderSearchLabel ? ' in '.$finderSearchLabel : '' }}.
-                            @elseif ($isFinderSearch)
-                                No consultants in this clinic yet. Pick another specialty or browse all doctors.
-                            @endif
-                        </span>
-                        <a href="{{ route('home') }}#find-doctor" data-finder-clear>Show all</a>
-                    </p>
-                    <div class="ch-find__people" data-finder-people @if ($finderDoctors->isEmpty()) hidden @endif>
-                        @foreach ($finderDoctors as $doctor)
-                                <a class="ch-find__person" href="{{ filled($doctor->slug) ? route('doctors.show', $doctor) : route('home').'#appointment' }}">
-                                @if ($doctor->photo)
-                                    <img src="{{ $doctor->photo }}" alt="{{ $doctor->name }}">
-                                @else
-                                    <span class="ch-find__initials" aria-hidden="true">{{ $doctor->initials() }}</span>
-                                @endif
-                                <span>
-                                    <strong>{{ $doctor->name }}</strong>
-                                    <em>{{ $doctor->specialization ?: $doctor->department?->name ?: 'Consultant' }}</em>
-                                </span>
-                            </a>
-                        @endforeach
-                    </div>
-                    <div class="ch-find__chips">
-                        @foreach ($departments->take(6) as $department)
-                            <a href="{{ route('home', ['specialty' => $department->name]) }}#find-doctor" data-finder-chip="{{ $department->name }}" @class(['is-active' => request('specialty') === $department->name])>{{ $department->name }}</a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="patients" class="ch-patients">
-        <div class="ch-wrap">
-            <div class="ch-sec__head">
-                <div>
-                    <p class="ch-find__kicker">Before you arrive</p>
-                    <h2 class="ch-sec__title">Patient services</h2>
-                    <p class="ch-depts-intro">Emergency, records, visiting, and billing — what each desk handles.</p>
-                </div>
-                <a class="ch-more" href="{{ route('services') }}">All services →</a>
-            </div>
-            <div class="ch-services">
-                @forelse ($patientServices as $service)
-                    <article @class(['ch-service', 'ch-service--urgent' => $service->isUrgent()])>
-                        <span class="ch-service__icon"><x-icon :name="$service->publicIcon()" class="h-5 w-5" /></span>
-                        <p class="ch-service__meta">{{ $service->department?->name ?: ($service->isUrgent() ? 'Open 24 hours' : 'Patient service') }}</p>
-                        <h3>{{ $service->title }}</h3>
-                        <p>{{ $service->summary ?: 'Ask the desk how this service runs and whether you need to book.' }}</p>
-                        <p class="ch-service__fact">
-                            @if ($service->isUrgent())
-                                {{ $hospital->get('emergency_phone') ?: $hospital->get('phone') ?: '24/7 Emergency Care' }}
-                            @else
-                                {{ $service->department?->name ?: 'Published by the desk' }}
-                            @endif
-                        </p>
-                        <a href="{{ $service->isUrgent() ? route('emergency') : route('services.show', $service) }}">
-                            {{ $service->isUrgent() ? 'Go to emergency' : 'Learn more' }} →
-                        </a>
-                    </article>
-                @empty
-                    <p class="ch-lead">Services will appear here when the desk publishes them.</p>
-                @endforelse
-            </div>
-        </div>
-    </section>
-
-    <section id="doctors" class="ch-docs-sec">
-        <div class="ch-wrap">
-            <div class="ch-sec__head">
-                <div>
-                    <h2 class="ch-sec__title">Consultants</h2>
-                    <p class="ch-depts-intro">Specialty, years in practice, and a direct book link.</p>
-                </div>
-                <a class="ch-more" href="{{ route('doctors') }}">All consultants →</a>
-            </div>
-            <div class="ch-docs">
-                @forelse ($doctorItems as $doctor)
-                    <article class="ch-doc">
-                        <a class="ch-doc__profile" @if (filled($doctor['slug'])) href="{{ route('doctors.show', $doctor['slug']) }}" @else href="{{ route('doctors') }}" @endif>
-                            @if ($doctor['photo'])
-                                <img src="{{ $doctor['photo'] }}" alt="{{ $doctor['name'] }}">
-                            @else
-                                <span class="ch-doc__initials" aria-hidden="true">{{ $doctor['initials'] }}</span>
-                            @endif
-                            <strong>{{ $doctor['name'] }}</strong>
-                            <em>{{ $doctor['specialization'] }}</em>
-                            @if ($doctor['years'])
-                                <p class="ch-doc__meta">{{ $doctor['years'] }} yrs experience</p>
-                            @endif
-                        </a>
-                        <div class="ch-doc__actions">
-                            @if (filled($doctor['slug']))
-                                <a class="ch-doc__btn ch-doc__btn--ghost" href="{{ route('doctors.show', $doctor['slug']) }}">Profile</a>
-                            @endif
-                            <a
-                                class="ch-doc__btn ch-doc__btn--solid"
-                                href="{{ route('home') }}#appointment"
-                                @if ($doctor['id'])
-                                    data-book-doctor="{{ $doctor['id'] }}"
-                                @endif
-                            >Book</a>
-                        </div>
-                    </article>
-                @empty
-                    <p class="ch-lead">Consultants will appear here when the desk publishes them.</p>
-                @endforelse
-            </div>
-        </div>
-    </section>
-
-    @if ($packages->isNotEmpty())
-        <section id="packages" class="ch-care">
+    @if ($notices->isNotEmpty() || $gallerySlides->isNotEmpty())
+        <section id="notices" class="ch-notices-sec" aria-label="Gallery and hospital notices">
             <div class="ch-wrap">
-                <div class="ch-sec__head">
-                    <div>
-                        <p class="ch-find__kicker">Screening</p>
-                        <h2 class="ch-sec__title">Health packages</h2>
-                        <p class="ch-depts-intro">Compare what is included and the price before you book.</p>
-                    </div>
-                    <a class="ch-more" href="{{ route('packages') }}">All packages →</a>
-                </div>
-                <div class="ch-pkgs">
-                    @foreach ($packages as $package)
-                        <article class="ch-pkg">
-                            <p class="ch-pkg__meta">Health package</p>
-                            <h3>{{ $package->title }}</h3>
-                            <p>{{ \Illuminate\Support\Str::limit(strip_tags((string) $package->description), 120) }}</p>
-                            @if ($package->healthPackageItems->isNotEmpty())
-                                <ul class="ch-pkg__list">
-                                    @foreach ($package->healthPackageItems->take(4) as $item)
-                                        <li>{{ $item->title }}</li>
+                <div class="ch-spotlight">
+                    <div class="ch-spotlight__panel ch-spotlight__panel--gallery">
+                        <div class="ch-spotlight__head">
+                            <h2 class="ch-sec__title">Gallery</h2>
+                        </div>
+                        <div
+                            class="ch-gallery-slider"
+                            data-gallery-slider
+                            @if ($gallerySlides->count() > 1) data-autoplay="5000" @endif
+                        >
+                            <div class="ch-gallery-slider__viewport">
+                                <div class="ch-gallery-slider__track" data-gallery-track>
+                                    @foreach ($gallerySlides as $slide)
+                                        <figure class="ch-gallery-slider__slide" data-gallery-slide @if (! $loop->first) aria-hidden="true" @endif>
+                                            <img
+                                                src="{{ $slide['image'] }}"
+                                                alt="{{ $slide['title'] ?: $hospitalName }}"
+                                                loading="{{ $loop->first ? 'eager' : 'lazy' }}"
+                                            >
+                                            @if (filled($slide['title']) || filled($slide['caption']))
+                                                <figcaption class="ch-gallery-slider__caption">
+                                                    @if (filled($slide['title']))
+                                                        <strong>{{ $slide['title'] }}</strong>
+                                                    @endif
+                                                    @if (filled($slide['caption']))
+                                                        <span>{{ $slide['caption'] }}</span>
+                                                    @endif
+                                                </figcaption>
+                                            @endif
+                                        </figure>
                                     @endforeach
-                                </ul>
-                            @endif
-                            <div class="ch-pkg__foot">
-                                <p class="ch-pkg__price">৳{{ number_format((float) $package->price) }}</p>
-                                @if ($package->duration_label)
-                                    <p class="ch-pkg__duration">{{ $package->duration_label }}</p>
-                                @endif
-                                <a class="ch-btn ch-btn--solid ch-btn--wide" href="{{ route('home') }}#appointment">Book package</a>
+                                </div>
                             </div>
-                        </article>
-                    @endforeach
+
+                            @if ($gallerySlides->count() > 1)
+                                <div class="ch-gallery-slider__controls">
+                                    <button type="button" class="ch-gallery-slider__nav" data-gallery-prev aria-label="Previous gallery image">
+                                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
+                                    <div class="ch-gallery-slider__dots" data-gallery-dots role="tablist" aria-label="Gallery slides">
+                                        @foreach ($gallerySlides as $slide)
+                                            <button
+                                                type="button"
+                                                class="ch-gallery-slider__dot{{ $loop->first ? ' is-active' : '' }}"
+                                                data-gallery-dot
+                                                data-index="{{ $loop->index }}"
+                                                aria-label="Show gallery image {{ $loop->iteration }}"
+                                                aria-selected="{{ $loop->first ? 'true' : 'false' }}"
+                                            ></button>
+                                        @endforeach
+                                    </div>
+                                    <button type="button" class="ch-gallery-slider__nav" data-gallery-next aria-label="Next gallery image">
+                                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="ch-spotlight__panel ch-spotlight__panel--notices">
+                        <div class="ch-spotlight__head">
+                            <h2 class="ch-sec__title">Notices</h2>
+                            <a class="ch-more" href="{{ route('notices') }}">All notices →</a>
+                        </div>
+                        <div class="ch-notices ch-notices--stack" data-notice-slots="5">
+                            @forelse ($notices->take(5) as $notice)
+                                <article @class(['ch-notice', 'ch-notice--stack', 'ch-notice--urgent' => $notice->is_urgent])>
+                                    <div class="ch-notice__meta">
+                                        <time class="ch-notice__date" datetime="{{ $notice->published_on->toDateString() }}">
+                                            {{ $notice->published_on->format('d M Y') }}
+                                        </time>
+                                        @if ($notice->is_urgent)
+                                            <span class="ch-notice__tag">Urgent</span>
+                                        @endif
+                                    </div>
+                                    <div class="ch-notice__body">
+                                        <h3>{{ $notice->title }}</h3>
+                                        @if (filled($notice->body))
+                                            <p>{{ \Illuminate\Support\Str::limit($notice->body, 64) }}</p>
+                                        @endif
+                                    </div>
+                                </article>
+                            @empty
+                                <p class="ch-spotlight__empty">No published notices right now.</p>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
+    @endif
+
+    <section id="departments" class="ch-depts-sec">
+        <div class="ch-wrap">
+            <div class="ch-depts-sec__head">
+                <div>
+                    <h2 class="ch-sec__title">Major departments</h2>
+                </div>
+                <a class="ch-depts-sec__all" href="{{ route('departments') }}">All departments</a>
+            </div>
+            <div class="ch-depts">
+                @forelse ($departments->take(8) as $department)
+                    @php
+                        $deptSummary = filled($department->description)
+                            ? \Illuminate\Support\Str::limit(strip_tags((string) $department->description), 96)
+                            : 'Specialist clinics and bookable consultants.';
+                    @endphp
+                    <a class="ch-dept" href="{{ route('doctors', ['specialty' => $department->name]) }}">
+                        <span class="ch-dept__icon" aria-hidden="true">
+                            <x-icon :name="$department->icon ?: 'hospital'" />
+                        </span>
+                        <span class="ch-dept__body">
+                            <strong>{{ $department->name }}</strong>
+                            <span class="ch-dept__copy">{{ $deptSummary }}</span>
+                        </span>
+                        <span class="ch-dept__go">Find consultants</span>
+                    </a>
+                @empty
+                    <p class="ch-lead">No departments listed yet.</p>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    @if ($doctorTalks->isNotEmpty())
+        <section id="doctor-talks" class="ch-talks-sec" aria-label="Doctor's Talk">
+            <div class="ch-wrap">
+                <div class="ch-talks-sec__head">
+                    <h2 class="ch-talks-sec__title">Doctor's Talk</h2>
+                    <div class="ch-talks-sec__nav">
+                        <button type="button" class="ch-talks-sec__arrow" data-talks-prev aria-label="Previous videos">
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <button type="button" class="ch-talks-sec__arrow" data-talks-next aria-label="Next videos">
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="ch-talks" data-talks-slider data-talk-slots="4">
+                    <div class="ch-talks__track" data-talks-track>
+                        @foreach ($doctorTalks as $talk)
+                            @continue(! filled($talk->embedUrl()))
+                            @php
+                                $talkCaption = filled($talk->doctor_name)
+                                    ? $talk->title.' | '.$talk->doctor_name
+                                    : $talk->title;
+                                $talkThumb = $talk->displayThumbnail();
+                            @endphp
+                            <button
+                                type="button"
+                                class="ch-talk"
+                                data-youtube-open
+                                data-youtube-src="{{ $talk->embedUrl() }}"
+                                data-youtube-title="{{ $talk->title }}"
+                            >
+                                <span class="ch-talk__media">
+                                    @if (filled($talkThumb))
+                                        <img
+                                            src="{{ $talkThumb }}"
+                                            alt="{{ $talk->title }}"
+                                            loading="lazy"
+                                            referrerpolicy="no-referrer"
+                                            data-talk-thumb
+                                        >
+                                    @endif
+                                    <span class="ch-talk__fallback" aria-hidden="true">
+                                        <svg viewBox="0 0 48 36" fill="none"><rect x="4" y="6" width="40" height="24" rx="4" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="18" r="1.6" fill="currentColor"/><circle cx="24" cy="18" r="1.6" fill="currentColor"/><circle cx="30" cy="18" r="1.6" fill="currentColor"/></svg>
+                                    </span>
+                                    <span class="ch-talk__veil" aria-hidden="true"></span>
+                                    <span class="ch-talk__play" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 7.2v9.6L17.6 12 9 7.2Z"/></svg>
+                                    </span>
+                                    <span class="ch-talk__tip">{{ $talkCaption }}</span>
+                                </span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="ch-video-modal" data-youtube-modal hidden>
+            <div class="ch-video-modal__backdrop" data-youtube-close></div>
+            <div class="ch-video-modal__dialog" role="dialog" aria-modal="true" aria-label="Doctor's Talk video">
+                <button type="button" class="ch-video-modal__close" data-youtube-close aria-label="Close video">×</button>
+                <div class="ch-video-modal__frame">
+                    <iframe
+                        data-youtube-frame
+                        title="Doctor's Talk video"
+                        src=""
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                    ></iframe>
+                </div>
+            </div>
+        </div>
     @endif
 
     <x-web.campus-band :stats="$stats" headline="Ready to book a slot?" cta-href="#appointment" cta-label="Book a visit →" />
@@ -391,9 +354,7 @@
             <div class="ch-sec__head">
                 <div>
                     <h2 class="ch-sec__title">How to get here</h2>
-                    <p class="ch-depts-intro">{{ $hospitalName }} campus address and map.</p>
                 </div>
-                <a class="ch-more" href="#locations">Open map →</a>
             </div>
             <div class="ch-locs">
                 <div class="ch-loc-list">
@@ -415,77 +376,14 @@
                 </div>
                 <form class="ch-dir" action="https://www.google.com/maps/dir/" method="get" target="_blank" rel="noopener">
                     <h3>Directions</h3>
-                    <p>Enter where you are starting from.</p>
                     <input type="hidden" name="api" value="1">
                     <input type="hidden" name="destination" value="{{ $campusAddress }}">
                     <label class="ch-field">
                         <span class="sr-only">Your address</span>
-                        <input class="ch-input" type="search" name="origin" placeholder="Enter location">
+                        <input class="ch-input" type="search" name="origin" placeholder="Your starting point">
                     </label>
                     <button type="submit" class="ch-btn ch-btn--solid ch-btn--wide">Get Directions</button>
                 </form>
-            </div>
-        </div>
-    </section>
-
-    <section id="faq" class="ch-sec ch-sec--soft">
-        <div class="ch-wrap ch-trio">
-            <div class="ch-trio__col">
-                <div class="ch-trio__head">
-                    <h2 class="ch-sec__title">Questions before a visit</h2>
-                    <p class="ch-lead">Booking, papers, and what happens at the desk.</p>
-                </div>
-                <div class="ch-faq">
-                    @forelse ($faqs as $faq)
-                        <details>
-                            <summary>{{ $faq->question }}</summary>
-                            <p>{{ $faq->answer }}</p>
-                        </details>
-                    @empty
-                        <p class="ch-lead">Questions will appear here when the desk publishes them.</p>
-                    @endforelse
-                </div>
-            </div>
-            <div class="ch-trio__col">
-                <div class="ch-trio__head">
-                    <h2 class="ch-sec__title">What to bring</h2>
-                    <p class="ch-lead">Short guides from the desk before you come in.</p>
-                </div>
-                <figure class="ch-trio__media">
-                    <img src="{{ $prepImage }}" alt="Preparing for a visit at {{ $hospitalName }}">
-                </figure>
-                <div class="ch-trio__list">
-                    @forelse ($posts->take(3) as $guide)
-                        <a class="ch-prep-item" href="{{ route('news.show', $guide) }}">{{ $guide->title }} <span>›</span></a>
-                    @empty
-                        <a class="ch-prep-item" href="{{ route('about') }}">Visit the campus <span>›</span></a>
-                        <a class="ch-prep-item" href="{{ route('services') }}">Read a service <span>›</span></a>
-                    @endforelse
-                </div>
-                <a class="ch-more" href="{{ $posts->isNotEmpty() ? route('news') : route('about') }}">View all Guides →</a>
-            </div>
-            <div class="ch-trio__col">
-                <div class="ch-trio__head">
-                    <h2 class="ch-sec__title">Recent reviews</h2>
-                    <p class="ch-lead">Notes from patients after their visit.</p>
-                </div>
-                <figure class="ch-trio__media">
-                    <img src="{{ $reviewScene }}" alt="Care at {{ $hospitalName }}">
-                </figure>
-                @if ($review)
-                    @if ($reviewAverage)
-                        <p class="ch-review">★ {{ $reviewAverage }} <small>({{ $testimonials->count() }} {{ \Illuminate\Support\Str::plural('review', $testimonials->count()) }})</small></p>
-                    @endif
-                    <p class="ch-lead ch-trio__quote">“{{ $review->quote }}”</p>
-                    <p class="ch-trio__person">
-                        @if ($reviewAvatar)
-                            <img class="ch-trio__avatar" src="{{ $reviewAvatar }}" alt="">
-                        @endif
-                        <span>— {{ $review->display_name }}@if ($review->display_role), {{ $review->display_role }}@endif</span>
-                    </p>
-                @else
-                    <p class="ch-lead">Reviews will appear here when patients share them.</p>
-                @endif
             </div>
         </div>
     </section>
@@ -494,8 +392,7 @@
         <div class="ch-wrap">
             <div class="ch-sec__head">
                 <div>
-                    <h2 class="ch-sec__title">From the desk</h2>
-                    <p class="ch-depts-intro">Clinic notices, health notes, and campus updates.</p>
+                    <h2 class="ch-sec__title">News &amp; updates</h2>
                 </div>
                 <a class="ch-more" href="{{ route('news') }}">All updates →</a>
             </div>
@@ -511,7 +408,7 @@
                         <a class="ch-more" href="{{ route('news.show', $article) }}">Read more →</a>
                     </article>
                 @empty
-                    <p class="ch-lead">Campus updates will appear here when the desk publishes them.</p>
+                    <p class="ch-lead">No articles yet.</p>
                 @endforelse
             </div>
         </div>
@@ -533,14 +430,14 @@
                     <button type="button" data-cal-prev aria-label="Previous">
                         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12.5 5 7.5 10l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <p data-cal-label>Choose a doctor to see free times</p>
+                    <p data-cal-label>Select a doctor to see availability</p>
                     <button type="button" data-cal-next aria-label="Next">
                         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7.5 5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                 </div>
                 <div class="ch-cal__weekdays" data-cal-weekdays hidden></div>
                 <div class="ch-cal__board" data-cal-board></div>
-                <p class="ch-cal__hint" data-cal-hint>Green times are free. Red times are already booked.</p>
+                <p class="ch-cal__hint" data-cal-hint>Green: available. Red: booked.</p>
                 <div class="ch-cal__key" aria-hidden="true">
                     <span class="ch-cal__swatch is-free">Free</span>
                     <span class="ch-cal__swatch is-taken">Booked</span>

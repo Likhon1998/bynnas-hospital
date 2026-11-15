@@ -43,15 +43,15 @@ class AboutPageTest extends TestCase
 
         $this->get(route('about'))
             ->assertOk()
-            ->assertSee('People who guide the campus', false)
-            ->assertSee('All guardians', false)
+            ->assertSee('Hospital leadership', false)
+            ->assertSee('All roles', false)
             ->assertSee('data-guardian-option', false)
             ->assertSee('data-guardian-role="managing_director"', false)
             ->assertSee('Engr. Farhana Rahman', false)
             ->assertSee('Managing Director', false)
             ->assertSee('Oversees operations and patient experience.', false)
             ->assertSee(route('about.leadership.role', 'managing_director'), false)
-            ->assertSee('About the hospital', false)
+            ->assertSee('About', false)
             ->assertSee('>Managing Director</a>', false);
     }
 
@@ -75,7 +75,7 @@ class AboutPageTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('About us', false)
-            ->assertSee('About the hospital', false)
+            ->assertSee('About', false)
             ->assertSee('Founder', false)
             ->assertSee('Co-founder', false)
             ->assertSee(route('about.leadership.role', 'founder'), false)

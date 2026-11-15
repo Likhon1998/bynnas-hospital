@@ -39,21 +39,30 @@ class HomePageTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('See a consultant.', false);
-        $response->assertSee('Leave with a plan.', false);
+        $response->assertSee('Care you can count on.', false);
+        $response->assertSee('Named consultants. Clear next steps.', false);
         $response->assertSee('Book an Appointment', false);
         $response->assertSee('Departments', false);
         $response->assertSee('Cardiology', false);
-        $response->assertSee('Find a doctor', false);
-        $response->assertSee('Patient services', false);
+        $response->assertSee('Find a Doctor', false);
+        $response->assertSee('Department Wise', false);
+        $response->assertSee('Branch Wise', false);
+        $response->assertSee('Doctor Name Wise', false);
+        $response->assertSee(route('doctors', ['view' => 'department']), false);
+        $response->assertDontSee('id="patients"', false);
+        $response->assertSee('Services', false);
         $response->assertSee('Emergency Care', false);
-        $response->assertSee('Consultants', false);
+        $response->assertDontSee('>Consultants<', false);
+        $response->assertDontSee('All consultants', false);
         $response->assertSee('Dr. Hamida Jannat', false);
         $response->assertSee('Ready to book a slot?', false);
         $response->assertSee('How to get here', false);
-        $response->assertSee('Questions before a visit', false);
-        $response->assertSee('From the desk', false);
-        $response->assertSee('Need a clinic slot this week?', false);
+        $response->assertDontSee('Questions before a visit', false);
+        $response->assertDontSee('What to bring', false);
+        $response->assertDontSee('Recent reviews', false);
+        $response->assertSee('News &amp; updates', false);
+        $response->assertDontSee('Need a clinic slot?', false);
+        $response->assertDontSee('ch-priority', false);
         $response->assertSee('data-nav-toggle', false);
         $response->assertSee('id="mobile-navigation"', false);
         $response->assertSee('ch-menu__label', false);
@@ -61,112 +70,31 @@ class HomePageTest extends TestCase
         $response->assertSee('width=device-width', false);
     }
 
-    public function test_home_expert_doctors_shows_eight_and_ignores_finder_search(): void
+    public function test_home_does_not_show_consultants_grid(): void
     {
         $cardiology = Department::factory()->create([
             'name' => 'Cardiology',
             'is_active' => true,
         ]);
-        $gynecology = Department::factory()->create([
-            'name' => 'Gynecology & Obstetrics',
-            'is_active' => true,
-        ]);
-
-        foreach (range(1, 8) as $index) {
-            Doctor::factory()->create([
-                'name' => 'Dr. Featured '.$index,
-                'department_id' => $cardiology->id,
-                'specialization' => 'Cardiologist',
-                'is_active' => true,
-                'is_featured' => true,
-                'sort_order' => $index,
-            ]);
-        }
 
         Doctor::factory()->create([
-            'name' => 'Dr. Extra Consultant',
+            'name' => 'Dr. Featured 1',
             'department_id' => $cardiology->id,
-            'is_active' => true,
-            'is_featured' => false,
-            'sort_order' => 99,
-        ]);
-        Doctor::factory()->create([
-            'name' => 'Dr. Anika Rahman',
-            'department_id' => $gynecology->id,
-            'specialization' => 'General Gynaecology',
-            'is_active' => true,
-            'is_featured' => false,
-            'sort_order' => 100,
-        ]);
-
-        $home = $this->get(route('home'));
-        $home->assertOk();
-        $home->assertSee('Browse consultants', false);
-        $home->assertSee('Dr. Featured 1', false);
-        $home->assertSee('Dr. Featured 8', false);
-        $home->assertSee('All consultants', false);
-        $home->assertSee(route('doctors'), false);
-        $home->assertSee('<strong>Dr. Featured 1</strong>', false);
-        $home->assertSee('<strong>Dr. Featured 8</strong>', false);
-        $home->assertDontSee('<strong>Dr. Extra Consultant</strong>', false);
-        $home->assertDontSee('<strong>Dr. Anika Rahman</strong>', false);
-        $home->assertDontSee('Clear search', false);
-
-        $filteredHome = $this->get(route('home', ['specialty' => 'Gynecology & Obstetrics']));
-        $filteredHome->assertOk();
-        $filteredHome->assertSee('Dr. Featured 1', false);
-        $filteredHome->assertSee('Dr. Featured 8', false);
-        $filteredHome->assertSee('1 consultant in Gynecology', false);
-        $filteredHome->assertSee('<strong>Dr. Anika Rahman</strong>', false);
-        $filteredHome->assertDontSee('Clear search', false);
-    }
-
-    public function test_home_finder_lists_every_consultant_in_the_selected_specialty(): void
-    {
-        $cardiology = Department::factory()->create([
-            'name' => 'Cardiology',
-            'is_active' => true,
-        ]);
-        $neurology = Department::factory()->create([
-            'name' => 'Neurology',
-            'is_active' => true,
-        ]);
-
-        foreach (range(1, 7) as $index) {
-            Doctor::factory()->create([
-                'name' => 'Dr. Cardio '.$index,
-                'department_id' => $cardiology->id,
-                'specialization' => 'Cardiologist',
-                'is_active' => true,
-                'is_featured' => $index <= 4,
-                'sort_order' => $index,
-            ]);
-        }
-
-        Doctor::factory()->create([
-            'name' => 'Dr. Nabila Rahman',
-            'department_id' => $neurology->id,
-            'specialization' => 'Neurologist',
+            'specialization' => 'Cardiologist',
             'is_active' => true,
             'is_featured' => true,
         ]);
 
-        $filtered = $this->get(route('home', ['specialty' => 'Cardiology']));
-
-        $filtered->assertOk();
-        $filtered->assertSee('7 consultants in Cardiology', false);
-        $filtered->assertSee(route('home').'#find-doctor', false);
-
-        foreach (range(1, 7) as $index) {
-            $filtered->assertSee('<strong>Dr. Cardio '.$index.'</strong>', false);
-        }
-
-        $empty = $this->get(route('home', ['specialty' => 'Oncology']));
-        $empty->assertOk();
-        $empty->assertSee('No consultants in this clinic yet', false);
-        $empty->assertSee('is-vacant', false);
-        $empty->assertSee('<strong data-finder-count>0</strong>', false);
-        $empty->assertSee('No consultants in this clinic', false);
+        $home = $this->get(route('home'));
+        $home->assertOk();
+        $home->assertDontSee('id="doctors"', false);
+        $home->assertDontSee('>Consultants<', false);
+        $home->assertDontSee('All consultants', false);
+        $home->assertDontSee('ch-docs-sec', false);
+        $home->assertSee('Find a Doctor', false);
+        $home->assertSee('Dr. Featured 1', false);
+        $home->assertSee(route('doctors'), false);
+        $home->assertSee(route('doctors', ['specialty' => 'Cardiology']), false);
     }
 
     public function test_home_finder_uses_live_consultants(): void
@@ -188,7 +116,9 @@ class HomePageTest extends TestCase
         $home->assertOk();
         $home->assertSee('consultant', false);
         $home->assertSee('Dr. Hamida Jannat', false);
-        $home->assertSee('Start with a specialty', false);
+        $home->assertSee('Find a Doctor', false);
+        $home->assertSee(route('doctors'), false);
+        $home->assertDontSee('id="find-doctor"', false);
         $home->assertDontSee('250+', false);
         $home->assertDontSee('Banani Clinic', false);
         $home->assertDontSee('Dr. Michael Anderson', false);
@@ -219,11 +149,37 @@ class HomePageTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
+        $response->assertSee('Major departments', false);
+        $response->assertDontSee('What we do', false);
+        $response->assertSee('All departments', false);
         $response->assertSeeInOrder(['Neonatal Care', 'Cardiology']);
-        $response->assertSee('title="Care for newborns after delivery."', false);
-        $response->assertSee('title="Heart clinics and ward support."', false);
+        $response->assertSee('Care for newborns after delivery.', false);
+        $response->assertSee('Heart clinics and ward support.', false);
+        $response->assertSee('ch-dept__icon', false);
+        $response->assertSee('Find consultants', false);
+        $response->assertDontSee('ch-dept__media', false);
         $response->assertDontSee('Hidden Ward', false);
         $response->assertDontSee('Skin, Hair & Nails', false);
+    }
+
+    public function test_home_shows_at_most_eight_departments_in_two_rows(): void
+    {
+        foreach (range(1, 9) as $number) {
+            Department::factory()->create([
+                'name' => "Clinic Unit {$number}",
+                'description' => "Description for clinic unit {$number}.",
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => $number,
+            ]);
+        }
+
+        $home = $this->get(route('home'));
+
+        $home->assertOk();
+        $home->assertSee('Clinic Unit 1', false);
+        $home->assertSee('Clinic Unit 8', false);
+        $home->assertDontSee('Clinic Unit 9', false);
     }
 
     public function test_home_booking_band_shows_live_desk_counts(): void
@@ -263,11 +219,15 @@ class HomePageTest extends TestCase
         $response->assertOk();
         $response->assertSee('Ready to book a slot?', false);
         $response->assertSee('3 consultants across 1 specialty', false);
-        $response->assertSee('data-stat="doctors"><strong>3</strong>', false);
-        $response->assertSee('data-stat="departments"><strong>1</strong>', false);
-        $response->assertSee('data-stat="patients"><strong>4</strong>', false);
-        $response->assertSee('data-stat="services"><strong>2</strong>', false);
-        $response->assertDontSee('data-stat="doctors"><strong>4</strong>', false);
+        $response->assertSee('data-stat="doctors"', false);
+        $response->assertSee('data-count-to="3"', false);
+        $response->assertSee('data-stat="departments"', false);
+        $response->assertSee('data-count-to="1"', false);
+        $response->assertSee('data-stat="patients"', false);
+        $response->assertSee('data-count-to="4"', false);
+        $response->assertSee('data-stat="services"', false);
+        $response->assertSee('data-count-to="2"', false);
+        $response->assertDontSee('data-count-to="250"', false);
         $response->assertDontSee('250+', false);
     }
 }

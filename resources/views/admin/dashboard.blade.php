@@ -30,11 +30,11 @@
                                 <x-admin.nav-icon :name="$action['icon'] ?? 'cross'" class="h-3.5 w-3.5" />
                                 <span>{{ $action['label'] }}</span>
                             </a>
-                        @endforeach
+        @endforeach
                     </div>
                 </nav>
             @endif
-        </section>
+    </section>
 
         @if (($superAdmin['enabled'] ?? false) === true)
             <section class="mc-kpis mc-desk__kpis" style="--kpi-count: {{ count($superAdmin['kpis']) }}">
@@ -49,7 +49,7 @@
                                 <p class="mc-kpi__label">{{ $kpi['label'] }}</p>
                                 <p class="mc-kpi__value">{{ $kpi['value'] }}</p>
                                 <p class="mc-kpi__meta">{{ $kpi['meta'] }}</p>
-                            </div>
+            </div>
                             <span class="mc-kpi__icon" aria-hidden="true">
                                 <x-admin.nav-icon :name="$kpi['icon'] ?? 'cross'" class="h-4 w-4" />
                             </span>
@@ -61,13 +61,13 @@
             <div class="mc-layout mc-layout--pair">
                 <section class="mc-card reveal">
                     <div class="mc-card__head">
-                        <div>
+                            <div>
                             <h2 class="mc-card__title">
                                 <x-admin.nav-icon name="pulse" class="h-4 w-4" />
                                 <span>System Activity</span>
                             </h2>
                             <p>Audit trail and desk movement</p>
-                        </div>
+                            </div>
                         <a href="{{ route('admin.system.audit-logs.index') }}">Audit logs</a>
                     </div>
                     <ul class="mc-activity">
@@ -81,7 +81,7 @@
                                         <em>{{ $row->when }}</em>
                                     </span>
                                 </a>
-                            </li>
+                        </li>
                         @empty
                             <li class="mc-activity__empty">No system activity recorded yet.</li>
                         @endforelse
@@ -138,7 +138,7 @@
                             </span>
                         </div>
                     </a>
-                @endforeach
+                    @endforeach
             </section>
 
             <div class="mc-layout mc-layout--pair">
@@ -165,7 +165,7 @@
                         @empty
                             <li class="mc-activity__empty">No doctor activity this month.</li>
                         @endforelse
-                    </ul>
+                </ul>
                 </section>
 
                 <section class="mc-card reveal">
@@ -317,7 +317,7 @@
                     </ul>
                 </section>
             </div>
-        @endif
+            @endif
 
         @if (($hospitalAdmin['enabled'] ?? false) === true)
             <section class="mc-kpis mc-desk__kpis" style="--kpi-count: {{ count($hospitalAdmin['kpis']) }}">
@@ -339,7 +339,7 @@
                         </div>
                     </a>
                 @endforeach
-            </section>
+        </section>
 
             <div class="mc-layout mc-layout--pair">
                 <section class="mc-card reveal">
@@ -350,7 +350,7 @@
                                 <span>Department-wise Activity</span>
                             </h2>
                             <p>Today's appointments and active admissions</p>
-                        </div>
+            </div>
                         <a href="{{ route('admin.departments.index') }}">Departments</a>
                     </div>
                     <ul class="mc-activity">
@@ -361,7 +361,7 @@
                                     <strong>{{ $row->name }}</strong>
                                     <span>{{ $row->appointments }} appointments · {{ $row->admissions }} admissions</span>
                                 </span>
-                            </li>
+                        </li>
                         @empty
                             <li class="mc-activity__empty">No department activity recorded today.</li>
                         @endforelse
@@ -536,7 +536,7 @@
                             </span>
                         </div>
                     </a>
-                @endforeach
+                    @endforeach
             </section>
 
             <div class="mc-layout mc-layout--pair">
@@ -564,7 +564,7 @@
                         @empty
                             <li class="mc-activity__empty">No doctor schedules for today.</li>
                         @endforelse
-                    </ul>
+                </ul>
                 </section>
 
                 <section class="mc-card reveal">
@@ -651,7 +651,7 @@
                     </div>
                 </section>
             </div>
-        @endif
+            @endif
 
         @if (($cashierDesk['enabled'] ?? false) === true)
             <section class="mc-kpis mc-desk__kpis" style="--kpi-count: {{ count($cashierDesk['kpis']) }}">
@@ -673,7 +673,7 @@
                         </div>
                     </a>
                 @endforeach
-            </section>
+        </section>
 
             <div class="mc-layout mc-layout--pair">
                 <section class="mc-card reveal">
@@ -684,7 +684,7 @@
                                 <span>Today's Bills</span>
                             </h2>
                             <p>Bills dated today</p>
-                        </div>
+    </div>
                         <div class="inline-flex flex-wrap gap-3">
                             <a href="{{ route('admin.bills.create') }}">Create bill</a>
                             <a href="{{ route('admin.bills.index') }}">All bills</a>
@@ -715,7 +715,7 @@
                                 <span>Today's Collections</span>
                             </h2>
                             <p>Payments taken today</p>
-                        </div>
+            </div>
                         <a href="{{ route('admin.bills.collections') }}">Report</a>
                     </div>
                     <ul class="mc-activity">
@@ -739,13 +739,13 @@
             <div class="mc-layout mc-layout--pair">
                 <section class="mc-card reveal">
                     <div class="mc-card__head">
-                        <div>
+                            <div>
                             <h2 class="mc-card__title">
                                 <x-admin.nav-icon name="clock" class="h-4 w-4" />
                                 <span>Pending Payments</span>
                             </h2>
                             <p>Issued bills with balance due</p>
-                        </div>
+                            </div>
                         <a href="{{ route('admin.bills.index', ['status' => 'issued']) }}">Issued</a>
                     </div>
                     <ul class="mc-activity">
@@ -758,7 +758,7 @@
                                         <span>{{ $bill->bill_no }} · due ৳{{ number_format($bill->balanceDue(), 0) }}</span>
                                     </span>
                                 </a>
-                            </li>
+                        </li>
                         @empty
                             <li class="mc-activity__empty">No pending payments.</li>
                         @endforelse
@@ -876,7 +876,7 @@
                             </span>
                         </div>
                     </a>
-                @endforeach
+                    @endforeach
             </section>
 
             <div class="mc-layout mc-layout--pair">
@@ -905,7 +905,7 @@
                         @empty
                             <li class="mc-activity__empty">No reports awaiting verification.</li>
                         @endforelse
-                    </ul>
+                </ul>
                 </section>
 
                 <section class="mc-card reveal">
@@ -1051,7 +1051,7 @@
                     </ul>
                 </section>
             </div>
-        @endif
+            @endif
 
         @if (($labDesk['enabled'] ?? false) === true)
             <section class="mc-kpis mc-desk__kpis" style="--kpi-count: {{ count($labDesk['kpis']) }}">
@@ -1073,7 +1073,7 @@
                         </div>
                     </a>
                 @endforeach
-            </section>
+        </section>
 
             <div class="mc-layout mc-layout--pair">
                 <section class="mc-card reveal">
