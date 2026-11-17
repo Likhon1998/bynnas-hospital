@@ -2283,7 +2283,7 @@ body.ch-cal-lock {
 
 .ch-depts-sec {
     padding: 2.85rem 0 3.1rem;
-    background: #edf5fc;
+    background: #f7fbfe;
 }
 
 .ch-depts-sec__head {
@@ -2362,8 +2362,8 @@ body.ch-cal-lock {
     min-width: 0;
     min-height: 100%;
     padding: 1.2rem 1.15rem 1.15rem;
-    border: 1px solid #9fc4e4;
-    background: #cfe6f8;
+    border: 1px solid #c5daf0;
+    background: #eef6fc;
     color: inherit;
     text-align: left;
     text-decoration: none;
@@ -2371,8 +2371,8 @@ body.ch-cal-lock {
 }
 
 .ch-dept:hover {
-    border-color: #6ea6d6;
-    background: #bddcf3;
+    border-color: #9fc4e4;
+    background: #e2f0fa;
     transform: translateY(-2px);
 }
 
