@@ -52,6 +52,7 @@
     $selectedVisitLabel = ($selectedVisitDate && $selectedVisitTime)
         ? \Illuminate\Support\Carbon::parse($selectedVisitDate)->format('D, j M Y').' · '.$selectedVisitTime
         : '';
+    $bookingPanelOpen = $errors->any() || filled(old('name')) || filled(old('phone')) || filled(old('doctor'));
 @endphp
 
 @section('content')
@@ -60,14 +61,35 @@
             <div class="ch-hero__copy">
                 <h1>{{ $heroTitle }}</h1>
                 <p class="ch-hero__lead">{{ $heroLead }}</p>
-                <a class="ch-more" href="{{ $heroCtaUrl }}">{{ $heroCtaLabel }} →</a>
+                <div class="ch-hero__actions">
+                    <button
+                        type="button"
+                        class="ch-btn ch-btn--solid ch-hero__book-launch"
+                        data-book-open
+                        aria-controls="appointment"
+                        aria-expanded="{{ $bookingPanelOpen ? 'true' : 'false' }}"
+                    >
+                        Book an Appointment
+                    </button>
+                    <a class="ch-more ch-hero__cta-link" href="{{ $heroCtaUrl }}" @if (\Illuminate\Support\Str::contains($heroCtaUrl, '#appointment')) data-book-open @endif>
+                        {{ $heroCtaLabel }} →
+                    </a>
+                </div>
             </div>
 
-            <div class="ch-hero__card">
+            <div @class(['ch-hero__card', 'is-open' => $bookingPanelOpen]) data-book-panel>
                 <form id="appointment" class="ch-card" method="POST" action="{{ route('appointment-requests.store') }}" data-appointment-slots="{{ route('appointment-slots') }}" data-appointment-schedule="{{ route('appointment-schedule') }}">
                     @csrf
                     <div class="ch-card__head">
                         <h2>Book an Appointment</h2>
+                        <button
+                            type="button"
+                            class="ch-hero__book-close"
+                            data-book-close
+                            aria-label="Close booking form"
+                        >
+                            <span aria-hidden="true">×</span>
+                        </button>
                     </div>
                     <div class="ch-card__body">
                     @if (session('status'))

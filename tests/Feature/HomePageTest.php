@@ -42,6 +42,8 @@ class HomePageTest extends TestCase
         $response->assertSee('Care you can count on.', false);
         $response->assertSee('Named consultants. Clear next steps.', false);
         $response->assertSee('Book an Appointment', false);
+        $response->assertSee('data-book-panel', false);
+        $response->assertSee('data-book-open', false);
         $response->assertSee('Departments', false);
         $response->assertSee('Cardiology', false);
         $response->assertSee('Find a Doctor', false);

@@ -25,6 +25,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const bookPanel = document.querySelector('[data-book-panel]');
+    const bookOpeners = Array.from(document.querySelectorAll('[data-book-open]'));
+    const bookClosers = Array.from(document.querySelectorAll('[data-book-close]'));
+    const appointmentAnchor = document.querySelector('#appointment');
+
+    const setBookingOpen = (open, { scroll = true } = {}) => {
+        if (! bookPanel) {
+            return;
+        }
+
+        bookPanel.classList.toggle('is-open', open);
+        bookOpeners.forEach((button) => {
+            button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        if (open && scroll && appointmentAnchor) {
+            window.requestAnimationFrame(() => {
+                appointmentAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+    };
+
+    bookOpeners.forEach((button) => {
+        button.addEventListener('click', (event) => {
+            if (button.tagName === 'A' && button.getAttribute('href')?.includes('#appointment')) {
+                event.preventDefault();
+            }
+
+            setBookingOpen(true);
+        });
+    });
+
+    bookClosers.forEach((button) => {
+        button.addEventListener('click', () => setBookingOpen(false, { scroll: false }));
+    });
+
+    document.querySelectorAll('a[href*="#appointment"]').forEach((link) => {
+        if (link.hasAttribute('data-book-open')) {
+            return;
+        }
+
+        link.addEventListener('click', () => {
+            setBookingOpen(true);
+        });
+    });
+
+    if (bookPanel && (window.location.hash === '#appointment' || bookPanel.classList.contains('is-open'))) {
+        setBookingOpen(true, { scroll: window.location.hash === '#appointment' });
+    }
+
+    window.addEventListener('hashchange', () => {
+        if (window.location.hash === '#appointment') {
+            setBookingOpen(true);
+        }
+    });
+
     const toggle = document.querySelector('[data-nav-toggle]');
     const panel = document.querySelector('[data-nav-panel]');
     const closeButtons = document.querySelectorAll('[data-nav-close]');
