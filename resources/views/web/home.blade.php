@@ -312,9 +312,6 @@
                         @foreach ($doctorTalks as $talk)
                             @continue(! filled($talk->embedUrl()))
                             @php
-                                $talkCaption = filled($talk->doctor_name)
-                                    ? $talk->title.' | '.$talk->doctor_name
-                                    : $talk->title;
                                 $talkThumb = $talk->displayThumbnail();
                             @endphp
                             <button
@@ -341,7 +338,12 @@
                                     <span class="ch-talk__play" aria-hidden="true">
                                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 7.2v9.6L17.6 12 9 7.2Z"/></svg>
                                     </span>
-                                    <span class="ch-talk__tip">{{ $talkCaption }}</span>
+                                </span>
+                                <span class="ch-talk__caption">
+                                    <strong>{{ $talk->title }}</strong>
+                                    @if (filled($talk->doctor_name))
+                                        <em>{{ $talk->doctor_name }}</em>
+                                    @endif
                                 </span>
                             </button>
                         @endforeach

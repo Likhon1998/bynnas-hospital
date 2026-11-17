@@ -2747,6 +2747,8 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 }
 
 .ch-talk {
+    display: grid;
+    gap: 0.55rem;
     min-width: 0;
     padding: 0;
     border: 0;
@@ -2820,24 +2822,36 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
     margin-left: 0.1rem;
 }
 
-.ch-talk__tip {
-    position: absolute;
-    left: 0.55rem;
-    right: 0.55rem;
-    bottom: 0.55rem;
-    z-index: 3;
-    padding: 0.4rem 0.5rem;
-    background: #fff;
+.ch-talk__caption {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0 0.1rem;
     color: #0f172a;
-    font-size: 0.72rem;
-    font-weight: 650;
-    line-height: 1.35;
-    opacity: 0;
-    transform: translateY(0.25rem);
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    text-align: left;
+}
+
+.ch-talk__caption strong {
     display: -webkit-box;
     overflow: hidden;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
     -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.ch-talk__caption em {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #64748b;
+    font-size: 0.78rem;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 1.35;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
 }
 
@@ -2849,15 +2863,13 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 .ch-talk:hover .ch-talk__veil,
 .ch-talk:focus-visible .ch-talk__veil,
 .ch-talk:hover .ch-talk__play,
-.ch-talk:focus-visible .ch-talk__play,
-.ch-talk:hover .ch-talk__tip,
-.ch-talk:focus-visible .ch-talk__tip {
+.ch-talk:focus-visible .ch-talk__play {
     opacity: 1;
 }
 
-.ch-talk:hover .ch-talk__tip,
-.ch-talk:focus-visible .ch-talk__tip {
-    transform: translateY(0);
+.ch-talk:hover .ch-talk__caption strong,
+.ch-talk:focus-visible .ch-talk__caption strong {
+    color: #0f766e;
 }
 
 .ch-video-modal {
@@ -2937,10 +2949,9 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
     }
 }
 
-/* Touch / small screens: keep the full thumbnail, put the title under the image. */
+/* Touch / small screens: keep the full thumbnail and always-visible captions. */
 @media (hover: none), (max-width: 720px) {
     .ch-talk {
-        display: grid;
         gap: 0.45rem;
     }
 
@@ -2962,20 +2973,12 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
         border-color: transparent;
     }
 
-    .ch-talk__tip {
-        position: static;
-        left: auto;
-        right: auto;
-        bottom: auto;
-        z-index: auto;
-        opacity: 1;
-        transform: none;
-        padding: 0.15rem 0.1rem 0;
-        background: transparent;
-        color: #0f172a;
-        font-size: 0.8rem;
-        line-height: 1.35;
-        -webkit-line-clamp: 3;
+    .ch-talk__caption strong {
+        font-size: 0.86rem;
+    }
+
+    .ch-talk__caption em {
+        font-size: 0.76rem;
     }
 }
 
@@ -3004,8 +3007,7 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 @media (prefers-reduced-motion: reduce) {
     .ch-talk__media img,
     .ch-talk__veil,
-    .ch-talk__play,
-    .ch-talk__tip {
+    .ch-talk__play {
         transition: none;
     }
 
