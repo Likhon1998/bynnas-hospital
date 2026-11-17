@@ -2740,10 +2740,9 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 }
 
 .ch-talks__track {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: calc((100% - 2.4rem) / 4);
-    gap: 0.8rem;
+    display: flex;
+    align-items: stretch;
+    gap: 0.9rem;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
@@ -2756,6 +2755,7 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 
 .ch-talk {
     display: grid;
+    flex: 0 0 calc((100% - 2.7rem) / 4);
     gap: 0.55rem;
     min-width: 0;
     padding: 0;
@@ -2765,6 +2765,10 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
     text-align: left;
     cursor: pointer;
     scroll-snap-align: start;
+}
+
+.ch-talks__track > .ch-talk:not(:last-child) {
+    margin-inline-end: 0.15rem;
 }
 
 .ch-talk__media {
@@ -2936,8 +2940,8 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 }
 
 @media (max-width: 900px) {
-    .ch-talks__track {
-        grid-auto-columns: calc((100% - 1.6rem) / 3);
+    .ch-talk {
+        flex-basis: calc((100% - 1.8rem) / 3);
     }
 }
 
@@ -2953,8 +2957,15 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
     }
 
     .ch-talks__track {
-        grid-auto-columns: calc((100% - 0.9rem) / 2);
-        gap: 0.9rem;
+        gap: 1rem;
+    }
+
+    .ch-talk {
+        flex-basis: calc((100% - 1rem) / 2);
+    }
+
+    .ch-talks__track > .ch-talk:not(:last-child) {
+        margin-inline-end: 0.25rem;
     }
 }
 
@@ -2993,9 +3004,17 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 
 @media (max-width: 520px) {
     .ch-talks__track {
-        grid-auto-columns: minmax(78%, 17.5rem);
-        gap: 1rem;
-        padding-right: 0.5rem;
+        gap: 1.15rem;
+        padding-right: 0.75rem;
+    }
+
+    .ch-talk {
+        flex: 0 0 min(78%, 17.5rem);
+        width: min(78%, 17.5rem);
+    }
+
+    .ch-talks__track > .ch-talk:not(:last-child) {
+        margin-inline-end: 0.35rem;
     }
 
     .ch-talks-sec__head {
