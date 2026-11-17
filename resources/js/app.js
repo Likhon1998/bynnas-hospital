@@ -2970,7 +2970,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const duration = 5000;
+        const duration = 1000;
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         if (reduceMotion) {
