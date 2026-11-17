@@ -46,6 +46,7 @@ class NoticesPageTest extends TestCase
         $page->assertSee('October vaccination camp has ended.', false);
         $page->assertSee('Archived', false);
         $page->assertSee('Ended 31 Oct 2026', false);
+        $page->assertSee(route('notices.show', Notice::query()->where('title', 'OPD counters open at 8 AM')->first()), false);
         $page->assertDontSee('Draft desk notice', false);
         $page->assertDontSee('Future notice', false);
 
@@ -62,7 +63,7 @@ class NoticesPageTest extends TestCase
 
     public function test_home_links_to_the_notices_page(): void
     {
-        Notice::factory()->create([
+        $notice = Notice::factory()->create([
             'title' => 'Desk update',
             'published_on' => now()->toDateString(),
             'is_active' => true,
@@ -71,6 +72,33 @@ class NoticesPageTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('All notices', false)
-            ->assertSee(route('notices'), false);
+            ->assertSee(route('notices'), false)
+            ->assertSee(route('notices.show', $notice), false);
+    }
+
+    public function test_notice_show_page_displays_full_notice(): void
+    {
+        $notice = Notice::factory()->create([
+            'title' => 'Pharmacy stock check',
+            'body' => 'Prescriptions resume after the afternoon stock check.',
+            'published_on' => now()->toDateString(),
+            'is_active' => true,
+        ]);
+
+        $this->get(route('notices.show', $notice))
+            ->assertOk()
+            ->assertSee('Pharmacy stock check', false)
+            ->assertSee('Prescriptions resume after the afternoon stock check.', false)
+            ->assertSee('All notices', false);
+    }
+
+    public function test_inactive_notice_show_page_is_not_found(): void
+    {
+        $notice = Notice::factory()->inactive()->create([
+            'title' => 'Hidden desk note',
+            'published_on' => now()->toDateString(),
+        ]);
+
+        $this->get(route('notices.show', $notice))->assertNotFound();
     }
 }

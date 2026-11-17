@@ -19,7 +19,7 @@
                 <h2 class="ch-notices-page__heading">Current notices</h2>
                 <div class="ch-notices">
                     @forelse ($currentNotices as $notice)
-                        <article @class(['ch-notice', 'ch-notice--urgent' => $notice->is_urgent])>
+                        <a href="{{ route('notices.show', $notice) }}" @class(['ch-notice', 'ch-notice--link', 'ch-notice--urgent' => $notice->is_urgent])>
                             <time class="ch-notice__date" datetime="{{ $notice->published_on->toDateString() }}">
                                 {{ $notice->published_on->format('d M Y') }}
                             </time>
@@ -29,10 +29,10 @@
                                 @endif
                                 <h3>{{ $notice->title }}</h3>
                                 @if (filled($notice->body))
-                                    <p>{{ $notice->body }}</p>
+                                    <p>{{ \Illuminate\Support\Str::limit($notice->body, 140) }}</p>
                                 @endif
                             </div>
-                        </article>
+                        </a>
                     @empty
                         <p class="ch-lead">No current notices.</p>
                     @endforelse
@@ -43,7 +43,7 @@
                 <h2 class="ch-notices-page__heading">Previous notices</h2>
                 <div class="ch-notices">
                     @forelse ($previousNotices as $notice)
-                        <article class="ch-notice ch-notice--past">
+                        <a href="{{ route('notices.show', $notice) }}" class="ch-notice ch-notice--link ch-notice--past">
                             <time class="ch-notice__date" datetime="{{ $notice->published_on->toDateString() }}">
                                 {{ $notice->published_on->format('d M Y') }}
                             </time>
@@ -51,13 +51,13 @@
                                 <span class="ch-notice__tag ch-notice__tag--past">Archived</span>
                                 <h3>{{ $notice->title }}</h3>
                                 @if (filled($notice->body))
-                                    <p>{{ $notice->body }}</p>
+                                    <p>{{ \Illuminate\Support\Str::limit($notice->body, 140) }}</p>
                                 @endif
                                 @if ($notice->expires_on)
                                     <p class="ch-notice__ended">Ended {{ $notice->expires_on->format('d M Y') }}</p>
                                 @endif
                             </div>
-                        </article>
+                        </a>
                     @empty
                         <p class="ch-lead">No previous notices yet.</p>
                     @endforelse

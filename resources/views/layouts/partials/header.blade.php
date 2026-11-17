@@ -68,7 +68,7 @@
             'active' => request()->routeIs('about', 'about.leadership.*', 'about.people.*'),
             'children' => $aboutChildren,
         ],
-        ['label' => 'Departments', 'href' => route('departments'), 'active' => request()->routeIs('departments')],
+        ['label' => 'Departments', 'href' => route('home').'#departments', 'active' => request()->routeIs('departments')],
         [
             'label' => 'Find a Doctor',
             'href' => route('doctors'),
@@ -223,10 +223,25 @@
         <nav class="ch-drawer__nav" aria-label="Mobile">
             @foreach ($links as $link)
                 @if (! empty($link['children']))
-                    <a href="{{ $link['href'] }}" data-nav-close>{{ $link['label'] }}</a>
-                    @foreach ($link['children'] as $child)
-                        <a href="{{ $child['href'] }}" class="ch-drawer__sub" data-nav-close>{{ $child['label'] }}</a>
-                    @endforeach
+                    <div class="ch-drawer__group" data-drawer-group>
+                        <button
+                            type="button"
+                            class="ch-drawer__group-trigger"
+                            data-drawer-group-trigger
+                            aria-expanded="false"
+                        >
+                            <span>{{ $link['label'] }}</span>
+                            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="ch-drawer__group-panel" data-drawer-group-panel hidden>
+                            <a href="{{ $link['href'] }}" data-nav-close>Overview</a>
+                            @foreach ($link['children'] as $child)
+                                <a href="{{ $child['href'] }}" data-nav-close>{{ $child['label'] }}</a>
+                            @endforeach
+                        </div>
+                    </div>
                 @else
                     <a href="{{ $link['href'] }}" data-nav-close>{{ $link['label'] }}</a>
                 @endif

@@ -90,6 +90,22 @@ document.addEventListener('DOMContentLoaded', () => {
             panel.classList.toggle('hidden', !open);
             document.body.classList.toggle('overflow-hidden', open);
             toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+            if (! open) {
+                panel.querySelectorAll('[data-drawer-group]').forEach((group) => {
+                    group.classList.remove('is-open');
+                    const groupTrigger = group.querySelector('[data-drawer-group-trigger]');
+                    const groupPanel = group.querySelector('[data-drawer-group-panel]');
+
+                    if (groupTrigger) {
+                        groupTrigger.setAttribute('aria-expanded', 'false');
+                    }
+
+                    if (groupPanel) {
+                        groupPanel.hidden = true;
+                    }
+                });
+            }
         };
 
         toggle.addEventListener('click', () => {
@@ -99,6 +115,96 @@ document.addEventListener('DOMContentLoaded', () => {
         closeButtons.forEach((button) => {
             button.addEventListener('click', () => setOpen(false));
         });
+
+        panel.querySelectorAll('[data-drawer-group]').forEach((group) => {
+            const groupTrigger = group.querySelector('[data-drawer-group-trigger]');
+            const groupPanel = group.querySelector('[data-drawer-group-panel]');
+
+            if (! groupTrigger || ! groupPanel) {
+                return;
+            }
+
+            groupTrigger.addEventListener('click', () => {
+                const willOpen = groupPanel.hidden;
+
+                panel.querySelectorAll('[data-drawer-group]').forEach((other) => {
+                    if (other === group) {
+                        return;
+                    }
+
+                    other.classList.remove('is-open');
+                    const otherTrigger = other.querySelector('[data-drawer-group-trigger]');
+                    const otherPanel = other.querySelector('[data-drawer-group-panel]');
+
+                    if (otherTrigger) {
+                        otherTrigger.setAttribute('aria-expanded', 'false');
+                    }
+
+                    if (otherPanel) {
+                        otherPanel.hidden = true;
+                    }
+                });
+
+                group.classList.toggle('is-open', willOpen);
+                groupTrigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                groupPanel.hidden = ! willOpen;
+            });
+        });
+    }
+
+    const stickyScrollOffset = () => {
+        const top = document.querySelector('.ch-top');
+
+        return (top?.getBoundingClientRect().height || 96) + 12;
+    };
+
+    const scrollToHashTarget = (hash, behavior = 'smooth') => {
+        if (! hash || hash === '#') {
+            return false;
+        }
+
+        const target = document.querySelector(hash);
+
+        if (! target) {
+            return false;
+        }
+
+        const top = target.getBoundingClientRect().top + window.scrollY - stickyScrollOffset();
+        window.scrollTo({ top: Math.max(0, top), behavior });
+
+        return true;
+    };
+
+    document.querySelectorAll('a[href*="#"]').forEach((link) => {
+        link.addEventListener('click', (event) => {
+            const href = link.getAttribute('href') || '';
+            const hashIndex = href.indexOf('#');
+
+            if (hashIndex === -1) {
+                return;
+            }
+
+            const path = href.slice(0, hashIndex);
+            const hash = href.slice(hashIndex);
+            const linkUrl = new URL(href, window.location.origin);
+            const samePage = linkUrl.pathname === window.location.pathname
+                || path === ''
+                || path === '#'
+                || (path.endsWith('/') && path.length === 1);
+
+            if (! samePage || hash === '#appointment') {
+                return;
+            }
+
+            if (scrollToHashTarget(hash)) {
+                event.preventDefault();
+                history.pushState(null, '', hash);
+            }
+        });
+    });
+
+    if (window.location.hash && window.location.hash !== '#appointment') {
+        window.setTimeout(() => scrollToHashTarget(window.location.hash, 'auto'), 50);
     }
 
     const finePointerHover = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;

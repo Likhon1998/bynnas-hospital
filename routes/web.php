@@ -27,6 +27,7 @@ Route::get('/emergency', EmergencyController::class)->name('emergency');
 Route::get('/services', [ServiceController::class, 'index'])->name('services');
 Route::get('/services/{service:slug}', [ServiceController::class, 'show'])->name('services.show');
 Route::get('/notices', [NoticeController::class, 'index'])->name('notices');
+Route::get('/notices/{notice}', [NoticeController::class, 'show'])->name('notices.show');
 Route::get('/news', [BlogController::class, 'index'])->name('news');
 Route::get('/news/{post:slug}', [BlogController::class, 'show'])->name('news.show');
 Route::get('/privacy', [LegalPageController::class, 'privacy'])->name('privacy');

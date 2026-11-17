@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Notice;
 use Illuminate\View\View;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class NoticeController extends Controller
 {
@@ -28,6 +29,21 @@ class NoticeController extends Controller
         return view('web.notices', [
             'currentNotices' => $currentNotices,
             'previousNotices' => $previousNotices,
+        ]);
+    }
+
+    public function show(Notice $notice): View
+    {
+        $isPublished = Notice::query()->published()->whereKey($notice->id)->exists();
+        $isPrevious = Notice::query()->previous()->whereKey($notice->id)->exists();
+
+        if (! $isPublished && ! $isPrevious) {
+            throw new NotFoundHttpException;
+        }
+
+        return view('web.notice-show', [
+            'notice' => $notice,
+            'isPrevious' => $isPrevious,
         ]);
     }
 }

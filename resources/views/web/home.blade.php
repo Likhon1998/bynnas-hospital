@@ -237,7 +237,10 @@
                         </div>
                         <div class="ch-notices ch-notices--stack" data-notice-slots="5">
                             @forelse ($notices->take(5) as $notice)
-                                <article @class(['ch-notice', 'ch-notice--stack', 'ch-notice--urgent' => $notice->is_urgent])>
+                                <a
+                                    href="{{ route('notices.show', $notice) }}"
+                                    @class(['ch-notice', 'ch-notice--stack', 'ch-notice--link', 'ch-notice--urgent' => $notice->is_urgent])
+                                >
                                     <div class="ch-notice__meta">
                                         <time class="ch-notice__date" datetime="{{ $notice->published_on->toDateString() }}">
                                             {{ $notice->published_on->format('d M Y') }}
@@ -252,7 +255,7 @@
                                             <p>{{ \Illuminate\Support\Str::limit($notice->body, 64) }}</p>
                                         @endif
                                     </div>
-                                </article>
+                                </a>
                             @empty
                                 <p class="ch-spotlight__empty">No published notices right now.</p>
                             @endforelse

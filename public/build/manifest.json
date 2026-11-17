@@ -60,7 +60,7 @@
     "src": "_fraunces-700-normal-DTjk5d1Q.woff"
   },
   "resources/css/app.css": {
-    "file": "assets/app-WbMfmzPA.css",
+    "file": "assets/app-BpVVOgwj.css",
     "name": "app",
     "names": [
       "app.css"
@@ -69,7 +69,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CdDD4157.js",
+    "file": "assets/app-CfQOkSte.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true
