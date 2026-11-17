@@ -168,7 +168,7 @@
                     </span>
                 </a>
             @endif
-            <a href="{{ route('home') }}#appointment" class="ch-btn ch-btn--solid ch-btn--header-book">Book Appointment</a>
+            <a href="{{ route('home', ['book' => 1]) }}" class="ch-btn ch-btn--solid ch-btn--header-book" data-book-open>Book Appointment</a>
         </div>
 
         <button
@@ -250,6 +250,6 @@
         @if ($phone)
             <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="ch-btn ch-btn--wide" data-nav-close>Call {{ $phone }}</a>
         @endif
-        <a href="{{ route('home') }}#appointment" class="ch-btn ch-btn--solid ch-btn--wide" data-nav-close>Book Appointment</a>
+        <a href="{{ route('home', ['book' => 1]) }}" class="ch-btn ch-btn--solid ch-btn--wide" data-nav-close data-book-open>Book Appointment</a>
     </div>
 </div>

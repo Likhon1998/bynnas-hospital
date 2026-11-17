@@ -47,10 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const isHomePath = (pathname) => pathname === '/' || pathname === '';
+
     bookOpeners.forEach((button) => {
         button.addEventListener('click', (event) => {
-            if (button.tagName === 'A' && button.getAttribute('href')?.includes('#appointment')) {
-                event.preventDefault();
+            if (button.tagName === 'A') {
+                const href = button.getAttribute('href') || '';
+                const url = new URL(href, window.location.origin);
+                const staysOnHome = isHomePath(window.location.pathname) && isHomePath(url.pathname);
+
+                if (staysOnHome) {
+                    event.preventDefault();
+                }
             }
 
             setBookingOpen(true);
@@ -61,25 +69,45 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => setBookingOpen(false, { scroll: false }));
     });
 
-    document.querySelectorAll('a[href*="#appointment"]').forEach((link) => {
+    document.querySelectorAll('a[href*="#appointment"], a[href*="book=1"]').forEach((link) => {
         if (link.hasAttribute('data-book-open')) {
             return;
         }
 
-        link.addEventListener('click', () => {
-            setBookingOpen(true);
+        link.addEventListener('click', (event) => {
+            const href = link.getAttribute('href') || '';
+            const url = new URL(href, window.location.origin);
+            const staysOnHome = isHomePath(window.location.pathname) && isHomePath(url.pathname);
+
+            if (staysOnHome) {
+                event.preventDefault();
+                setBookingOpen(true);
+            }
         });
     });
 
-    if (bookPanel && (window.location.hash === '#appointment' || bookPanel.classList.contains('is-open'))) {
-        setBookingOpen(true, { scroll: window.location.hash === '#appointment' });
+    const bookingParams = new URLSearchParams(window.location.search);
+    const shouldOpenBookingOnLoad = Boolean(
+        bookPanel
+        && (
+            bookPanel.classList.contains('is-open')
+            || bookingParams.has('doctor')
+            || bookingParams.has('service')
+            || bookingParams.get('book') === '1'
+        ),
+    );
+
+    if (window.location.hash === '#appointment') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
-    window.addEventListener('hashchange', () => {
-        if (window.location.hash === '#appointment') {
-            setBookingOpen(true);
-        }
-    });
+    if (shouldOpenBookingOnLoad) {
+        setBookingOpen(true, {
+            scroll: bookingParams.has('doctor')
+                || bookingParams.has('service')
+                || bookingParams.get('book') === '1',
+        });
+    }
 
     const toggle = document.querySelector('[data-nav-toggle]');
     const panel = document.querySelector('[data-nav-panel]');

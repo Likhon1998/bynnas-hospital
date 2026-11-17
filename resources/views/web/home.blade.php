@@ -13,7 +13,7 @@
     $heroTitle = $heroBanner?->title ?: 'Care you can count on.';
     $heroLead = $heroBanner?->subtitle ?: 'Named consultants. Clear next steps.';
     $heroCtaLabel = $heroBanner?->cta_label ?: 'Book a visit';
-    $heroCtaUrl = $heroBanner?->destination() ?: route('home').'#appointment';
+    $heroCtaUrl = $heroBanner?->destination() ?: route('home', ['book' => 1]);
     $campusAddress = $hospital->get('address') ?: 'Main Campus';
     $campusLabel = filled($hospital->get('campus_name'))
         ? $hospital->get('campus_name')
@@ -62,7 +62,11 @@
                 <h1>{{ $heroTitle }}</h1>
                 <p class="ch-hero__lead">{{ $heroLead }}</p>
                 <div class="ch-hero__actions">
-                    <a class="ch-more ch-hero__cta-link" href="{{ $heroCtaUrl }}" @if (\Illuminate\Support\Str::contains($heroCtaUrl, '#appointment')) data-book-open @endif>
+                    <a
+                        class="ch-more ch-hero__cta-link"
+                        href="{{ $heroCtaUrl }}"
+                        @if (\Illuminate\Support\Str::contains($heroCtaUrl, 'book=1') || \Illuminate\Support\Str::contains($heroCtaUrl, '#appointment')) data-book-open @endif
+                    >
                         {{ $heroCtaLabel }} →
                     </a>
                 </div>
@@ -363,7 +367,7 @@
         </div>
     @endif
 
-    <x-web.campus-band :stats="$stats" headline="Ready to book a slot?" cta-href="#appointment" cta-label="Book a visit →" />
+    <x-web.campus-band :stats="$stats" headline="Ready to book a slot?" cta-href="?book=1" cta-label="Book a visit →" />
 
     <section id="locations" class="ch-sec">
         <div class="ch-wrap">

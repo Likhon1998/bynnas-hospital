@@ -31,7 +31,7 @@
                 Call
             </a>
         @endif
-        <a href="{{ route('home') }}#appointment" class="ch-dock__book" data-book-open>Book Appointment</a>
+        <a href="{{ route('home', ['book' => 1]) }}" class="ch-dock__book" data-book-open>Book Appointment</a>
     </nav>
 </body>
 </html>
