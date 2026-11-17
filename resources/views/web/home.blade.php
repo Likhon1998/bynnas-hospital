@@ -62,15 +62,6 @@
                 <h1>{{ $heroTitle }}</h1>
                 <p class="ch-hero__lead">{{ $heroLead }}</p>
                 <div class="ch-hero__actions">
-                    <button
-                        type="button"
-                        class="ch-btn ch-btn--solid ch-hero__book-launch"
-                        data-book-open
-                        aria-controls="appointment"
-                        aria-expanded="{{ $bookingPanelOpen ? 'true' : 'false' }}"
-                    >
-                        Book an Appointment
-                    </button>
                     <a class="ch-more ch-hero__cta-link" href="{{ $heroCtaUrl }}" @if (\Illuminate\Support\Str::contains($heroCtaUrl, '#appointment')) data-book-open @endif>
                         {{ $heroCtaLabel }} →
                     </a>

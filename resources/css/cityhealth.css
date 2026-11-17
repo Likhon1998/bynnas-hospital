@@ -855,10 +855,6 @@ html {
     margin-top: 1.35rem;
 }
 
-.ch-hero__book-launch {
-    display: none;
-}
-
 .ch-hero__cta-link {
     display: inline-flex;
     align-items: center;
@@ -6638,22 +6634,6 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
     }
 
     .ch-hero__actions {
-        margin-top: 1rem;
-        gap: 0.7rem;
-    }
-
-    .ch-hero__book-launch {
-        display: inline-flex;
-        width: 100%;
-        min-height: 2.9rem;
-        justify-content: center;
-    }
-
-    .ch-hero:has(.ch-hero__card.is-open) .ch-hero__book-launch {
-        display: none;
-    }
-
-    .ch-hero__cta-link {
         display: none;
     }
 
