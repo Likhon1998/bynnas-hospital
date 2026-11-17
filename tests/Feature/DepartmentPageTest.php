@@ -36,7 +36,7 @@ class DepartmentPageTest extends TestCase
         $response->assertSee('Cardiology', false);
         $response->assertSee('Heart clinics and ward support.', false);
         $response->assertSee('1 consultant', false);
-        $response->assertSee(route('doctors', ['specialty' => 'Cardiology']), false);
+        $response->assertSee(route('departments.show', $cardiology), false);
         $response->assertDontSee('Hidden Ward', false);
     }
 

@@ -68,7 +68,7 @@
             'active' => request()->routeIs('about', 'about.leadership.*', 'about.people.*'),
             'children' => $aboutChildren,
         ],
-        ['label' => 'Departments', 'href' => route('departments'), 'active' => request()->routeIs('departments')],
+        ['label' => 'Departments', 'href' => route('departments'), 'active' => request()->routeIs('departments', 'departments.show')],
         [
             'label' => 'Find a Doctor',
             'href' => route('doctors'),

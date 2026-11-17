@@ -30,7 +30,7 @@
                     <a
                         id="department-{{ $department->slug }}"
                         class="ch-clinic"
-                        href="{{ route('doctors', ['specialty' => $department->name]) }}"
+                        href="{{ route('departments.show', $department) }}"
                     >
                         <span class="ch-clinic__top">
                             <span class="ch-clinic__icon"><x-icon :name="$department->icon ?: 'hospital'" /></span>
@@ -46,7 +46,7 @@
                             @if ($department->consultants_count > 0)
                                 {{ $department->consultants_count }} {{ \Illuminate\Support\Str::plural('consultant', $department->consultants_count) }} →
                             @else
-                                Find doctors →
+                                View department →
                             @endif
                         </span>
                     </a>

@@ -97,7 +97,7 @@ class HomePageTest extends TestCase
         $home->assertSee('Dr. Featured 1', false);
         $home->assertSee(route('doctors'), false);
         $home->assertSee(route('departments'), false);
-        $home->assertSee('#department-', false);
+        $home->assertSee('/departments/', false);
     }
 
     public function test_home_finder_uses_live_consultants(): void
