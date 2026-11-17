@@ -35,7 +35,7 @@ class PublicLayoutComposer
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->limit(10)
-                ->get(['id', 'title', 'slug', 'is_urgent']),
+                ->get(['id', 'title', 'slug']),
             'leadershipNavRoles' => $this->leadershipNavRoles(),
         ]);
     }
