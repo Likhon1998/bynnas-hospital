@@ -89,7 +89,8 @@ class NoticesPageTest extends TestCase
             ->assertOk()
             ->assertSee('Pharmacy stock check', false)
             ->assertSee('Prescriptions resume after the afternoon stock check.', false)
-            ->assertSee('All notices', false);
+            ->assertSee('All notices', false)
+            ->assertSee('id="notice-detail"', false);
     }
 
     public function test_inactive_notice_show_page_is_not_found(): void

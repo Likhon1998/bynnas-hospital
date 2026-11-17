@@ -1,3 +1,7 @@
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const revealItems = Array.from(document.querySelectorAll('[data-reveal]'));
 
@@ -188,6 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
         '#contact',
     ]);
 
+    const isDepartmentHash = (hash) => typeof hash === 'string' && hash.startsWith('#department-');
+
     const stickyScrollOffset = () => {
         const top = document.querySelector('.ch-top');
 
@@ -195,7 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const scrollToHashTarget = (hash, behavior = 'smooth') => {
-        if (! hash || hash === '#' || ! sectionHashes.has(hash)) {
+        if (! hash || hash === '#') {
+            return false;
+        }
+
+        if (! sectionHashes.has(hash) && ! isDepartmentHash(hash)) {
             return false;
         }
 
@@ -222,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const hash = href.slice(hashIndex);
 
-            if (! sectionHashes.has(hash) || hash === '#appointment') {
+            if ((! sectionHashes.has(hash) && ! isDepartmentHash(hash)) || hash === '#appointment') {
                 return;
             }
 
@@ -261,12 +271,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (sectionHashes.has(window.location.hash)) {
-        window.setTimeout(() => scrollToHashTarget(window.location.hash, 'auto'), 100);
-    }
+    const resetPageScroll = () => {
+        if (sectionHashes.has(window.location.hash) || isDepartmentHash(window.location.hash)) {
+            return;
+        }
 
-    if (! window.location.hash) {
-        window.scrollTo({ top: 0, behavior: 'auto' });
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    };
+
+    resetPageScroll();
+    window.addEventListener('load', resetPageScroll);
+    window.setTimeout(resetPageScroll, 0);
+    window.setTimeout(resetPageScroll, 150);
+
+    if (sectionHashes.has(window.location.hash) || isDepartmentHash(window.location.hash)) {
+        window.setTimeout(() => scrollToHashTarget(window.location.hash, 'auto'), 180);
     }
 
     const finePointerHover = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;

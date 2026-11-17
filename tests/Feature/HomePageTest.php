@@ -96,7 +96,8 @@ class HomePageTest extends TestCase
         $home->assertSee('Find a Doctor', false);
         $home->assertSee('Dr. Featured 1', false);
         $home->assertSee(route('doctors'), false);
-        $home->assertSee(route('doctors', ['specialty' => 'Cardiology']), false);
+        $home->assertSee(route('departments'), false);
+        $home->assertSee('#department-', false);
     }
 
     public function test_home_finder_uses_live_consultants(): void
@@ -158,7 +159,7 @@ class HomePageTest extends TestCase
         $response->assertSee('Care for newborns after delivery.', false);
         $response->assertSee('Heart clinics and ward support.', false);
         $response->assertSee('ch-dept__icon', false);
-        $response->assertSee('Find consultants', false);
+        $response->assertSee('View department', false);
         $response->assertDontSee('ch-dept__media', false);
         $response->assertDontSee('Hidden Ward', false);
         $response->assertDontSee('Skin, Hair & Nails', false);

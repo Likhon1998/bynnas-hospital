@@ -276,7 +276,7 @@
                             ? \Illuminate\Support\Str::limit(strip_tags((string) $department->description), 96)
                             : 'Specialist clinics and bookable consultants.';
                     @endphp
-                    <a class="ch-dept" href="{{ route('doctors', ['specialty' => $department->name]) }}">
+                    <a class="ch-dept" href="{{ route('departments') }}#department-{{ $department->slug }}">
                         <span class="ch-dept__icon" aria-hidden="true">
                             <x-icon :name="$department->icon ?: 'hospital'" />
                         </span>
@@ -284,7 +284,7 @@
                             <strong>{{ $department->name }}</strong>
                             <span class="ch-dept__copy">{{ $deptSummary }}</span>
                         </span>
-                        <span class="ch-dept__go">Find consultants</span>
+                        <span class="ch-dept__go">View department</span>
                     </a>
                 @empty
                     <p class="ch-lead">No departments listed yet.</p>

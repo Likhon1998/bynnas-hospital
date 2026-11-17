@@ -28,6 +28,7 @@
             <div class="ch-clinics__grid">
                 @forelse ($departments as $department)
                     <a
+                        id="department-{{ $department->slug }}"
                         class="ch-clinic"
                         href="{{ route('doctors', ['specialty' => $department->name]) }}"
                     >

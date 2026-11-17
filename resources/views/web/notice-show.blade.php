@@ -9,16 +9,16 @@
 
 @section('content')
     <x-web.page-intro
-        title="Notice"
+        :title="$notice->title"
         note="Official desk update for patients and visitors."
-    />
+    >
+        <p class="mt-4">
+            <a class="ch-more" href="{{ route('notices') }}">← All notices</a>
+        </p>
+    </x-web.page-intro>
 
     <section class="ch-notices-page" id="notice-detail">
         <div class="ch-wrap">
-            <p class="ch-notices-page__back">
-                <a class="ch-more" href="{{ route('notices') }}">← All notices</a>
-            </p>
-
             <article @class(['ch-notice', 'ch-notice--detail', 'ch-notice--urgent' => $notice->is_urgent, 'ch-notice--past' => $isPrevious])>
                 <div class="ch-notice__meta">
                     <time class="ch-notice__date" datetime="{{ $notice->published_on->toDateString() }}">
@@ -32,9 +32,10 @@
                     @endif
                 </div>
                 <div class="ch-notice__body">
-                    <h1>{{ $notice->title }}</h1>
                     @if (filled($notice->body))
                         <p>{{ $notice->body }}</p>
+                    @else
+                        <p>{{ $notice->title }}</p>
                     @endif
                     @if ($isPrevious && $notice->expires_on)
                         <p class="ch-notice__ended">Ended {{ $notice->expires_on->format('d M Y') }}</p>
