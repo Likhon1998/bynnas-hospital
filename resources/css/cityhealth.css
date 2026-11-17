@@ -2283,7 +2283,7 @@ body.ch-cal-lock {
 
 .ch-depts-sec {
     padding: 2.85rem 0 3.1rem;
-    background: #f7fbff;
+    background: #edf5fc;
 }
 
 .ch-depts-sec__head {
@@ -2362,8 +2362,8 @@ body.ch-cal-lock {
     min-width: 0;
     min-height: 100%;
     padding: 1.2rem 1.15rem 1.15rem;
-    border: 1px solid #b7d3ea;
-    background: #dceefb;
+    border: 1px solid #9fc4e4;
+    background: #cfe6f8;
     color: inherit;
     text-align: left;
     text-decoration: none;
@@ -2371,22 +2371,23 @@ body.ch-cal-lock {
 }
 
 .ch-dept:hover {
-    border-color: #8eb8d7;
-    background: #cfe6f8;
+    border-color: #6ea6d6;
+    background: #bddcf3;
     transform: translateY(-2px);
 }
 
 .ch-dept:hover .ch-dept__icon {
-    background: #0f766e;
+    background: #1769aa;
     color: #fff;
+    border-color: #1769aa;
 }
 
 .ch-dept:hover strong {
-    color: #0f766e;
+    color: #0c4a6e;
 }
 
 .ch-dept:hover .ch-dept__go {
-    color: #0f766e;
+    color: #1769aa;
 }
 
 .ch-dept__icon {
@@ -2394,9 +2395,9 @@ body.ch-cal-lock {
     place-items: center;
     width: 2.85rem;
     height: 2.85rem;
-    border: 1px solid #ccfbf1;
+    border: 1px solid #b6d4ec;
     background: #fff;
-    color: #0f766e;
+    color: #1769aa;
     flex-shrink: 0;
     transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
@@ -2420,7 +2421,7 @@ body.ch-cal-lock {
     display: -webkit-box;
     overflow: hidden;
     min-height: 2.6em;
-    color: #134e4a;
+    color: #0c4a6e;
     font-size: 1.05rem;
     font-weight: 750;
     line-height: 1.3;
@@ -2443,7 +2444,7 @@ body.ch-cal-lock {
 .ch-dept__go {
     margin-top: auto;
     padding-top: 0.35rem;
-    color: #0f766e;
+    color: #1769aa;
     font-size: 0.78rem;
     font-weight: 750;
     letter-spacing: 0.01em;
