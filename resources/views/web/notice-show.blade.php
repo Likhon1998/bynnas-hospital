@@ -13,7 +13,7 @@
         note="Official desk update for patients and visitors."
     />
 
-    <section class="ch-notices-page">
+    <section class="ch-notices-page" id="notice-detail">
         <div class="ch-wrap">
             <p class="ch-notices-page__back">
                 <a class="ch-more" href="{{ route('notices') }}">← All notices</a>

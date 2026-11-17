@@ -2416,9 +2416,22 @@ a.ch-notice--link.ch-notice--urgent:focus-visible {
 #notices,
 #doctor-talks,
 #locations,
-#contact,
-#appointment {
-    scroll-margin-top: 7.5rem;
+#contact {
+    scroll-margin-top: 8.5rem;
+}
+
+.ch-notices-page,
+.ch-clinics,
+.ch-clinics-hero {
+    scroll-margin-top: 7rem;
+}
+
+.ch-notices-page {
+    min-height: calc(100vh - 14rem);
+}
+
+.ch-clinics {
+    min-height: calc(100vh - 16rem);
 }
 
 .ch-notices-page__block + .ch-notices-page__block {

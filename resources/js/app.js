@@ -180,18 +180,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const sectionHashes = new Set([
+        '#departments',
+        '#notices',
+        '#doctor-talks',
+        '#locations',
+        '#contact',
+    ]);
+
     const stickyScrollOffset = () => {
         const top = document.querySelector('.ch-top');
 
-        return (top?.getBoundingClientRect().height || 96) + 12;
+        return (top?.getBoundingClientRect().height || 96) + 16;
     };
 
     const scrollToHashTarget = (hash, behavior = 'smooth') => {
-        if (! hash || hash === '#') {
+        if (! hash || hash === '#' || ! sectionHashes.has(hash)) {
             return false;
         }
 
-        const target = document.querySelector(hash);
+        const target = document.getElementById(hash.slice(1));
 
         if (! target) {
             return false;
@@ -212,27 +220,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const path = href.slice(0, hashIndex);
             const hash = href.slice(hashIndex);
-            const linkUrl = new URL(href, window.location.origin);
-            const samePage = linkUrl.pathname === window.location.pathname
-                || path === ''
-                || path === '#'
-                || (path.endsWith('/') && path.length === 1);
 
-            if (! samePage || hash === '#appointment') {
+            if (! sectionHashes.has(hash) || hash === '#appointment') {
                 return;
             }
 
-            if (scrollToHashTarget(hash)) {
-                event.preventDefault();
-                history.pushState(null, '', hash);
+            let linkUrl;
+
+            try {
+                linkUrl = new URL(href, window.location.origin);
+            } catch (error) {
+                return;
             }
+
+            const samePage = linkUrl.pathname === window.location.pathname
+                || (isHomePath(window.location.pathname) && isHomePath(linkUrl.pathname));
+
+            if (! samePage) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const runScroll = () => {
+                scrollToHashTarget(hash);
+                history.pushState(null, '', hash);
+            };
+
+            if (panel && ! panel.classList.contains('hidden')) {
+                panel.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                toggle?.setAttribute('aria-expanded', 'false');
+                window.setTimeout(runScroll, 120);
+
+                return;
+            }
+
+            runScroll();
         });
     });
 
-    if (window.location.hash && window.location.hash !== '#appointment') {
-        window.setTimeout(() => scrollToHashTarget(window.location.hash, 'auto'), 50);
+    if (sectionHashes.has(window.location.hash)) {
+        window.setTimeout(() => scrollToHashTarget(window.location.hash, 'auto'), 100);
+    }
+
+    if (! window.location.hash) {
+        window.scrollTo({ top: 0, behavior: 'auto' });
     }
 
     const finePointerHover = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
