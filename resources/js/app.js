@@ -2205,11 +2205,167 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    document.querySelectorAll('form[data-doctor-directory]').forEach((form) => {
+        const results = document.querySelector('[data-directory-results]');
+
+        if (! results) {
+            return;
+        }
+
+        const title = results.querySelector('[data-directory-title]');
+        const count = results.querySelector('[data-directory-count]');
+        const empty = results.querySelector('[data-directory-empty]');
+        const emptyClear = results.querySelector('[data-directory-empty-clear]');
+        const emptyCopy = results.querySelector('[data-directory-empty-copy]');
+        const specialtyField = form.querySelector('[data-directory-specialty]');
+        const branchField = form.querySelector('[data-directory-branch]');
+        const searchField = form.querySelector('input[type="search"][name="q"]');
+        const viewField = form.querySelector('input[name="view"]');
+
+        const pluralizeDoctors = (total) => `${total} doctor${total === 1 ? '' : 's'}`;
+
+        const matchesSpecialty = (card, specialty) => {
+            if (specialty === '') {
+                return true;
+            }
+
+            const department = card.dataset.department || '';
+            const specialization = (card.dataset.specialization || '').toLowerCase();
+
+            return department === specialty || specialization.includes(specialty.toLowerCase());
+        };
+
+        const matchesBranch = (card, branch) => {
+            if (branch === '') {
+                return true;
+            }
+
+            return (card.dataset.branch || '') === branch;
+        };
+
+        const directoryTitle = (specialty, query) => {
+            if (specialty !== '') {
+                return `Results for ${specialty}`;
+            }
+
+            if (query !== '') {
+                return `Results for ${query}`;
+            }
+
+            const view = viewField?.value || 'department';
+
+            if (view === 'name') {
+                return 'Doctors A–Z';
+            }
+
+            if (view === 'branch') {
+                return 'Doctors by branch';
+            }
+
+            return 'All doctors';
+        };
+
+        const syncDirectoryUrl = () => {
+            const params = new URLSearchParams(new FormData(form));
+
+            ['q', 'specialty', 'branch', 'sort'].forEach((key) => {
+                if (! params.get(key)) {
+                    params.delete(key);
+                }
+            });
+
+            const query = params.toString();
+            const nextUrl = query === '' ? form.action : `${form.action}?${query}`;
+
+            window.history.replaceState(window.history.state, '', nextUrl);
+        };
+
+        const applyDirectoryFilter = () => {
+            const specialty = specialtyField?.value?.trim() || '';
+            const branch = branchField?.value?.trim() || '';
+            const query = searchField?.value?.trim() || '';
+            let visibleTotal = 0;
+
+            results.querySelectorAll('[data-dir-group]').forEach((group) => {
+                let visibleInGroup = 0;
+
+                group.querySelectorAll('[data-dir-card]').forEach((card) => {
+                    const show = matchesSpecialty(card, specialty) && matchesBranch(card, branch);
+                    card.hidden = ! show;
+
+                    if (show) {
+                        visibleInGroup += 1;
+                    }
+                });
+
+                group.hidden = visibleInGroup === 0;
+
+                const groupCount = group.querySelector('[data-dir-group-count]');
+
+                if (groupCount) {
+                    groupCount.textContent = String(visibleInGroup);
+                }
+
+                visibleTotal += visibleInGroup;
+            });
+
+            if (title) {
+                title.textContent = directoryTitle(specialty, query);
+            }
+
+            if (count) {
+                count.textContent = pluralizeDoctors(visibleTotal);
+            }
+
+            if (empty) {
+                empty.hidden = visibleTotal > 0;
+            }
+
+            if (emptyCopy && visibleTotal === 0) {
+                emptyCopy.textContent = specialty !== '' || branch !== '' || query !== ''
+                    ? 'Try another search or clear filters.'
+                    : 'No doctors listed yet.';
+            }
+
+            if (emptyClear) {
+                emptyClear.hidden = specialty === '' && branch === '' && query === '';
+            }
+
+            const clearLink = form.querySelector('.ch-dir-clear');
+
+            if (clearLink) {
+                clearLink.hidden = specialty === '' && branch === '' && query === '';
+            }
+        };
+
+        const onInstantFilterChange = (event) => {
+            const field = event.target;
+
+            if (! (field instanceof HTMLElement)) {
+                return;
+            }
+
+            if (! field.matches('[data-directory-specialty], [data-directory-branch]')) {
+                return;
+            }
+
+            applyDirectoryFilter();
+            syncDirectoryUrl();
+        };
+
+        form.addEventListener('change', onInstantFilterChange);
+        applyDirectoryFilter();
+    });
+
     document.querySelectorAll('form[data-live-filter]').forEach((form) => {
         form.addEventListener('change', (event) => {
             const field = event.target;
 
             if (! (field instanceof HTMLElement)) {
+                return;
+            }
+
+            if (form.hasAttribute('data-doctor-directory') && field.matches('[data-directory-specialty], [data-directory-branch]')) {
                 return;
             }
 

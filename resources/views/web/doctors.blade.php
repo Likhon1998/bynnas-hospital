@@ -16,6 +16,21 @@
         'experience' => 'Most experience',
         'fee' => 'Fee: low to high',
     ];
+    $branchKey = $branches[0]['key'] ?? '';
+    $specialtyNeedle = mb_strtolower($specialty);
+    $doctorMatchesSpecialty = static function ($doctor) use ($specialty, $specialtyNeedle): bool {
+        if ($specialty === '') {
+            return true;
+        }
+
+        $departmentName = (string) ($doctor->department?->name ?? '');
+        $specialization = mb_strtolower((string) $doctor->specialization);
+
+        return $departmentName === $specialty
+            || ($specialtyNeedle !== '' && str_contains($specialization, $specialtyNeedle));
+    };
+    $visibleDoctors = $doctors->filter($doctorMatchesSpecialty);
+    $visibleCount = $visibleDoctors->count();
 @endphp
 
 @section('title', 'Find a doctor | '.$hospitalName)
@@ -64,7 +79,7 @@
                 @if ($directoryView === 'department')
                     <label class="ch-dir-form__field">
                         <span>Department</span>
-                        <select class="ch-input" name="specialty">
+                        <select class="ch-input" name="specialty" data-directory-specialty>
                             <option value="">All departments</option>
                             @foreach ($departments as $department)
                                 <option value="{{ $department->name }}" @selected($specialty === $department->name)>
@@ -78,7 +93,7 @@
                 @if ($directoryView === 'branch')
                     <label class="ch-dir-form__field">
                         <span>Branch</span>
-                        <select class="ch-input" name="branch">
+                        <select class="ch-input" name="branch" data-directory-branch>
                             <option value="">All branches</option>
                             @foreach ($branches as $item)
                                 <option value="{{ $item['key'] }}" @selected($branch === $item['key'])>{{ $item['label'] }}</option>
@@ -98,20 +113,24 @@
 
                 <div class="ch-dir-search__actions">
                     <button type="submit" class="ch-btn ch-btn--solid ch-dir-form__go">Search</button>
-                    @if ($isFiltered)
-                        <a class="ch-btn ch-dir-clear" href="{{ route('doctors', ['view' => $directoryView]) }}">Clear</a>
-                    @endif
+                    <a
+                        class="ch-btn ch-dir-clear"
+                        href="{{ route('doctors', ['view' => $directoryView]) }}"
+                        @if (! $isFiltered) hidden @endif
+                    >Clear</a>
                 </div>
             </form>
         </div>
     </section>
 
-    <section class="ch-dir-results" id="doctor-results">
+    <section class="ch-dir-results" id="doctor-results" data-directory-results>
         <div class="ch-wrap">
             <div class="ch-dir-results__head">
-                <h2>
-                    @if ($isFiltered && $resultLabel)
-                        Results for {{ $resultLabel }}
+                <h2 data-directory-title>
+                    @if ($specialty !== '')
+                        Results for {{ $specialty }}
+                    @elseif ($searchedName !== '')
+                        Results for {{ $searchedName }}
                     @elseif ($directoryView === 'name')
                         Doctors A–Z
                     @elseif ($directoryView === 'branch')
@@ -120,42 +139,61 @@
                         All doctors
                     @endif
                 </h2>
-                <p>{{ $doctors->count() }} {{ \Illuminate\Support\Str::plural('doctor', $doctors->count()) }}</p>
+                <p data-directory-count>{{ $visibleCount }} {{ \Illuminate\Support\Str::plural('doctor', $visibleCount) }}</p>
             </div>
 
-            @forelse ($groupedDoctors as $groupName => $groupDoctors)
+            @foreach ($groupedDoctors as $groupName => $groupDoctors)
+                @php
+                    $groupVisibleDoctors = $groupDoctors->filter($doctorMatchesSpecialty);
+                    $groupIsVisible = $groupVisibleDoctors->isNotEmpty();
+                @endphp
                 <div
                     class="ch-dir-group"
                     id="{{ $directoryView === 'name' ? 'letter-'.\Illuminate\Support\Str::slug($groupName) : 'clinic-'.\Illuminate\Support\Str::slug($groupName) }}"
+                    data-dir-group
+                    data-department="{{ $groupName }}"
+                    @if (! $groupIsVisible) hidden @endif
                 >
                     @if ($directoryView === 'name' || $directoryView === 'branch' || $specialty === '' || $groupedDoctors->count() > 1)
                         <div class="ch-dir-group__head">
                             <h3>{{ $groupName }}</h3>
-                            <span>{{ $groupDoctors->count() }}</span>
+                            <span data-dir-group-count>{{ $groupVisibleDoctors->count() }}</span>
                         </div>
                     @endif
 
                     <div class="ch-dir-list">
                         @foreach ($groupDoctors as $doctor)
-                            @include('web.partials.doctor-directory-card', ['doctor' => $doctor, 'weekdayToday' => $weekdayToday])
+                            @include('web.partials.doctor-directory-card', [
+                                'doctor' => $doctor,
+                                'weekdayToday' => $weekdayToday,
+                                'branchKey' => $branchKey,
+                                'cardHidden' => ! $doctorMatchesSpecialty($doctor),
+                            ])
                         @endforeach
                     </div>
                 </div>
-            @empty
-                <div class="ch-dir-empty">
-                    <h3>No doctors found</h3>
-                    <p>
-                        @if ($isFiltered)
-                            Try another search or clear filters.
-                        @else
-                            No doctors listed yet.
-                        @endif
-                    </p>
-                    @if ($isFiltered)
-                        <a class="ch-btn ch-btn--solid" href="{{ route('doctors', ['view' => $directoryView]) }}">Show all doctors</a>
+            @endforeach
+
+            <div
+                class="ch-dir-empty"
+                data-directory-empty
+                @if ($visibleCount > 0) hidden @endif
+            >
+                <h3>No doctors found</h3>
+                <p data-directory-empty-copy>
+                    @if ($doctors->isEmpty() && $specialty === '' && $searchedName === '')
+                        No doctors listed yet.
+                    @else
+                        Try another search or clear filters.
                     @endif
-                </div>
-            @endforelse
+                </p>
+                <a
+                    class="ch-btn ch-btn--solid"
+                    href="{{ route('doctors', ['view' => $directoryView]) }}"
+                    data-directory-empty-clear
+                    @if ($specialty === '' && $searchedName === '' && $branch === '') hidden @endif
+                >Show all doctors</a>
+            </div>
         </div>
     </section>
 

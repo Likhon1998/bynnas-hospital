@@ -69,19 +69,7 @@ class DoctorController extends Controller
                         ->orWhere('qualifications', 'like', '%'.$searchedName.'%');
                 });
             })
-            ->when($specialty !== '', function (Builder $query) use ($specialty): void {
-                $query->where(function (Builder $match) use ($specialty): void {
-                    $match->where('specialization', 'like', '%'.$specialty.'%')
-                        ->orWhereHas('department', function (Builder $departmentQuery) use ($specialty): void {
-                            $departmentQuery->where('name', $specialty);
-                        });
-                });
-            })
             ->when($featuredOnly, fn (Builder $query) => $query->featured());
-
-        if ($view === 'branch' && $branch !== '' && $branch !== ($branches->first()['key'] ?? '')) {
-            $doctorsQuery->whereRaw('1 = 0');
-        }
 
         $doctorsQuery = match ($sort) {
             'name' => $doctorsQuery->orderBy('name'),

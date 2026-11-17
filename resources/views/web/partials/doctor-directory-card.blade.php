@@ -15,7 +15,16 @@
     }
 @endphp
 
-<article class="ch-dir-card @if ($doctor->is_featured) is-featured @endif">
+<article
+    class="ch-dir-card @if ($doctor->is_featured) is-featured @endif"
+    data-dir-card
+    data-name="{{ $doctor->name }}"
+    data-department="{{ $doctor->department?->name }}"
+    data-specialization="{{ $doctor->specialization }}"
+    data-designation="{{ $doctor->designation }}"
+    data-branch="{{ $branchKey ?? '' }}"
+    @if (! empty($cardHidden)) hidden @endif
+>
     <a class="ch-dir-card__photo" href="{{ route('doctors.show', $doctor) }}">
         @if ($doctor->photo)
             <img src="{{ $doctor->photo }}" alt="{{ $doctor->name }}" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="120" height="150">
